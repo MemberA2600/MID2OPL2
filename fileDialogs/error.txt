@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "D:/PyCharm/P/OpenFileDialog/filedialogs.py", line 89, in <module>
-    args.extend("Error", "Error occured!", "")
-TypeError: extend() takes exactly one argument (3 given)
