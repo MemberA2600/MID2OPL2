@@ -192,8 +192,11 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
   character(c_char)    :: string
 
   loadText = fdialog('"OpenFile" "Open File" "*"')  
-  if (loadText /= "") retlog = DLGSET(gdlg, IDC_LOAD, loadText)
-
+  if (loadText /= "") then
+      retlog = DLGSET(gdlg, IDC_LOAD, loadText)
+      call midiF%loadFile(loadText)
+  end if    
+      
 END SUBROUTINE 
 
 SUBROUTINE MID2OPL2VGMPath( dlg, id, callbacktype)
@@ -356,6 +359,13 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
     if (exist .EQV. .TRUE.) then
        answer = fdialog('"YesOrNo" "File Already Exists!" "The given file ' // trim(fullName) // ' already exist! Overwrite file?"') 
        if (answer == "No") goto 99998
+        
+    end if    
+    
+    inquire(file = loadText, exist = exist)
+    if (exist .EQV. .FALSE.) then
+       answer = fdialog('"Error" "Source Midi Not Loaded!" "There is no midi file loaded!"') 
+       goto 99998
         
     end if    
     

@@ -34,7 +34,8 @@
 		<Filter Name="Source Files" Filter="f90;for;f;fpp;ftn;def;odl;idl">
 		<File RelativePath=".\functions.f90"/>
 		<File RelativePath=".\MID2OPL2.f90"/>
-		<File RelativePath=".\MID2OPL2globals.f90"/></Filter>
+		<File RelativePath=".\MID2OPL2globals.f90"/>
+		<File RelativePath=".\midi.f90"/></Filter>
 		<File RelativePath=".\ReadMe.txt"/>
 		<File RelativePath=".\Resource.h">
 			<FileConfiguration Name="Debug|Win32">

@@ -1,6 +1,6 @@
 !
-! D:\dotNetStuff\MID2OPL2\MID2OPL2\MID2OPL2\Resource.fd generated from D
-! :\dotNetStuff\MID2OPL2\MID2OPL2\MID2OPL2\Resource.h
+! D:\dotNetStuff\MID2OPL2\MID2OPL2\Resource.fd generated from D:\dotNetS
+! tuff\MID2OPL2\MID2OPL2\Resource.h
 !
       integer, parameter :: IDC_CONVERTEDBY = 1025
       integer, parameter :: IDC_DAY = 1028
