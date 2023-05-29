@@ -1,0 +1,30 @@
+!
+! D:\dotNetStuff\MID2OPL2\MID2OPL2\MID2OPL2\Resource.fd generated from D
+! :\dotNetStuff\MID2OPL2\MID2OPL2\MID2OPL2\Resource.h
+!
+      integer, parameter :: IDC_CONVERTEDBY = 1025
+      integer, parameter :: IDC_DAY = 1028
+      integer, parameter :: IDC_BUTTON_CONVERT = 1008
+      integer, parameter :: IDC_SYSTEMNAME = 1022
+      integer, parameter :: IDC_YEAR = 1024
+      integer, parameter :: IDC_PATH_BUTTON = 1015
+      integer, parameter :: IDD_MID2OPL2_DIALOG = 101
+      integer, parameter :: IDC_EDIT1 = 1014
+      integer, parameter :: IDC_BUTTON_CLOSE = 1008
+      integer, parameter :: IDC_GAMENAME = 1021
+      integer, parameter :: IDM_APPLY = 30002
+      integer, parameter :: IDC_NOTES = 1026
+      integer, parameter :: IDC_TRACKNAME = 1020
+      integer, parameter :: IDC_AUTHORNAME = 1023
+      integer, parameter :: IDC_LOAD = 1014
+      integer, parameter :: IMG_PIANO = 1011
+      integer, parameter :: IDC_OUTPUT = 1016
+      integer, parameter :: IDM_EXIT = 30001
+      integer, parameter :: IDC_BUTTON_CLOSE2 = 1011
+      integer, parameter :: IDC_OKBOX = 1018
+      integer, parameter :: IDC_PATH = 1014
+      integer, parameter :: IDC_CHECK1 = 1029
+      integer, parameter :: ID_PICTURE = 1013
+      integer, parameter :: IDC_MONTH = 1027
+      integer, parameter :: IDC_FILENAME = 1019
+      integer, parameter :: IDC_MIDI_BUTTON = 1017

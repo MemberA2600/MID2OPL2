@@ -1,0 +1,16 @@
+!/*********************  Prototypes  ***********************/
+      interface 
+      function MainWndProc(hwnd, mesg, wParam, lParam)
+!DEC$ IF DEFINED(_X86_)
+!DEC$ ATTRIBUTES STDCALL, ALIAS : '_MainWndProc@16' :: MainWndProc
+!DEC$ ELSE
+!DEC$ ATTRIBUTES STDCALL, ALIAS : 'MainWndProc' :: MainWndProc
+!DEC$ ENDIF
+      use ifwinty
+      integer(LRESULT) :: MainWndProc ! LRESULT
+      integer(HANDLE)   hwnd 
+      integer(UINT)     mesg  
+      integer(UINT_PTR) wParam
+      integer(LONG_PTR) lParam 
+      end function 
+      end interface

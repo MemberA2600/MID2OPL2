@@ -1,0 +1,211 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+#include "winver.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1250)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MID2OPL2_DIALOG DIALOGEX 40, 40, 196, 263
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "Dialog Title"
+FONT 14, "HammerFat_Hun", 400, 0, 0x0
+BEGIN
+    PUSHBUTTON      "Convert",IDC_BUTTON_CONVERT,5,247,63,14,BS_FLAT
+    GROUPBOX        "Midi Input",IDC_STATIC,6,3,181,69
+    CONTROL         IMG_PIANO,ID_PICTURE,"Static",SS_BITMAP,10,18,74,43
+    LTEXT           "Input Path:",IDC_STATIC,87,13,36,8
+    EDITTEXT        IDC_LOAD,87,23,96,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Select Output Folder",IDC_PATH_BUTTON,100,99,81,14,BS_FLAT
+    GROUPBOX        "VGM Output",IDC_STATIC,6,75,181,168
+    LTEXT           "Output Folder:",IDC_STATIC,10,86,49,8
+    EDITTEXT        IDC_OUTPUT,72,85,109,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Select MIDI",IDC_MIDI_BUTTON,87,47,50,14,BS_FLAT
+    LTEXT           "GD3 Data:",IDC_STATIC,10,102,35,8
+    EDITTEXT        IDC_OKBOX,72,100,25,12,ES_CENTER | ES_AUTOHSCROLL | ES_READONLY
+    RTEXT           "File Name:",IDC_STATIC,28,116,37,8,0,WS_EX_RIGHT
+    RTEXT           "Track Name:",IDC_STATIC,24,130,41,8,0,WS_EX_RIGHT
+    RTEXT           "Game Name:",IDC_STATIC,22,144,43,8,0,WS_EX_RIGHT
+    RTEXT           "System Name:",IDC_STATIC,18,158,47,8,0,WS_EX_RIGHT
+    RTEXT           "Name of Author:",IDC_STATIC,9,173,56,8,0,WS_EX_RIGHT
+    RTEXT           "Release Date:",IDC_STATIC,18,186,47,8,0,WS_EX_RIGHT
+    RTEXT           "Converted by:",IDC_STATIC,19,200,46,8,0,WS_EX_RIGHT
+    RTEXT           "Notes:",IDC_STATIC,44,214,21,8,0,WS_EX_RIGHT
+    EDITTEXT        IDC_FILENAME,72,114,109,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_TRACKNAME,72,128,109,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_GAMENAME,72,142,109,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_SYSTEMNAME,72,156,109,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_AUTHORNAME,72,170,109,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_YEAR,72,184,22,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_CONVERTEDBY,72,198,109,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_NOTES,72,212,109,27,ES_MULTILINE | ES_AUTOHSCROLL
+    EDITTEXT        IDC_MONTH,106,184,13,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_DAY,131,184,13,12,ES_AUTOHSCROLL | ES_NUMBER
+    CTEXT           "-",IDC_STATIC,96,185,8,8
+    CTEXT           "-",IDC_STATIC,121,185,8,8
+    CONTROL         "Auto Update GD3",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | BS_LEFT | WS_TABSTOP,87,36,75,10
+    PUSHBUTTON      "Exit Program",IDC_BUTTON_CLOSE2,123,247,63,14,BS_FLAT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_MID2OPL2_DIALOG, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 261
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Hungarian (Hungary) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_HUN)
+LANGUAGE LANG_HUNGARIAN, SUBLANG_DEFAULT
+#pragma code_page(1250)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IMG_PIANO               BITMAP                  "bmp_pian.bmp"
+#endif    // Hungarian (Hungary) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+MID2OPL2                ICON                    "MID2OPL2.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName", "My Company"
+            VALUE "FileDescription", "MID2OPL2 Application"
+            VALUE "FileVersion", "1.0"
+            VALUE "InternalName", "MID2OPL2"
+            VALUE "ProductName", "MID2OPL2"
+            VALUE "ProductVersion", "1.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "#include ""winver.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    0                       " "
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
