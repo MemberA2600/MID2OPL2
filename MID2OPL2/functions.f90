@@ -21,11 +21,6 @@ module functions
       
       INQUIRE(FILE = "error.txt", EXIST = exist)
       
-       OPEN(12, file = "fos.txt", action = "WRITE")
-       !WRITE(12, '(A)') 'filedialogs.exe ' // params // " || " // message
-       WRITE(12, '(A)') 'filedialogs.exe "Error" "Error occured!" "' // trim(message) // '"'
-       CLOSE(12)
-      
       if (exist .EQV. .TRUE.) then
           OPEN(unit = 11, file = "error.txt", iostat = iostat)
           READ(11, "(A)", iostat = iostat) message  

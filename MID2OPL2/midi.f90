@@ -23,12 +23,14 @@ module midi
     end type 
    
     type chunkList
-       type(chunk), dimension(:), allocatable           :: listOfChunks, tempList
-       integer(kind = 8)                                :: theSize
+       type(chunk), dimension(:), allocatable           :: listOfChunks
+       integer(kind = 8)                                :: theSize, last
        
        contains
-       procedure                                        :: initList       => initList
+       procedure                                        :: initList       => InitList
        procedure                                        :: deAllocateList => DeAllocateList
+       procedure                                        :: doubleSize     => DoubleSize
+       procedure                                        :: nextChunk      => NextChunk
        
     end type    
         
@@ -77,11 +79,85 @@ module midi
    
    subroutine InitList(this)
       class(chunkList), intent(inout) :: this
+      integer                         :: stat
       
-      if (allocated(this%listOfChunks) .EQV. .TRUE.) call this%DeAllocateList() 
-      this%theSize = 8
+      if (allocated(this%listOfChunks) .EQV. .TRUE.) then
+          call this%DeAllocateList() 
+          deallocate(this%listOfChunks, stat = stat)
+      end if    
+      this%theSize = 16
+      this%last    = 0
+      
+      allocate(this%listOfChunks(this%theSize), stat = stat)
       
    end subroutine
+   
+   subroutine NextChunk(this, hexArray, binArray)
+      class(chunkList), intent(inout)       :: this
+      character(len = 2), dimension(*)      :: hexArray 
+      character(len = 8), dimension(*)      :: binArray 
+      
+      if (this%theSize == this%last) call this%doubleSize()
+      this%last = this%last + 1
+      
+      
+   end subroutine   
+      
+   function getTextFromBytes(hexArray, theSize, byteNum) result(theText)
+     character(len = 2), dimension(*) :: hexArray 
+     integer                          :: theSize, byteNum, index
+     character(len = theSize)         :: theText 
+   
+   
+   end function
+   
+   subroutine DoubleSize(this)
+      class(chunkList), intent(inout)        :: this
+      integer                                :: stat
+      integer(kind = 8)                      :: index, subIndex, oldSize
+      type(chunk), dimension(:), allocatable :: tempList
+
+      allocate(tempList(this%theSize), stat = stat)   
+      
+      do index = 1, this%theSize, 1
+         tempList(index)%header    = this%listOfChunks(index)%header 
+         tempList(index)%theSize   = this%listOfChunks(index)%theSize
+         tempList(index)%trackNum  = this%listOfChunks(index)%trackNum
+
+         call templist(index)%allocateChunk()   
+         
+         do subIndex = 1, this%listOfChunks(index)%theSize, 1
+            tempList(index)%hexas(subIndex)    = this%listOfChunks(index)%hexas(subIndex)
+            tempList(index)%binaries(subIndex) = this%listOfChunks(index)%binaries(subIndex)
+         end do    
+         
+         call this%listOfChunks(index)%deAllocateChunk()
+      end do    
+   
+      oldSize      = this%theSize   
+      this%theSize = this%theSize * 2
+      
+      deallocate(this%listOfChunks               , stat = stat)
+      allocate(  this%listOfChunks(this%theSize) , stat = stat)
+      
+      do index = 1, oldSize, 1
+         this%listOfChunks(index)%header   = tempList(index)%header
+         this%listOfChunks(index)%theSize  = tempList(index)%theSize
+         this%listOfChunks(index)%trackNum = tempList(index)%trackNum
+
+         call this%listOfChunks(index)%allocateChunk()   
+         
+         do subIndex = 1, tempList(index)%theSize, 1
+            this%listOfChunks(index)%hexas(subIndex)    = tempList(index)%hexas(subIndex)
+            this%listOfChunks(index)%binaries(subIndex) = tempList(index)%binaries(subIndex)  
+         end do    
+         
+         call tempList(index)%deAllocateChunk()
+      end do 
+      
+      deallocate(tempList, stat = stat)
+      
+   end subroutine 
    
    subroutine DeAllocateList(this)
       class(chunkList), intent(inout) :: this
@@ -102,7 +178,8 @@ module midi
    subroutine LoadFile(this, path)
      class(midiFile), intent(inout) :: this
      character(len = *)             :: path
-     integer                        :: theSize, stat, index, subIndex
+     integer                        :: theSize, stat
+     integer(kind = 8)              :: index, subIndex, currentIndex
      
      this%loaded = .FALSE.
      
@@ -117,7 +194,6 @@ module midi
      allocate(this%hexas(theSize)   , stat = stat)
      allocate(this%binaries(theSize), stat = stat)
 
-     
      OPEN(unit=11, file=path, access="stream", status="old", action="read",iostat=stat)     
      read(11, iostat=stat) this%bytes
      CLOSE(11)
@@ -140,9 +216,16 @@ module midi
          
      end do    
      deallocate(this%bytes)   
-    
      
-     
+     call this%chunks%initList()
+     currentIndex = 1
+
+     do while (currentIndex < size(this%hexas))
+        call this%chunks%NextChunk(this%hexas(currentIndex:size(this%hexas)), &
+                                 & this%binaries(currentIndex:size(this%hexas))) 
+         
+     end do
+         
    end subroutine
     
     
