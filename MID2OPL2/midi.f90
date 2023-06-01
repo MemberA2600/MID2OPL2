@@ -1,7 +1,7 @@
 module midi
     use iso_fortran_env
     use, intrinsic :: iso_c_binding  
-     
+    
     implicit none
     
     private
@@ -92,25 +92,68 @@ module midi
       
    end subroutine
    
-   subroutine NextChunk(this, hexArray, binArray)
+   subroutine NextChunk(this, hexArray, binArray, currentIndex)
       class(chunkList), intent(inout)       :: this
       character(len = 2), dimension(*)      :: hexArray 
       character(len = 8), dimension(*)      :: binArray 
+      integer(kind = 8), intent(inout)      :: currentIndex
+      integer(kind = 8)                     :: index
       
       if (this%theSize == this%last) call this%doubleSize()
       this%last = this%last + 1
+     
+      if (getASCIIFromBytes(hexArray(1:4), 4) .EQ. "MThd") then
+         this%listOfChunks(this%last)%header = .TRUE.
+      else
+         this%listOfChunks(this%last)%header = .FALSE.
+      end if
       
+      this%listOfChunks(this%last)%theSize = getInt32FromBytes(hexArray(5:8))
+
+      !OPEN(unit=12, file="szar.txt", position="append", action = "write")
+      !WRITE(12, *) getASCIIFromBytes(hexArray(1:4), 4), currentIndex, this%listOfChunks(this%last)%theSize, hexArray(8:this%listOfChunks(this%last)%theSize + 8)
+      !CLOSE(12)
+      
+      call this%listOfChunks(this%last)%allocateChunk()
+      
+      do index = 1, this%listOfChunks(this%last)%theSize, 1
+         this%listOfChunks(this%last)%hexas(index)    = hexArray(index + 8)        
+         this%listOfChunks(this%last)%binaries(index) = binArray(index + 8)
+      end do    
+      
+      currentIndex = currentIndex + 8 + this%listOfChunks(this%last)%theSize
       
    end subroutine   
-      
-   function getTextFromBytes(hexArray, theSize, byteNum) result(theText)
-     character(len = 2), dimension(*) :: hexArray 
-     integer                          :: theSize, byteNum, index
-     character(len = theSize)         :: theText 
    
+   function getASCIIFromBytes(hexArray, theSize) result(theText)
+     integer                                :: theSize, index
+     character(len = 2), dimension(theSize) :: hexArray 
+     character(len = theSize)               :: theText
+     integer(kind = 2)                      :: asNum
+     
+     do index = 1, theSize, 1
+        READ(hexArray(index), "(Z2)") asNum
+        theText(index:index) = char(asNum)
+     end do    
    
    end function
+
+   function getInt32FromBytes(hexArray) result(theNumber)
+     integer                                    :: index, subIndex
+     character(len = 2), dimension(4)           :: hexArray 
+     character(len = 8)                         :: theText
+     integer(kind = 8)                          :: theNumber
+     
+     do index = 1, 4, 1
+        subIndex = (index - 1) * 2 + 1  
+        theText(subIndex  :subIndex  ) = hexArray(index)(1:1)
+        theText(subIndex+1:subIndex+1) = hexArray(index)(2:2)       
+     end do    
    
+     read(theText, "(Z8)") theNumber
+     
+   end function 
+     
    subroutine DoubleSize(this)
       class(chunkList), intent(inout)        :: this
       integer                                :: stat
@@ -198,6 +241,9 @@ module midi
      read(11, iostat=stat) this%bytes
      CLOSE(11)
 
+     !
+     !  Get pure hexString and binString data
+     !
      do index = 1, theSize, 1
         WRITE(this%hexas(index)   , '(Z2)', iostat = stat) this%bytes(index)
         WRITE(this%binaries(index), '(B8)', iostat = stat) this%bytes(index)
@@ -215,17 +261,32 @@ module midi
         end do     
          
      end do    
-     deallocate(this%bytes)   
+     deallocate(this%bytes, stat = stat)   
      
      call this%chunks%initList()
      currentIndex = 1
-
+    
+     !
+     !  Create chunks from binary: Chunk Type (Header / Track), Size, Data of Chunk
+     !
      do while (currentIndex < size(this%hexas))
         call this%chunks%NextChunk(this%hexas(currentIndex:size(this%hexas)), &
-                                 & this%binaries(currentIndex:size(this%hexas))) 
+                                 & this%binaries(currentIndex:size(this%binaries)), currentIndex) 
          
      end do
          
+     deallocate(this%hexas    , stat = stat)
+     deallocate(this%binaries , stat = stat)
+
+     !
+     !  Create Header / Track Messages for each chunk!
+     !
+     
+     do currentIndex = 1, this%chunks%last, 1
+        ! TODO 
+         
+     end do
+     
    end subroutine
     
     
