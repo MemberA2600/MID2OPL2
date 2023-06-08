@@ -35,10 +35,21 @@ module midi
        procedure                                        :: nextChunk      => NextChunk
        
     end type    
-               
+    
+    type metaMessage   
+         integer(kind = 8)                              :: lenght
+         character(len=2)                               :: typeAsHex
+         character(len=20)                              :: typeAsText
+         character(len=250)                             :: valueAsText
+         character(len=2), dimension(:), allocatable    :: valueAsHex
+         
+    end type 
+        
     type message   
         integer(kind = 8)                              :: deltaTime
-    
+        character(len = 2)                             :: messageType
+        type(metaMessage)                              :: metaM
+        
     end type    
         
     type track
@@ -47,10 +58,11 @@ module midi
         type(message), dimension(:), allocatable       :: messages
       
         contains 
-        procedure                                      :: buildTrack     => BuildTrack
-        procedure                                      :: addNessage     => AddMessage
-        procedure                                      :: doubleMe       => DoubleMe
-        
+        procedure                                      :: buildTrack       => BuildTrack
+        procedure                                      :: addNessage       => AddMessage
+        procedure                                      :: doubleMe         => DoubleMe
+        procedure                                      :: processAsMeta    => ProcessAsMeta
+
     end type   
     
     
@@ -78,12 +90,31 @@ module midi
        class(track), intent(inout)               :: this
        integer                                   :: stat
        type(message), dimension(:), allocatable  :: tempMessages 
-       integer(kind = 8)                         :: index
+       integer(kind = 8)                         :: index, subIndex
        
        allocate(tempMessages(this%arraySize), stat = stat) 
        
        do index = 1, this%lastMessage, 1
-          tempMessages(index)%deltaTime = this%messages(index)%deltaTime 
+          tempMessages(index)%deltaTime   = this%messages(index)%deltaTime 
+          tempMessages(index)%messageType = this%messages(index)%messageType 
+
+          select case(tempMessages(index)%messageType)
+          case ("MT")    
+               !tempMessages(index)%metaM  = this%messages(index)%metaM
+               tempMessages(index)%metaM%lenght      = this%messages(index)%metaM%lenght 
+               tempMessages(index)%metaM%typeAsHex   = this%messages(index)%metaM%typeAsHex 
+               tempMessages(index)%metaM%typeAsText  = this%messages(index)%metaM%typeAsText 
+               tempMessages(index)%metaM%valueAsText = this%messages(index)%metaM%valueAsText 
+               
+               if (this%messages(index)%metaM%lenght > 0) then
+                   allocate(tempMessages(index)%metaM%valueAsHex(this%messages(index)%metaM%lenght), stat = stat)
+                   do subIndex = 1, this%messages(index)%metaM%lenght, 1
+                      tempMessages(index)%metaM%valueAsHex(subIndex) = this%messages(index)%metaM%valueAsHex(subIndex)
+                   end do    
+                   deallocate(this%messages(index)%metaM%valueAsHex, stat = stat)
+               end if
+               
+          end select    
        end do    
        
        this%arraySize = this%arraySize * 2 
@@ -92,7 +123,28 @@ module midi
        allocate  (this%messages(this%arraySize), stat = stat)
        
        do index = 1, this%lastMessage, 1
-          this%messages(index)%deltaTime = tempMessages(index)%deltaTime
+          this%messages(index)%deltaTime   = tempMessages(index)%deltaTime
+          this%messages(index)%messageType = tempMessages(index)%messageType
+
+          select case(this%messages(index)%messageType)
+          case ("MT")    
+               !this%messages(index)%metaM  = tempMessages(index)%metaM
+               this%messages(index)%metaM%lenght      = tempMessages(index)%metaM%lenght 
+               this%messages(index)%metaM%typeAsHex   = tempMessages(index)%metaM%typeAsHex 
+               this%messages(index)%metaM%typeAsText  = tempMessages(index)%metaM%typeAsText 
+               this%messages(index)%metaM%valueAsText = tempMessages(index)%metaM%valueAsText 
+               
+                if (this%messages(index)%metaM%lenght > 0) then
+                   allocate(this%messages(index)%metaM%valueAsHex(this%messages(index)%metaM%lenght), stat = stat)
+                   do subIndex = 1, this%messages(index)%metaM%lenght, 1
+                      this%messages(index)%metaM%valueAsHex(subIndex) = tempMessages(index)%metaM%valueAsHex(subIndex)
+                   end do  
+                   deallocate(tempMessages(index)%metaM%valueAsHex, stat = stat)
+
+               end if              
+               
+          end select    
+          
        end do    
        
        deallocate(tempMessages, stat = stat)
@@ -139,8 +191,93 @@ module midi
        
        call calculateVLQ(this%messages(this%lastMessage)%deltaTime, binArray, byteIndex)
        
+       select case(hexarray(byteIndex))
+       ! Meta Message
+       case("FF")    
+           this%messages(this%lastMessage)%messageType = "MT"
+           byteIndex = byteIndex + 1
+           
+           call this%processAsMeta(byteIndex, hexArray, binArray, arrSize)
+       ! System Exclusive Message
+       case("F0")
+           this%messages(this%lastMessage)%messageType = "SE"
+           byteIndex = byteIndex + 1
+         
+       ! Midi Message    
+       case default    
+           this%messages(this%lastMessage)%messageType = "MD"
+           byteIndex = byteIndex + 1
+           
+       end select
+       
    end subroutine 
    
+   function getMetaTypeFromHex(hex) result(text)
+   character(len = 2)                         :: hex
+   character(len = 20)                        :: text
+   
+   select case(hex)
+   case("00")
+       text = "Sequence Number"
+   case("01")
+       text = "Text"
+   case("02")
+       text = "Copyright Notice"
+   case("03")
+       text = "Track Name"
+   case("04")
+       text = "Instrument Name"
+   case("05")
+       text = "Lyrics"    
+   case("06")
+       text = "Marker" 
+   case("07")
+       text = "Cue Point"       
+   case("20")
+       text = "Channel Prefix" 
+   case("2F")
+       text = "End of Track"    
+   case("51")
+       text = "Set Tempo"     
+   case("54")
+       text = "SMPTE Offset" 
+   case("58")
+       text = "Time Signature"
+   case("59")
+       text = "Key Signature"       
+   case("7F")
+       text = "Sequencer Specific"     
+   case("FF")
+       text = "Reset"
+   case default
+       text = "Invalid" 
+   end select
+   
+   end function
+   
+   subroutine ProcessAsMeta(this, byteIndex, hexArray, binArray, arrSize)
+       class(track), intent(inout)            :: this
+       character(len = 2), dimension(*)       :: hexArray
+       character(len = 8), dimension(*)       :: binArray  
+       integer                                :: stat
+       integer(kind = 8)                      :: index
+       integer(kind = 8), intent(inout)       :: byteIndex
+       integer(kind = 8)                      :: arrSize
+       
+       this%messages(this%lastMessage)%metaM%typeAsHex = hexArray(byteIndex)
+       byteIndex = byteIndex + 1
+       this%messages(this%lastMessage)%metaM%typeAsText = getMetaTypeFromHex(this%messages(this%lastMessage)%metaM%typeAsHex)
+       
+       this%messages(this%lastMessage)%metaM%lenght = 0
+       call calculateVLQ(this%messages(this%lastMessage)%metaM%lenght, binArray, byteIndex)
+
+       if (this%messages(this%lastMessage)%metaM%lenght > 0) then
+           allocate(this%messages(this%lastMessage)%metaM%valueAsHex(this%messages(this%lastMessage)%metaM%lenght), stat = stat)
+       end if
+       this%messages(this%lastMessage)%metaM%valueAsText = ""
+       
+   end subroutine    
+       
    subroutine BuildTrack(this, hexArray, binArray, arrSize)
        class(track), intent(inout)            :: this
        character(len = 2), dimension(*)       :: hexArray
