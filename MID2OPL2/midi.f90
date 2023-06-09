@@ -260,7 +260,7 @@ module midi
        character(len = 2), dimension(*)       :: hexArray
        character(len = 8), dimension(*)       :: binArray  
        integer                                :: stat
-       integer(kind = 8)                      :: index
+       integer(kind = 8)                      :: index, saveIndex
        integer(kind = 8), intent(inout)       :: byteIndex
        integer(kind = 8)                      :: arrSize
        
@@ -275,6 +275,19 @@ module midi
            allocate(this%messages(this%lastMessage)%metaM%valueAsHex(this%messages(this%lastMessage)%metaM%lenght), stat = stat)
        end if
        this%messages(this%lastMessage)%metaM%valueAsText = ""
+       
+       allocate(this%messages(this%lastMessage)%metaM%valueAsHex(this%messages(this%lastMessage)%metaM%lenght), stat = stat)
+       
+       saveIndex = 1
+       do index = byteIndex, this%messages(this%lastMessage)%metaM%lenght + byteIndex, 1
+          this%messages(this%lastMessage)%metaM%valueAsHex(saveIndex) = hexArray(index)  
+          saveIndex = saveIndex + 1  
+       end do
+       
+       this%messages(this%lastMessage)%metaM%valueAsText = getASCIIFromBytes(this%messages(this%lastMessage)%metaM%valueAsHex, &
+                                                                           & this%messages(this%lastMessage)%metaM%lenght)
+       
+       byteIndex = byteIndex + this%messages(this%lastMessage)%metaM%lenght + 1
        
    end subroutine    
        
@@ -444,7 +457,8 @@ module midi
    end subroutine   
    
    function getASCIIFromBytes(hexArray, theSize) result(theText)
-     integer                                :: theSize, index
+     integer(kind = 8)                      :: theSize
+     integer                                :: index
      character(len = 2), dimension(theSize) :: hexArray 
      character(len = theSize)               :: theText
      integer(kind = 2)                      :: asNum
