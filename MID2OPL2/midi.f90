@@ -45,10 +45,26 @@ module midi
          
     end type 
         
+    type sysMessage
+         integer(kind = 8)                              :: lenght
+         character(len=2)                               :: typeAsHex
+         character(len=20)                              :: typeAsText
+         character(len=2), dimension(:), allocatable    :: valueAsHex
+    end type
+    
+    type midiData
+         integer(kind = 8)                              :: lenght
+         character(len=2)                               :: typeAsHex
+         character(len=20)                              :: typeAsText
+         character(len=2), dimension(:), allocatable    :: valueAsHex
+    end type
+    
     type message   
         integer(kind = 8)                              :: deltaTime
         character(len = 2)                             :: messageType
         type(metaMessage)                              :: metaM
+        type(sysMessage)                               :: sysM
+        type(midiData)                               :: midiD
         
     end type    
         
@@ -58,10 +74,12 @@ module midi
         type(message), dimension(:), allocatable       :: messages
       
         contains 
-        procedure                                      :: buildTrack       => BuildTrack
-        procedure                                      :: addNessage       => AddMessage
-        procedure                                      :: doubleMe         => DoubleMe
-        procedure                                      :: processAsMeta    => ProcessAsMeta
+        procedure                                      :: buildTrack        => BuildTrack
+        procedure                                      :: addNessage        => AddMessage
+        procedure                                      :: doubleMe          => DoubleMe
+        procedure                                      :: processAsMeta     => ProcessAsMeta
+        procedure                                      :: processAsSysMes   => ProcessAsSysMes
+        ! procedure                                      :: processAsMidiData => ProcessAsMidiData
 
     end type   
     
@@ -113,6 +131,19 @@ module midi
                    end do    
                    deallocate(this%messages(index)%metaM%valueAsHex, stat = stat)
                end if
+          
+          case("SE")
+               tempMessages(index)%sysM%lenght      = this%messages(index)%sysM%lenght 
+               tempMessages(index)%sysM%typeAsHex   = this%messages(index)%sysM%typeAsHex 
+               tempMessages(index)%sysM%typeAsText  = this%messages(index)%sysM%typeAsText 
+               
+                if (this%messages(index)%sysM%lenght > 0) then
+                   allocate(tempMessages(index)%sysM%valueAsHex(this%messages(index)%sysM%lenght), stat = stat)
+                   do subIndex = 1, this%messages(index)%sysM%lenght, 1
+                      tempMessages(index)%sysM%valueAsHex(subIndex) = this%messages(index)%sysM%valueAsHex(subIndex)
+                   end do    
+                   deallocate(this%messages(index)%sysM%valueAsHex, stat = stat)
+               end if
                
           end select    
        end do    
@@ -141,8 +172,20 @@ module midi
                    end do  
                    deallocate(tempMessages(index)%metaM%valueAsHex, stat = stat)
 
-               end if              
+                end if     
+          case("SE")
+               this%messages(index)%sysM%lenght      = tempMessages(index)%sysM%lenght 
+               this%messages(index)%sysM%typeAsHex   = tempMessages(index)%sysM%typeAsHex 
+               this%messages(index)%sysM%typeAsText  = tempMessages(index)%sysM%typeAsText 
                
+               if (this%messages(index)%sysM%lenght > 0) then
+                   allocate(this%messages(index)%sysM%valueAsHex(this%messages(index)%sysM%lenght), stat = stat)
+                   do subIndex = 1, this%messages(index)%sysM%lenght, 1
+                      this%messages(index)%sysM%valueAsHex(subIndex) = tempMessages(index)%sysM%valueAsHex(subIndex)
+                   end do  
+                   deallocate(tempMessages(index)%sysM%valueAsHex, stat = stat)
+
+               end if    
           end select    
           
        end do    
@@ -202,7 +245,8 @@ module midi
        case("F0")
            this%messages(this%lastMessage)%messageType = "SE"
            byteIndex = byteIndex + 1
-         
+           call this%processAsSysMes(byteIndex, hexArray, binArray, arrSize)
+
        ! Midi Message    
        case default    
            this%messages(this%lastMessage)%messageType = "MD"
@@ -211,7 +255,158 @@ module midi
        end select
        
    end subroutine 
+     
+   function getSysTypeFromHex(hex) result(text)
+   character(len = 2)                         :: hex
+   character(len = 20)                        :: text
    
+   select case(hex)
+   case("01")
+       text = "Sequential Circuits"
+   case("02")
+       text = "Big Briar"
+   case("03")
+       text = "Octave / Plateau"    
+   case("04")
+       text = "Moog"    
+   case("05")
+       text = "Passport Designs"   
+   case("06")
+       text = "Lexicon"   
+   case("07")
+       text = "Kurzweil"   
+   case("08")
+       text = "Fender"   
+   case("09")
+       text = "Gulbransen"   
+   case("0A")
+       text = "Delta Labs"   
+   case("0B")
+       text = "Sound Comp."   
+   case("0C")
+       text = "General Electro"          
+   case("0D")
+       text = "Techmar"   
+   case("0E")
+       text = "Matthews Research"    
+   case("10")
+       text = "Oberheim"   
+   case("11")
+       text = "PAIA"   
+   case("12")
+       text = "Simmons"   
+   case("13")
+       text = "Gentle Electric"   
+   case("14")
+       text = "Fairlight"   
+   case("15")
+       text = "JL Cooper"   
+   case("16")
+       text = "Lowery"   
+   case("17")
+       text = "Lin"   
+   case("18")
+       text = "Emu"   
+   case("1B")
+       text = "Peavey"   
+   case("20")
+       text = "Bon Tempi"   
+   case("21")
+       text = "S.I.E.L."   
+   case("23")
+       text = "SyntheAxe"   
+   case("24")
+       text = "Hohner"   
+   case("25")
+       text = "Crumar"   
+   case("26")
+       text = "Solton"   
+   case("27")
+       text = "Jellinghous Ms"   
+   case("28")
+       text = "CTS"   
+   case("29")
+       text = "PPG"   
+   case("2F")
+       text = "Elka"   
+   case("40")
+       text = "Kawai"   
+   case("41")
+       text = "Roland"   
+   case("42")
+       text = "Korg"   
+   case("43")
+       text = "Yamaha"   
+   case("44")
+       text = "Casio"   
+   case("45")
+       text = "Akai"   
+   case("46")
+       text = "Roland"   
+   case("7E")
+       text = "Universal Non-Real Time"  
+   case("7F")
+       text = "Universal Real Time"  
+   case default
+       text = "Invalid" 
+   end select
+   
+   end function
+   
+   subroutine ProcessAsSysMes(this, byteIndex, hexArray, binArray, arrSize)
+       class(track), intent(inout)                   :: this
+       character(len = 2), dimension(*)              :: hexArray
+       character(len = 8), dimension(*)              :: binArray  
+       integer                                       :: stat
+       integer(kind = 8)                             :: index, saveIndex, tempLen
+       integer(kind = 8), intent(inout)              :: byteIndex
+       integer(kind = 8)                             :: arrSize
+       character(len = 2), dimension(:), allocatable :: tempArr
+ 
+       
+       this%messages(this%lastMessage)%sysM%typeAsHex  = hexArray(byteIndex + 1)
+       this%messages(this%lastMessage)%sysM%typeAsText = getSysTypeFromHex(this%messages(this%lastMessage)%sysM%typeAsHex)
+       this%messages(this%lastMessage)%sysM%lenght = 0
+       
+       byteIndex = byteIndex - 1
+       
+       do 
+           ! Should stand on "F0' or "F7"
+           if (byteIndex + 2 > arrSize)                                                   exit          
+           if (hexArray(byteIndex + 2) /= this%messages(this%lastMessage)%sysM%typeAsHex) exit
+            
+           byteIndex = byteIndex + 1
+           call calculateVLQ(tempLen, binArray, byteIndex)
+           tempLen = tempLen - 1
+           
+           if (allocated(this%messages(this%lastMessage)%sysM%valueAsHex) .EQV. .FALSE.) then
+               allocate(this%messages(this%lastMessage)%sysM%valueAsHex(tempLen), stat = stat) 
+           else
+               allocate(tempArr(this%messages(this%lastMessage)%sysM%lenght), stat = stat)
+               do index = 1, this%messages(this%lastMessage)%sysM%lenght, 1
+                  tempArr(index) = this%messages(this%lastMessage)%sysM%valueAsHex(index) 
+               end do    
+               deallocate(this%messages(this%lastMessage)%sysM%valueAsHex, stat = stat)
+               
+               allocate(this%messages(this%lastMessage)%sysM%valueAsHex(this%messages(this%lastMessage)%sysM%lenght + tempLen), stat = stat)
+               do index = 1, this%messages(this%lastMessage)%sysM%lenght, 1
+                  this%messages(this%lastMessage)%sysM%valueAsHex(index) = tempArr(index)
+               end do     
+               deallocate(tempArr, stat = stat)
+               
+           end if    
+           
+           do index = this%messages(this%lastMessage)%sysM%lenght, this%messages(this%lastMessage)%sysM%lenght + tempLen, 1
+              this%messages(this%lastMessage)%sysM%valueAsHex(index) = hexArray(byteIndex)
+              byteIndex                                              = byteIndex + 1
+           end do     
+           
+           this%messages(this%lastMessage)%sysM%lenght = this%messages(this%lastMessage)%sysM%lenght + tempLen
+           
+       end do
+       
+   end subroutine
+       
    function getMetaTypeFromHex(hex) result(text)
    character(len = 2)                         :: hex
    character(len = 20)                        :: text
