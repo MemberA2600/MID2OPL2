@@ -54,9 +54,10 @@ module midi
     
     type midiData
          integer(kind = 8)                              :: lenght
-         character(len=2)                               :: typeAsHex
-         character(len=20)                              :: typeAsText
-         character(len=2), dimension(:), allocatable    :: valueAsHex
+         integer(kind = 1)                              :: channelNum
+         character(len=8)                               :: typeAsBin
+         character(len=50)                              :: typeAsText
+         character(len=8), dimension(:), allocatable    :: valueAsBin
     end type
     
     type message   
@@ -64,7 +65,7 @@ module midi
         character(len = 2)                             :: messageType
         type(metaMessage)                              :: metaM
         type(sysMessage)                               :: sysM
-        type(midiData)                               :: midiD
+        type(midiData)                                 :: midiD
         
     end type    
         
@@ -79,7 +80,7 @@ module midi
         procedure                                      :: doubleMe          => DoubleMe
         procedure                                      :: processAsMeta     => ProcessAsMeta
         procedure                                      :: processAsSysMes   => ProcessAsSysMes
-        ! procedure                                      :: processAsMidiData => ProcessAsMidiData
+        procedure                                      :: processAsMidiData => ProcessAsMidiData
 
     end type   
     
@@ -250,7 +251,9 @@ module midi
        ! Midi Message    
        case default    
            this%messages(this%lastMessage)%messageType = "MD"
-           byteIndex = byteIndex + 1
+           ! byteIndex = byteIndex + 1
+           call this%processAsMidiData(byteIndex, hexArray, binArray, arrSize)
+
            
        end select
        
@@ -348,11 +351,239 @@ module midi
    case("7F")
        text = "Universal Real Time"  
    case default
-       text = "Invalid" 
+       text = "Undefined" 
    end select
    
    end function
    
+   function getTypeOfContrMes(hexByte) result(text)
+       character(len=2)                              :: hexByte
+       character(len=50)                             :: text
+   
+       select case(hexByte)
+       case("00")    
+           text = "Bank Select"
+       case("01")    
+           text = "Modulation Wheel"           
+       case("02")    
+           text = "Breath control"               
+       case("04")    
+           text = "Foot controller"              
+       case("05")    
+           text = "Portamento Time"               
+       case("06")    
+           text = "Data Entry"                       
+       case("07")    
+           text = "Channel Volume"     
+       case("08")    
+           text = "Balance"              
+       case("0A")    
+           text = "Pan"      
+       case("0B")    
+           text = "Expression Controller"                 
+       case("0C")    
+           text = "Effect Control 1"     
+       case("0D")    
+           text = "Effect Control 2"
+       case("10")    
+           text = "General Purpose Controller #1"               
+       case("11")    
+           text = "General Purpose Controller #2"    
+       case("12")    
+           text = "General Purpose Controller #3"    
+       case("13")    
+           text = "General Purpose Controller #4"    
+           
+       case("20")    
+           text = "Bank Select"
+       case("21")    
+           text = "Modulation Wheel"           
+       case("22")    
+           text = "Breath control"               
+       case("24")    
+           text = "Foot controller"              
+       case("25")    
+           text = "Portamento Time"               
+       case("26")    
+           text = "Data Entry"                       
+       case("27")    
+           text = "Channel Volume"     
+       case("28")    
+           text = "Balance"              
+       case("2A")    
+           text = "Pan"      
+       case("2B")    
+           text = "Expression Controller"                 
+       case("2C")    
+           text = "Effect Control 1"     
+       case("2D")    
+           text = "Effect Control 2"
+       case("30")    
+           text = "General Purpose Controller #1"               
+       case("31")    
+           text = "General Purpose Controller #2"    
+       case("32")    
+           text = "General Purpose Controller #3"    
+       case("33")    
+           text = "General Purpose Controller #4"      
+
+       case("40")    
+           text = "Damper pedal (Sustain)"
+       case("41")    
+           text = "Portamento"
+       case("42")    
+           text = "Sustenuto"          
+       case("43")    
+           text = "Soft pedal"    
+       case("44")
+           text = "Legato Footswitch"
+       case("45")
+           text = "Hold 2"           
+       case("46")
+           text = "Sound Controller 1 (Sound Variation)"  
+       case("47")
+           text = "Sound Controller 2 (Timbre)"             
+       case("48")
+           text = "Sound Controller 3 (Release Time)"             
+       case("49")
+           text = "Sound Controller 4 (Attack Time)"             
+       case("4A")
+           text = "Sound Controller 5 (Brightness)"  
+       case("4B")
+           text = "Sound Controller 6"             
+       case("4C")
+           text = "Sound Controller 7"             
+       case("4D")
+           text = "Sound Controller 8"              
+       case("4E")
+           text = "Sound Controller 9"  
+       case("4F")
+           text = "Sound Controller 10"             
+       case("50")
+           text = "General Purpose Controller #5"             
+       case("51")
+           text = "General Purpose Controller #6"  
+       case("52")
+           text = "General Purpose Controller #7"             
+       case("53")
+           text = "General Purpose Controller #8"  
+       case("54")
+           text = "Portamento Control"             
+       case("5B")
+           text = "Effects 1 Depth"    
+       case("5C")
+           text = "Effects 2 Depth"         
+       case("5D")
+           text = "Effects 3 Depth"         
+       case("5E")
+           text = "Effects 4 Depth"      
+       case("5F")
+           text = "Effects 5 Depth"
+             
+       case("60")
+           text = "Data Entry +1"         
+       case("61")
+           text = "Data Entry -1"         
+       case("62")
+           text = "Non-Registered Parameter Number LSB	0"   
+       case("63")
+           text = "Non-Registered Parameter Number MSB	0"    
+       case("64")
+           text = "* Registered Parameter Number LSB"         
+       case("65")
+           text = "* Registered Parameter Number MSB"         
+       case("78")
+           text = "All Sound Off"   
+       case("79")
+           text = "* Reset All Controllers"    
+       case("7A")
+           text = "Local Control On/Off"         
+       case("7B")
+           text = "* All Notes Off"         
+       case("7C")
+           text = "Omni Mode Off (+ All Notes Off)"   
+       case("7D")
+           text = "Omni Mode On (+ All Notes Off)"              
+       case("7E")
+           text = "Poly Mode On/Off (+ All Notes Off)"   
+       case("7F")
+           text = "Poly Mode On (Incl Mono=Off +All Notes Off)"   
+           
+       case default
+           text = "Undefined"
+           
+       end select    
+   
+   end function
+   
+   subroutine processAsMidiData(this, byteIndex, hexArray, binArray, arrSize)
+       class(track), intent(inout)                   :: this
+       character(len = 2), dimension(*)              :: hexArray
+       character(len = 8), dimension(*)              :: binArray  
+       integer                                       :: stat, channelNum
+       integer(kind = 8)                             :: index, saveIndex
+       integer(kind = 8), intent(inout)              :: byteIndex
+       integer(kind = 8)                             :: arrSize
+       character(len = 2)                            :: channelNumAsText
+
+       this%messages(this%lastMessage)%midiD%typeAsBin  = binArray(byteIndex)
+       this%messages(this%lastMessage)%midiD%lenght = 0        
+
+       read(binArray(byteIndex)(5:8), "(B4)") channelNum
+       write(channelNumAsText, "(I2)") channelNum
+       
+       if (channelNumAsText(1:1) == " ") channelNumAsText(1:1) = "0"
+       
+       select case(binArray(byteIndex)(1:4))
+       case ("1000")
+           this%messages(this%lastMessage)%midiD%lenght     = 2
+           this%messages(this%lastMessage)%midiD%typeAsText = "Note Off (Channel " // channelNumAsText // ")"
+           this%messages(this%lastMessage)%midiD%channelNum = channelNum
+           this%messages(this%lastMessage)%midiD%typeAsText = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000" 
+       case ("1001")
+           this%messages(this%lastMessage)%midiD%lenght     = 2     
+           this%messages(this%lastMessage)%midiD%typeAsText = "Note On (Channel " // channelNumAsText // ")"
+           this%messages(this%lastMessage)%midiD%typeAsText = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000" 
+       case ("1010")
+           this%messages(this%lastMessage)%midiD%lenght     = 2  
+           this%messages(this%lastMessage)%midiD%typeAsText = "Polyphonic Key Pressure (Channel " // channelNumAsText // ")"
+           this%messages(this%lastMessage)%midiD%channelNum = channelNum
+           this%messages(this%lastMessage)%midiD%typeAsText = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000"            
+       case ("1011")
+           ! Controller Message
+           byteIndex                                        = byteIndex + 1
+           this%messages(this%lastMessage)%midiD%lenght     = 1 
+           this%messages(this%lastMessage)%midiD%channelNum = channelNum
+           this%messages(this%lastMessage)%midiD%typeAsText = getTypeOfContrMes(hexArray(byteIndex)) // " (" // channelNumAsText // ")"         
+           
+       case ("1100")
+           this%messages(this%lastMessage)%midiD%lenght     = 1    
+           this%messages(this%lastMessage)%midiD%typeAsText = "Program Change (Channel " // channelNumAsText // ")"
+           this%messages(this%lastMessage)%midiD%channelNum = channelNum
+           this%messages(this%lastMessage)%midiD%typeAsText = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000"            
+       case ("1101")
+           this%messages(this%lastMessage)%midiD%lenght     = 1  
+           this%messages(this%lastMessage)%midiD%typeAsText = "Channel Pressure (Channel " // channelNumAsText // ")"
+           this%messages(this%lastMessage)%midiD%channelNum = channelNum 
+           this%messages(this%lastMessage)%midiD%typeAsText = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000"            
+       case ("1110")
+           this%messages(this%lastMessage)%midiD%lenght     = 2           
+           this%messages(this%lastMessage)%midiD%typeAsText = "Pitch Wheel Change (Channel " // channelNumAsText // ")"   
+           this%messages(this%lastMessage)%midiD%channelNum = channelNum 
+           this%messages(this%lastMessage)%midiD%typeAsText = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000"            
+       end select   
+       
+       byteIndex = byteIndex + 1
+       saveIndex = 1
+       allocate(this%messages(this%lastMessage)%midiD%valueAsBin(this%messages(this%lastMessage)%midiD%lenght), stat = stat) 
+       
+       do index = byteIndex, byteIndex + this%messages(this%lastMessage)%midiD%lenght, 1
+          this%messages(this%lastMessage)%midiD%valueAsBin(saveIndex) = binArray(index) 
+          saveIndex = saveIndex + 1 
+       end do    
+       
+   end subroutine    
+       
    subroutine ProcessAsSysMes(this, byteIndex, hexArray, binArray, arrSize)
        class(track), intent(inout)                   :: this
        character(len = 2), dimension(*)              :: hexArray
@@ -445,7 +676,7 @@ module midi
    case("FF")
        text = "Reset"
    case default
-       text = "Invalid" 
+       text = "Undefined" 
    end select
    
    end function
