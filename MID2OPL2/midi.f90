@@ -38,7 +38,7 @@ module midi
     end type    
     
     type metaMessage   
-         integer(kind = 8)                              :: lenght
+         integer(kind = 8)                              :: lenght, valueAsNum = 0
          character(len=2)                               :: typeAsHex
          character(len=20)                              :: typeAsText
          character(len=250)                             :: valueAsText = ""
@@ -128,6 +128,8 @@ module midi
                tempMessages(index)%metaM%typeAsHex   = this%messages(index)%metaM%typeAsHex 
                tempMessages(index)%metaM%typeAsText  = this%messages(index)%metaM%typeAsText 
                tempMessages(index)%metaM%valueAsText = this%messages(index)%metaM%valueAsText 
+               tempMessages(index)%metaM%valueAsNum  = this%messages(index)%metaM%valueAsNum
+
                
                if (this%messages(index)%metaM%lenght > 0) then
                    allocate(tempMessages(index)%metaM%valueAsHex(this%messages(index)%metaM%lenght), stat = stat)
@@ -185,6 +187,7 @@ module midi
                this%messages(index)%metaM%typeAsHex   = tempMessages(index)%metaM%typeAsHex 
                this%messages(index)%metaM%typeAsText  = tempMessages(index)%metaM%typeAsText 
                this%messages(index)%metaM%valueAsText = tempMessages(index)%metaM%valueAsText 
+               this%messages(index)%metaM%valueAsNum  = tempMessages(index)%metaM%valueAsNum
                
                 if (this%messages(index)%metaM%lenght > 0) then
                    allocate(this%messages(index)%metaM%valueAsHex(this%messages(index)%metaM%lenght), stat = stat)
@@ -977,7 +980,7 @@ module midi
        character(len = 2), dimension(*)       :: hexArray
        character(len = 8), dimension(*)       :: binArray  
        integer                                :: stat
-       integer(kind = 8)                      :: index, saveIndex
+       integer(kind = 8)                      :: index, saveIndex, lenght
        integer(kind = 8), intent(inout)       :: byteIndex
        integer(kind = 8)                      :: arrSize
        
@@ -1027,13 +1030,58 @@ module midi
            close(12)           
        end if
        
-       this%messages(this%lastMessage)%metaM%valueAsText = getASCIIFromBytes(this%messages(this%lastMessage)%metaM%valueAsHex, &
-                                                                           & this%messages(this%lastMessage)%metaM%lenght)
+       if (this%messages(this%lastMessage)%metaM%typeAsHex == "00" .OR. this%messages(this%lastMessage)%metaM%typeAsHex == "20" .OR. &
+          &this%messages(this%lastMessage)%metaM%typeAsHex == "51" .OR. this%messages(this%lastMessage)%metaM%typeAsHex == "54" .OR. &
+          &this%messages(this%lastMessage)%metaM%typeAsHex == "58" .OR. this%messages(this%lastMessage)%metaM%typeAsHex == "59" ) then
        
+           lenght = 0
+           select case(this%messages(this%lastMessage)%metaM%typeAsHex)
+           case("00")
+               lenght = 2
+           case("20")
+               lenght = 1
+           case("51")
+               lenght = 3
+           case("54")
+               lenght = 5
+           case("58")
+               lenght = 4
+           case("59")
+               lenght = 2
+           end select 
+           
+           this%messages(this%lastMessage)%metaM%valueAsNum  = getNumberFromHexData(this%messages(this%lastMessage)%metaM%valueAsHex, lenght)
+           write(this%messages(this%lastMessage)%metaM%valueAsText, "(I0)") this%messages(this%lastMessage)%metaM%valueAsNum
+
+       else
+           this%messages(this%lastMessage)%metaM%valueAsNum  = 0
+           this%messages(this%lastMessage)%metaM%valueAsText = getASCIIFromBytes(this%messages(this%lastMessage)%metaM%valueAsHex, &
+                                                                               & this%messages(this%lastMessage)%metaM%lenght)
+       end if
        byteIndex = byteIndex + this%messages(this%lastMessage)%metaM%lenght
        
    end subroutine    
        
+   function getNumberFromHexData(hexArray, lenght) result(num)
+        integer(kind = 8)                     :: num
+        integer(kind = 8)                     :: index
+        character(len = 2), dimension(*)      :: hexArray
+        integer(kind = 8)                     :: lenght
+        character(len = lenght * 2)           :: tempText   
+        character(len = 20)                   :: F  
+        
+        do index = 1, lenght, 1
+           tempText((index * 2) - 1 : index * 2) = hexArray(index) 
+        end do    
+               
+        write(F, "(A, I0, A)") "(Z", lenght * 2, ")" 
+        !call dumpTest(F)
+        !call dumpTest(tempText)
+
+        read(tempText, F) num
+        
+   end function 
+   
    subroutine BuildTrack(this, hexArray, binArray, arrSize)
        class(track), intent(inout)            :: this
        character(len = 2), dimension(*)       :: hexArray
