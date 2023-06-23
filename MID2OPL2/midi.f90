@@ -250,10 +250,10 @@ module midi
      if (VLQdebug .EQV. .TRUE.) call dumpTest("Dump VLQ calculation!")
      do while (foundLast .EQV. .FALSE.)
         index = index + 1
-        if (binArray(index)(1:1) == "0") foundLast = .TRUE.
+        if (binArray(messageDataIndex)(1:1) == "0") foundLast = .TRUE.
         if (VLQdebug .EQV. .TRUE.) call dumpTest(binArray(messageDataIndex))
         
-        tempString = binArray(messageDataIndex)(2:8) // trim(tempString)
+        tempString = trim(tempString) // binArray(messageDataIndex)(2:8)
         messageDataIndex = messageDataIndex + 1
      end do
         
@@ -285,8 +285,10 @@ module midi
        if (this%lastMessage == size(this%messages)) call this%doubleMe()
        this%lastMessage = this%lastMessage + 1
        
+       !call dumpTest(hexarray(byteIndex))
        call calculateVLQ(this%messages(this%lastMessage)%deltaTime, binArray, byteIndex)
-             
+       !call dumpTest(hexarray(byteIndex))
+       
        if (debug .EQV. .TRUE.) then
          write(byteIndexAsText, "(I0)") byteIndex            
          write(deltaTimeAsText, "(I0)") this%messages(this%lastMessage)%deltaTime 
@@ -295,6 +297,7 @@ module midi
          close(12) 
        end if    
        
+       !call dumpTest(hexArray(byteIndex))
        select case(hexarray(byteIndex))
        ! Meta Message
        case("FF")    
@@ -311,7 +314,8 @@ module midi
        ! Midi Message    
        case default    
            this%messages(this%lastMessage)%messageType = "MD"
-           ! byteIndex = byteIndex + 1
+           !byteIndex = byteIndex + 1
+           
            call this%processAsMidiData(byteIndex, hexArray, binArray, arrSize)           
        end select
        
@@ -647,7 +651,8 @@ module midi
        integer(kind = 8), intent(inout)              :: byteIndex
        integer(kind = 8)                             :: arrSize
        character(len = 2)                            :: channelNumAsText
-       
+
+       character(len = 20)                           :: tempText
        character(len = 255)                          :: sizeAsText
        character(len = 3)                            :: advance
        character(len = 2)                            :: tempHex
@@ -658,7 +663,7 @@ module midi
        this%messages(this%lastMessage)%midiD%lenght = 0        
 
        this%messages(this%lastMessage)%midiD%channelNum = -1
-             
+       
        read(binArray(byteIndex)(5:8), "(B4)") channelNum
        write(channelNumAsText, "(I2)")        channelNum
        
@@ -667,6 +672,9 @@ module midi
        this%messages(this%lastMessage)%midiD%usage             = "L"
        gotIt                                                   = .FALSE.       
        this%messages(this%lastMessage)%midiD%onOff             = "ON "
+
+       !write(tempText, "(I0)") this%messages(this%lastMessage)%deltaTime
+       !call dumpTest(binArray(byteIndex) // " || " // tempText)
        
        select case(binArray(byteIndex)(1:4))
        case ("1000")
@@ -1092,7 +1100,7 @@ module midi
        character(len = 255)                   :: trackNumAsText, sizeAsText   
        character(len = 3)                     :: advance
        
-       !! VLQdebug = .TRUE.
+       ! VLQdebug = .TRUE.
        
        this%lastMessage = 0
        if (allocated(this%messages) .EQV. .FALSE.) then
