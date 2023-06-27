@@ -1059,7 +1059,18 @@ module midi
            end select 
            
            this%messages(this%lastMessage)%metaM%valueAsNum  = getNumberFromHexData(this%messages(this%lastMessage)%metaM%valueAsHex, lenght)
-           write(this%messages(this%lastMessage)%metaM%valueAsText, "(I0)") this%messages(this%lastMessage)%metaM%valueAsNum
+           
+           select case(this%messages(this%lastMessage)%metaM%typeAsHex)
+           case("51")
+               this%messages(this%lastMessage)%metaM%valueAsNum = 60000000 / this%messages(this%lastMessage)%metaM%valueAsNum
+           end select
+           
+           select case(this%messages(this%lastMessage)%metaM%typeAsHex)
+           case("58")    
+               this%messages(this%lastMessage)%metaM%valueAsText = getTimeSignature(this%messages(this%lastMessage)%metaM%valueAsHex)
+           case default 
+                write(this%messages(this%lastMessage)%metaM%valueAsText, "(I0)") this%messages(this%lastMessage)%metaM%valueAsNum
+           end select
 
        else
            this%messages(this%lastMessage)%metaM%valueAsNum  = 0
@@ -1070,6 +1081,22 @@ module midi
        
    end subroutine    
        
+   function getTimeSignature(hexArray) result(timeSign)
+        character(len = 2), dimension(*)      :: hexArray
+        integer(kind = 8)                     :: index
+        integer(kind = 2)                     :: numerator, denominator, metronomeClicks, X32ndNotesPerBeat
+        character(len = 250)                  :: timeSign
+        
+        timeSign  = ""
+        read(hexArray(1), "(Z2)") numerator   
+        read(hexArray(2), "(Z2)") denominator
+        read(hexArray(3), "(Z2)") metronomeClicks
+        read(hexArray(4), "(Z2)") X32ndNotesPerBeat
+
+        write(timeSign, "(I0, A, I0, A, I0, A, I0)") numerator, "/", 2 ** denominator, " || Clicks: ", metronomeClicks, " || 32nd Notes/Beat: ", X32ndNotesPerBeat
+
+   end function
+   
    function getNumberFromHexData(hexArray, lenght) result(num)
         integer(kind = 8)                     :: num
         integer(kind = 8)                     :: index

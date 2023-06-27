@@ -112,14 +112,14 @@ Value: 01010000 (80) Usage: L
 -> Size: 3
 06 8A 1B
 Type: Meta Message
-Set Tempo = 428571
+Set Tempo = 140
 
 -> Very First Index / Byte: 30 / 00
 -> Data Starter ByteIndex: 31 || DeltaTime Before: 0
 -> Size: 4
 04 02 18 08
 Type: Meta Message
-Time Signature = 67246088
+Time Signature = 4/4 || Clicks: 24 || 32nd Notes/Beat: 8
 
 -> Very First Index / Byte: 38 / FB
 -> Data Starter ByteIndex: 40 || DeltaTime Before: 15840
