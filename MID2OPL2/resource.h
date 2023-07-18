@@ -26,6 +26,8 @@
 #define IDC_MONTH                       1027
 #define IDC_DAY                         1028
 #define IDC_CHECK1                      1029
+#define IDC_GD3Updat                    1029
+#define IDC_GD3Update                   1029
 #define IDM_EXIT                        30001
 #define IDM_APPLY                       30002
 

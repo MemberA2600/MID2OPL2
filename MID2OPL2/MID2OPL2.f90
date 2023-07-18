@@ -47,7 +47,9 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     external MID2OPL2VGMPath
     external MID2OPL2BoxChanged
     external MID2OPL2Convert
+    external MID2OPL2EnterFileName
 
+    
     ! Variables
     type (T_MSG)      :: mesg
     integer*4         :: ret
@@ -68,6 +70,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     lret = DlgSetSub(gdlg, IDC_PATH_BUTTON, MID2OPL2VGMPath)
     lret = DLGSETSUB(gdlg, IDC_OUTPUT, MID2OPL2BoxChanged)
     lret = DlgSetSub(gdlg, IDC_BUTTON_CONVERT, MID2OPL2Convert)
+    lret = DlgSetSub(gdlg, IDC_FILENAME, MID2OPL2EnterFileName)
     
     retlog = DLGSET(gdlg, IDC_LOAD, "Ready to work!")
     retlog = DLGSET(gdlg, IDC_OUTPUT, "You must construct additional pylons!")
@@ -80,6 +83,8 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     retlog = DLGSET(gdlg, IDC_MONTH, currentDate(5:6))
     retlog = DLGSET(gdlg, IDC_DAY, currentDate(7:8))
 
+    retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .FALSE., DLG_ENABLE)
+    
     
     lret = DlgModeless(gdlg, nCmdShow)
     if (lret == FALSE) goto 99999
@@ -190,13 +195,30 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
   integer              :: id, callbacktype, length, iostat
   integer(SINT)        :: iret, retlog
   character(c_char)    :: string
-
+  logical              :: checkBox 
+  integer(kind = 8)    :: index, trackIndex, boxIndex
+  
   loadText = fdialog('"OpenFile" "Open File" "*"')  
   if (loadText /= "") then
       retlog = DLGSET(gdlg, IDC_LOAD, loadText)
       call midiF%loadFile(loadText)
   end if    
-      
+     
+  boxIndex = 0
+  do trackIndex = 1, midiF%numberOfTracks, 1
+     do index = 1, midiF%tracks(trackIndex)%lastMessage, 1 
+        if (midiF%tracks(trackIndex)%messages(index)%messageType == "MT") then
+            if (midiF%tracks(trackIndex)%messages(index)%metaM%typeAsHex == "01") then
+               boxIndex = boxIndex + 1
+            
+            end if 
+        end if
+        if (boxIndex == 4) exit
+     end do  
+     if (boxIndex == 4) exit
+  end do    
+  
+  
 END SUBROUTINE 
 
 SUBROUTINE MID2OPL2VGMPath( dlg, id, callbacktype)
@@ -225,8 +247,9 @@ SUBROUTINE MID2OPL2VGMPath( dlg, id, callbacktype)
   if (loadText /= "") retlog = DLGSET(gdlg, IDC_OUTPUT, loadText)
   outPath = loadText 
   call checkOutPut(loadText)
+  call enableDisableConvertButton()
   
-    END SUBROUTINE 
+  END SUBROUTINE 
 
 SUBROUTINE MID2OPL2BoxChanged( dlg, id, callbacktype)
 !DEC$ ATTRIBUTES DEFAULT :: MID2OPL2BoxChanged
@@ -262,6 +285,7 @@ SUBROUTINE MID2OPL2BoxChanged( dlg, id, callbacktype)
           !dummy = fdialog('"Error" "Invalid Folder" "The given folder for output does not exist"')
       call checkOutPut(tempDir)    
       
+      call enableDisableConvertButton()
       already = .FALSE.
   end if
   END SUBROUTINE 
@@ -371,3 +395,20 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
     
 99998 &  
   END SUBROUTINE 
+            
+    SUBROUTINE MID2OPL2EnterFileName( dlg, id, callbacktype)
+    !DEC$ ATTRIBUTES DEFAULT :: MID2OPL2Convert
+ 
+      use iflogm
+      use ifcom
+      use ifauto
+      use MID2OPL2Globals
+      use user32
+      use iso_c_binding 
+      use kernel32
+      use functions
+      use, intrinsic :: iso_c_binding 
+      
+      call enableDisableConvertButton()
+      
+    END SUBROUTINE 

@@ -140,4 +140,51 @@ module functions
         
   end function
 
+  subroutine enableDisableConvertButton() 
+      use iflogm
+      use ifwinty
+      use ifcom
+      use ifauto
+      use MID2OPL2Globals
+      use user32
+      use iso_c_binding 
+      use kernel32
+      use, intrinsic :: iso_c_binding  
+      
+      implicit none
+
+      integer(SINT) :: WinMain
+      integer(HANDLE) hInstance
+      integer(HANDLE) hPrevInstance
+      integer(LPWSTR) lpszCmdLine
+      integer(SINT)   nCmdShow
+
+      include 'resource.fd'
+      
+      character(len = textLen2) :: tempOK, tempPath, tempName, tempLoad, saveName
+      integer(SINT)             :: iret, retlog
+      logical                   :: inputOK, outputOK, fileNameOK, loadedOK
+      
+      
+      retlog = DLGGET(gdlg, IDC_OKBOX   ,  tempOK)
+      retlog = DLGGET(gdlg, IDC_OUTPUT  ,  tempPath)
+      retlog = DLGGET(gdlg, IDC_FILENAME,  tempName) 
+      retlog = DLGGET(gdlg, IDC_LOAD    ,  tempLoad) 
+  
+      inquire(file = tempLoad, exist = inputOK)
+      inquire(file = tempPath, exist = outputOK)
+      loadedOK     = midiF%Loaded
+      fileNameOK   = checkIfVGM(tempName)
+  
+      if (inputOK    .EQV. .TRUE. .AND. &
+       &  outputOK   .EQV. .TRUE. .AND. &
+       &  fileNameOK .EQV. .TRUE. .AND. &
+       &  loadedOK   .EQV. .TRUE. ) then
+          retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .TRUE., DLG_ENABLE)
+      else    
+          retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .FALSE., DLG_ENABLE)
+      end if
+          
+  end subroutine
+  
   end module functions

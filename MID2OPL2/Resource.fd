@@ -2,6 +2,7 @@
 ! D:\dotNetStuff\MID2OPL2\MID2OPL2\Resource.fd generated from D:\dotNetS
 ! tuff\MID2OPL2\MID2OPL2\Resource.h
 !
+      integer, parameter :: IDC_GD3Updat = 1029
       integer, parameter :: IDC_CONVERTEDBY = 1025
       integer, parameter :: IDC_DAY = 1028
       integer, parameter :: IDC_BUTTON_CONVERT = 1008
@@ -28,3 +29,4 @@
       integer, parameter :: IDC_MONTH = 1027
       integer, parameter :: IDC_FILENAME = 1019
       integer, parameter :: IDC_MIDI_BUTTON = 1017
+      integer, parameter :: IDC_GD3Update = 1029
