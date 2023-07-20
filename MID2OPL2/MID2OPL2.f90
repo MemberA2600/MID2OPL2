@@ -191,12 +191,14 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
   
   include 'resource.fd'
   
-  type (dialog)        :: dlg
-  integer              :: id, callbacktype, length, iostat
-  integer(SINT)        :: iret, retlog
-  character(c_char)    :: string
-  logical              :: checkBox 
-  integer(kind = 8)    :: index, trackIndex, boxIndex
+  type (dialog)                     :: dlg
+  integer                           :: id, callbacktype, length, iostat
+  integer(SINT)                     :: iret, retlog
+  character(c_char)                 :: string
+  logical                           :: checkBox 
+  integer(kind = 8)                 :: index, trackIndex, boxIndex, typeIndex
+  character(len = 2), dimension(2)  :: mTypes
+  ! character(len = textLen)  :: tempText
   
   loadText = fdialog('"OpenFile" "Open File" "*"')  
   if (loadText /= "") then
@@ -204,20 +206,39 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
       call midiF%loadFile(loadText)
   end if    
      
-  boxIndex = 0
-  do trackIndex = 1, midiF%numberOfTracks, 1
-     do index = 1, midiF%tracks(trackIndex)%lastMessage, 1 
-        if (midiF%tracks(trackIndex)%messages(index)%messageType == "MT") then
-            if (midiF%tracks(trackIndex)%messages(index)%metaM%typeAsHex == "01") then
-               boxIndex = boxIndex + 1
-            
-            end if 
-        end if
-        if (boxIndex == 4) exit
-     end do  
-     if (boxIndex == 4) exit
-  end do    
+  retlog = DLGGET (gdlg, IDC_GD3Update, checkBox)
+  mTypes = (/ "01", "03" /)
+  !open(19, file = "C:/putypurutty.txt", action = "WRITE")
   
+  if (checkBox .EQV. .TRUE.) then
+      boxIndex = 0
+      do typeIndex = 1, 2, 1
+          do trackIndex = 1, midiF%numberOfTracks, 1
+             do index = 1, midiF%tracks(trackIndex)%lastMessage, 1 
+                if (midiF%tracks(trackIndex)%messages(index)%messageType == "MT") then
+                    !write(19, "(A, 1x, A)") midiF%tracks(trackIndex)%messages(index)%metaM%typeAsHex, midiF%tracks(trackIndex)%messages(index)%metaM%valueAsText
+                    if (midiF%tracks(trackIndex)%messages(index)%metaM%typeAsHex == mTypes(typeIndex)) then
+                       boxIndex = boxIndex + 1
+                       select case(boxIndex)
+                       case(1)    
+                          retlog = DLGSET(gdlg, IDC_AUTHORNAME, midiF%tracks(trackIndex)%messages(index)%metaM%valueAsText)
+                       case(2)
+                          retlog = DLGSET(gdlg, IDC_TRACKNAME, midiF%tracks(trackIndex)%messages(index)%metaM%valueAsText)
+                       case(3)
+                          retlog = DLGSET(gdlg, IDC_GAMENAME, midiF%tracks(trackIndex)%messages(index)%metaM%valueAsText)
+                       case(4)    
+                          retlog = DLGSET(gdlg, IDC_SYSTEMNAME, midiF%tracks(trackIndex)%messages(index)%metaM%valueAsText)
+                       end select    
+                    end if 
+                end if
+                if (boxIndex == 4) exit
+             end do  
+             if (boxIndex == 4) exit
+          end do    
+      end do
+  end if
+  
+  !close(19)
   
 END SUBROUTINE 
 
