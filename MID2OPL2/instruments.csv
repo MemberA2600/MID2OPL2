@@ -1,0 +1,128 @@
+00;Acoustic Grand Piano
+01;Bright Acoustic Piano
+02;Electric Grand Piano
+03;Honky-tonk Piano
+04;Electric Piano 1 (Rhodes Piano)
+05;Electric Piano 2 (Chorused Piano)
+06;Harpsichord
+07;Clavinet
+08;Celesta
+09;Glockenspiel
+0a;Music Box
+0b;Vibraphone
+0c;Marimba
+0d;Xylophone
+0e;Tubular Bells
+0f;Dulcimer (Santur)
+10;Drawbar Organ (Hammond)
+11;Percussive Organ
+12;Rock Organ
+13;Church Organ
+14;Reed Organ
+15;Accordion (French)
+16;Harmonica
+17;Tango Accordion (Band neon)
+18;Acoustic Guitar (nylon)
+19;Acoustic Guitar (steel)
+1a;Electric Guitar (jazz)
+1b;Electric Guitar (clean)
+1c;Electric Guitar (muted)
+1d;Overdriven Guitar
+1e;Distortion Guitar
+1f;Guitar harmonics
+20;Acoustic Bass
+21;Electric Bass (fingered)
+22;Electric Bass (picked)
+23;Fretless Bass
+24;Slap Bass 1
+25;Slap Bass 2
+26;Synth Bass 1
+27;Synth Bass 2
+28;Violin
+29;Viola
+2a;Cello
+2b;Contrabass
+2c;Tremolo Strings
+2d;Pizzicato Strings
+2e;Orchestral Harp
+2f;Timpani
+30;String Ensemble 1 (strings)
+31;String Ensemble 2 (slow strings)
+32;SynthStrings 1
+33;SynthStrings 2
+34;Choir Aahs
+35;Voice Oohs
+36;Synth Voice
+37;Orchestra Hit
+38;Trumpet
+39;Trombone
+3a;Tuba
+3b;Muted Trumpet
+3c;French Horn
+3d;Brass Section
+3e;SynthBrass 1
+3f;SynthBrass 2
+40;Soprano Sax
+41;Alto Sax
+42;Tenor Sax
+43;Baritone Sax
+44;Oboe
+45;English Horn
+46;Bassoon
+47;Clarinet
+48;Piccolo
+49;Flute
+4a;Recorder
+4b;Pan Flute
+4c;Blown Bottle
+4d;Shakuhachi
+4e;Whistle
+4f;Ocarina
+50;Lead 1 (square wave)
+51;Lead 2 (sawtooth wave)
+52;Lead 3 (calliope)
+53;Lead 4 (chiffer)
+54;Lead 5 (charang)
+55;Lead 6 (voice solo)
+56;Lead 7 (fifths)
+57;Lead 8 (bass + lead)
+58;Pad 1 (new age Fantasia)
+59;Pad 2 (warm)
+5a;Pad 3 (polysynth)
+5b;Pad 4 (choir space voice)
+5c;Pad 5 (bowed glass)
+5d;Pad 6 (metallic pro)
+5e;Pad 7 (halo)
+5f;Pad 8 (sweep)
+60;FX 1 (rain)
+61;FX 2 (soundtrack)
+62;FX 3 (crystal)
+63;FX 4 (atmosphere)
+64;FX 5 (brightness)
+65;FX 6 (goblins)
+66;FX 7 (echoes, drops)
+67;FX 8 (sci-fi, star theme)
+68;Sitar
+69;Banjo
+6a;Shamisen
+6b;Koto
+6c;Kalimba
+6d;Bag pipe
+6e;Fiddle
+6f;Shanai
+70;Tinkle Bell
+71;Agogo
+72;Steel Drums
+73;Woodblock
+74;Taiko Drum
+75;Melodic Tom
+76;Synth Drum
+77;Reverse Cymbal
+78;Guitar Fret Noise
+79;Breath Noise
+7a;Seashore
+7b;Bird Tweet
+7c;Telephone Ring
+7d;Helicopter
+7e;Applause
+7f;Gunshot

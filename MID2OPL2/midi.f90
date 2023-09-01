@@ -4,10 +4,11 @@ module midi
     
     implicit none
     
-    !private
-    !public                                              :: midiFile, LoadFile
+    private
+    public                                              :: midiFile, LoadFile, midiData, message
 
-    logical, parameter                                  :: debug = .TRUE.   
+                                                         ! Turn these off at the end!
+    logical, parameter                                  :: debug = .FALSE., streamMode = .TRUE.  
     logical                                             :: VLQdebug
     
     type chunk
@@ -99,6 +100,7 @@ module midi
         type(chunkList)                                 :: chunks
         type(track)     , dimension(:), allocatable     :: tracks
         integer(kind=8), dimension(16)                  :: deltaSums
+        type(track)                                     :: midiStream
         
         contains
         procedure                                       :: loadFile    => LoadFile
@@ -1236,11 +1238,15 @@ module midi
           allocate(midiF%tracks(midiF%numberOfTracks), stat = stat)
           call setMidiTiming(midiF, this%binaries(5) // this%binaries(6))
       else
-          trackNum = trackNum + 1
-          midiF%tracks(trackNum)%trackNum = trackNum
-          midiF%tracks(trackNum)%midiF    => midiF
-          arrSize                         = size(this%hexas)
-          call midiF%tracks(trackNum)%BuildTrack(this%hexas, this%binaries, arrSize)
+          if (streamMode .EQV. .FALSE.) then  
+              trackNum = trackNum + 1
+              midiF%tracks(trackNum)%trackNum = trackNum
+              midiF%tracks(trackNum)%midiF    => midiF
+              arrSize                         = size(this%hexas)
+          
+              call midiF%tracks(trackNum)%BuildTrack(this%hexas, this%binaries, arrSize)
+              
+          end if    
       end if    
       
       call this%DeAllocateChunk()

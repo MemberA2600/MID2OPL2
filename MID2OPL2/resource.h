@@ -3,6 +3,7 @@
 // Used by MID2OPL2.rc
 //
 #define IDD_MID2OPL2_DIALOG             101
+#define IDD_MID2OPL2_SB                 101
 #define IDC_BUTTON_CLOSE                1008
 #define IDC_BUTTON_CONVERT              1008
 #define IMG_PIANO                       1011
@@ -26,8 +27,9 @@
 #define IDC_MONTH                       1027
 #define IDC_DAY                         1028
 #define IDC_CHECK1                      1029
-#define IDC_GD3Updat                    1029
 #define IDC_GD3Update                   1029
+#define IDC_STATIC2                     1030
+#define IDC_SBList                      1032
 #define IDM_EXIT                        30001
 #define IDM_APPLY                       30002
 
@@ -37,7 +39,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        113
 #define _APS_NEXT_COMMAND_VALUE         30003
-#define _APS_NEXT_CONTROL_VALUE         1030
+#define _APS_NEXT_CONTROL_VALUE         1035
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

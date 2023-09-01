@@ -163,7 +163,7 @@ module functions
       
       character(len = textLen2) :: tempOK, tempPath, tempName, tempLoad, saveName
       integer(SINT)             :: iret, retlog
-      logical                   :: inputOK, outputOK, fileNameOK, loadedOK
+      logical                   :: inputOK, outputOK, fileNameOK, loadedOK, ok, sbLoaded
       
       
       retlog = DLGGET(gdlg, IDC_OKBOX   ,  tempOK)
@@ -175,16 +175,28 @@ module functions
       inquire(file = tempPath, exist = outputOK)
       loadedOK     = midiF%Loaded
       fileNameOK   = checkIfVGM(tempName)
-  
-      if (inputOK    .EQV. .TRUE. .AND. &
-       &  outputOK   .EQV. .TRUE. .AND. &
-       &  fileNameOK .EQV. .TRUE. .AND. &
-       &  loadedOK   .EQV. .TRUE. ) then
+      sbLoaded     = sBank%loaded  
+      
+      ok = .TRUE.
+      
+      if (inputOK    .EQV. .FALSE.) ok = .FALSE.
+      if (outputOK   .EQV. .FALSE.) ok = .FALSE.
+      if (fileNameOK .EQV. .FALSE.) ok = .FALSE.
+      if (loadedOK   .EQV. .FALSE.) ok = .FALSE.
+      if (sbLoaded   .EQV. .FALSE.) ok = .FALSE.
+
+      
+      ! This is for debug only!
+      ok = .TRUE.
+      
+      if (ok .EQV. .TRUE.) then
           retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .TRUE., DLG_ENABLE)
       else    
           retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .FALSE., DLG_ENABLE)
       end if
-          
+ 
+
+      
   end subroutine
   
   end module functions

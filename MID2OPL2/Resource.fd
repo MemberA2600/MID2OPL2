@@ -2,9 +2,9 @@
 ! D:\dotNetStuff\MID2OPL2\MID2OPL2\Resource.fd generated from D:\dotNetS
 ! tuff\MID2OPL2\MID2OPL2\Resource.h
 !
-      integer, parameter :: IDC_GD3Updat = 1029
       integer, parameter :: IDC_CONVERTEDBY = 1025
       integer, parameter :: IDC_DAY = 1028
+      integer, parameter :: IDC_STATIC2 = 1030
       integer, parameter :: IDC_BUTTON_CONVERT = 1008
       integer, parameter :: IDC_SYSTEMNAME = 1022
       integer, parameter :: IDC_YEAR = 1024
@@ -23,8 +23,10 @@
       integer, parameter :: IDM_EXIT = 30001
       integer, parameter :: IDC_BUTTON_CLOSE2 = 1011
       integer, parameter :: IDC_OKBOX = 1018
+      integer, parameter :: IDD_MID2OPL2_SB = 101
       integer, parameter :: IDC_PATH = 1014
       integer, parameter :: IDC_CHECK1 = 1029
+      integer, parameter :: IDC_SBList = 1032
       integer, parameter :: ID_PICTURE = 1013
       integer, parameter :: IDC_MONTH = 1027
       integer, parameter :: IDC_FILENAME = 1019

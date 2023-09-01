@@ -48,20 +48,28 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     external MID2OPL2BoxChanged
     external MID2OPL2Convert
     external MID2OPL2EnterFileName
-
+    external MID2OPL2StartConversion
+    external MID2OPL2ChangeBank
     
     ! Variables
-    type (T_MSG)      :: mesg
-    integer*4         :: ret
-    integer(LRESULT)  :: lret
-    integer(BOOL)     :: bret
-    integer(SINT)     :: iret, retlog
+    type (T_MSG)                                        :: mesg
+    integer*4                                           :: ret
+    integer(LRESULT)                                    :: lret
+    integer(BOOL)                                       :: bret
+    integer(SINT)                                       :: iret, retlog
+    character(len=textLen), dimension(:), allocatable   :: listOfSB
+    integer(kind = 4)                                   :: index, stat
+    character                                           :: dummy
     
+    selectedSB = 0
+
     ghInstance = hInstance
     ghModule   = GetModuleHandle(NULL)
     ghwndMain  = NULL
     call COMINITIALIZE(ret)
 
+    call sBank%loadSBList(listOfSB)
+    
     lret = DlgInit(IDD_MID2OPL2_DIALOG, gdlg)
     if (lret == FALSE) goto 99999
     lret = DlgSetSub(gdlg, IDC_BUTTON_CLOSE, MID2OPL2Close)
@@ -71,6 +79,8 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     lret = DLGSETSUB(gdlg, IDC_OUTPUT, MID2OPL2BoxChanged)
     lret = DlgSetSub(gdlg, IDC_BUTTON_CONVERT, MID2OPL2Convert)
     lret = DlgSetSub(gdlg, IDC_FILENAME, MID2OPL2EnterFileName)
+    lret = DlgSetSub(gdlg, IDC_BUTTON_CONVERT, MID2OPL2StartConversion) 
+    lret = DlgSetSub(gdlg, IDC_SBList, MID2OPL2ChangeBank)
     
     retlog = DLGSET(gdlg, IDC_LOAD, "Ready to work!")
     retlog = DLGSET(gdlg, IDC_OUTPUT, "You must construct additional pylons!")
@@ -84,9 +94,24 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     retlog = DLGSET(gdlg, IDC_DAY, currentDate(7:8))
 
     retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .FALSE., DLG_ENABLE)
+    retlog = DLGSET (gdlg, IDC_GD3Update, .FALSE.)
     
-    
+    if (allocated(listOfSB) .EQV. .TRUE.) then
+        retlog = DlgSet ( gdlg, IDC_SBList, size(listOfSB), DLG_NUMITEMS)
+        do index = 1, size(listOfSB), 1
+           retlog = DlgSet ( gdlg, IDC_SBList, listOfSB(index), index) 
+        !dummy = fdialog('"Error" "Test" "' // listOfSB(index) // '"') 
+
+        end do
+        retlog = DlgSet(gdlg, IDC_SBList, 1, 1)
+        selectedSB = 1
+        call sBank%importBank("SoundBanks/" // listOfSB(1))
+        sBank%name = listOfSB(1)
+        if (sBank%loaded .EQV. .FALSE.) dummy = fdialog('"Error" "Invalid SB" "The selected Sound Bank has invalid data!"') 
+    end if
+
     lret = DlgModeless(gdlg, nCmdShow)
+    if (allocated(listOfSB) .EQV. .TRUE.) deallocate(listOfSB, stat = stat)
     if (lret == FALSE) goto 99999
 
     ! Read and process messsages
@@ -100,6 +125,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     call COMUNINITIALIZE()
 
     WinMain = mesg.wParam
+    
     return
 
 99999 &
@@ -418,7 +444,7 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
   END SUBROUTINE 
             
     SUBROUTINE MID2OPL2EnterFileName( dlg, id, callbacktype)
-    !DEC$ ATTRIBUTES DEFAULT :: MID2OPL2Convert
+    !DEC$ ATTRIBUTES DEFAULT :: MID2OPL2EnterFileName
  
       use iflogm
       use ifcom
@@ -432,4 +458,82 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
       
       call enableDisableConvertButton()
       
+    END SUBROUTINE 
+
+    SUBROUTINE MID2OPL2StartConversion( dlg, id, callbacktype)
+    !DEC$ ATTRIBUTES DEFAULT :: MID2OPL2StartConversion
+ 
+      use iflogm
+      use ifcom
+      use ifauto
+      use MID2OPL2Globals
+      use user32
+      use iso_c_binding 
+      use kernel32
+      use functions
+      use, intrinsic :: iso_c_binding 
+ !     use sequencer
+      
+ !     call midiP%initialize(midiF)
+ !   integer                         :: selectedBank
+ !   character                       :: dummy
+ !   character                       :: sbName
+ !   logical                         :: ok  
+ !   
+ !   selectedBank = 0
+ !   retlog = DLGGET(gdlg, IDC_SBList, selectedBank, 1)  
+ !   if (selectedBank == 0) then
+ !      dummy = fdialog('"Error" "No Sound Bank" "There is no OPL2 Sound Bank selected!"') 
+ !      goto 667
+ !   end if   
+ !   
+ !   retlog = DLGGET(gdlg, IDC_SBList, sbName, selectedBank)
+!
+!    open(88, file = "000.txt", action = "WRITE")
+!    write(88, "(A, I0)") sbName, selectedBank
+!    close(88)
+!    
+
+    END SUBROUTINE 
+
+    SUBROUTINE MID2OPL2ChangeBank(dlg, id, callbacktype)
+    !DEC$ ATTRIBUTES DEFAULT :: MID2OPL2ChangeBank
+ 
+        use iflogm
+        use ifcom
+        use ifauto
+        use MID2OPL2Globals
+        use functions
+
+        implicit none
+
+        include 'resource.fd'
+  
+        type (dialog)                     :: dlg
+        integer                           :: id, callbacktype
+        integer(SINT)                     :: iret, retlog
+     
+        logical                           :: ok  
+        character(len = 2)                :: dummy
+      
+        selectedSB = 0
+        retlog = DLGGET(gdlg, IDC_SBList, selectedSB, 1) 
+      
+        sbName = ""
+        retlog = DLGGET(gdlg, IDC_SBList, sbName, selectedSB)
+    
+        inquire(file = "SoundBanks/" // sbName, exist = ok )
+    
+        if (ok .EQV. .FALSE.) then
+            dummy = fdialog('"Error" "No Sound Bank" "The selected Sound Bank cannot be loaded!"') 
+            goto 667
+        end if   
+        
+        if (sBank%name /= sbName) then
+            sBank%name = sbName
+            call sBank%importBank("SoundBanks/" // sbName)
+        end if 
+        
+        if (sBank%loaded .EQV. .FALSE.) dummy = fdialog('"Error" "Invalid SB" "The selected Sound Bank has invalid data!"') 
+667 &
     END SUBROUTINE 
