@@ -472,28 +472,9 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
       use kernel32
       use functions
       use, intrinsic :: iso_c_binding 
- !     use sequencer
-      
- !     call midiP%initialize(midiF)
- !   integer                         :: selectedBank
- !   character                       :: dummy
- !   character                       :: sbName
- !   logical                         :: ok  
- !   
- !   selectedBank = 0
- !   retlog = DLGGET(gdlg, IDC_SBList, selectedBank, 1)  
- !   if (selectedBank == 0) then
- !      dummy = fdialog('"Error" "No Sound Bank" "There is no OPL2 Sound Bank selected!"') 
- !      goto 667
- !   end if   
- !   
- !   retlog = DLGGET(gdlg, IDC_SBList, sbName, selectedBank)
-!
-!    open(88, file = "000.txt", action = "WRITE")
-!    write(88, "(A, I0)") sbName, selectedBank
-!    close(88)
-!    
 
+    call midiP%initPlayer(midiF, sBank)
+      
     END SUBROUTINE 
 
     SUBROUTINE MID2OPL2ChangeBank(dlg, id, callbacktype)

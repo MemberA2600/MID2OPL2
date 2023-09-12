@@ -8,13 +8,12 @@ module midi
     public                                              :: midiFile, LoadFile, midiData, message
 
                                                          ! Turn these off at the end!
-    logical, parameter                                  :: debug = .FALSE., streamMode = .TRUE.  
+    logical, parameter                                  :: debug = .FALSE., streamMode = .FALSE.  
     logical                                             :: VLQdebug
     
     type chunk
         logical                                         :: header
         integer(kind = 8)                               :: theSize
-        ! integer                                       :: trackNum
         character(len=2), dimension(:), allocatable     :: hexas
         character(len=8), dimension(:), allocatable     :: binaries
           
@@ -100,6 +99,7 @@ module midi
         type(chunkList)                                 :: chunks
         type(track)     , dimension(:), allocatable     :: tracks
         integer(kind=8), dimension(16)                  :: deltaSums
+        integer(kind=8)                                 :: deltaFull
         type(track)                                     :: midiStream
         
         contains
@@ -333,9 +333,11 @@ module midi
        
      do index = 1, 16, 1
           this%midiF%deltaSums(index) = this%midiF%deltaSums(index) + this%messages(this%lastMessage)%deltaTime 
-       
+          this%midiF%deltaFull        = this%midiF%deltaFull        + this%messages(this%lastMessage)%deltaTime   
+          
           if (index == channelNum) then
               this%messages(this%lastMessage)%trueDeltaTime =  this%midiF%deltaSums(index) 
+              
               this%midiF%deltaSums(index)  = 0
               write(trueDeltaTimeAsText, "(I0)") this%messages(this%lastMessage)%trueDeltaTime 
           end if 
@@ -1034,20 +1036,17 @@ module midi
        
        if (this%messages(this%lastMessage)%metaM%lenght > 0) then
            allocate(this%messages(this%lastMessage)%metaM%valueAsHex(this%messages(this%lastMessage)%metaM%lenght), stat = stat)
+       else    
+           goto 7777
        end if
        this%messages(this%lastMessage)%metaM%valueAsText = ""
-       
-       allocate(this%messages(this%lastMessage)%metaM%valueAsHex(this%messages(this%lastMessage)%metaM%lenght), stat = stat)
+       ! allocate(this%messages(this%lastMessage)%metaM%valueAsHex(this%messages(this%lastMessage)%metaM%lenght), stat = stat)
              
        saveIndex = 1
        do index = byteIndex, this%messages(this%lastMessage)%metaM%lenght + byteIndex - 1, 1         
-          !open(12, file = "midiDump.txt", action="write", position="append")
-          !write(12, "(I0, 1x, I0)") index, saveIndex  
-          !close(12)  
           this%messages(this%lastMessage)%metaM%valueAsHex(saveIndex) = hexArray(index)  
           saveIndex = saveIndex + 1            
-       end do
-       
+       end do   
        
        if (debug .EQV. .TRUE.) then
            open(12, file = "midiDump.txt", action="write", position="append")
@@ -1105,7 +1104,7 @@ module midi
                                                                                & this%messages(this%lastMessage)%metaM%lenght)
        end if
        byteIndex = byteIndex + this%messages(this%lastMessage)%metaM%lenght
-       
+7777 &       
    end subroutine    
        
    function getTimeSignature(hexArray) result(timeSign)
@@ -1518,6 +1517,7 @@ module midi
      
      trackNum = 0
      this%deltaSums = 0
+     this%deltaFull = 0
      
      do currentIndex = 1, this%chunks%last, 1  
         call this%chunks%listOfChunks(currentIndex)%processChunk(this, trackNum)

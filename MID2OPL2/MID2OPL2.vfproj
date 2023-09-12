@@ -32,10 +32,12 @@
 		<File RelativePath=".\MID2OPL2.ico"/>
 		<File RelativePath=".\MID2OPL2.rc"/></Filter>
 		<Filter Name="Source Files" Filter="f90;for;f;fpp;ftn;def;odl;idl">
+		<File RelativePath=".\envelopeTable.f90"/>
 		<File RelativePath=".\functions.f90"/>
 		<File RelativePath=".\MID2OPL2.f90"/>
 		<File RelativePath=".\MID2OPL2globals.f90"/>
 		<File RelativePath=".\midi.f90"/>
+		<File RelativePath=".\player.f90"/>
 		<File RelativePath=".\sb.f90"/>
 		<File RelativePath=".\seq.f90">
 			<FileConfiguration Name="Debug|Win32" ExcludedFromBuild="true"/></File></Filter>

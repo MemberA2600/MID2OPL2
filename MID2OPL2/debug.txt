@@ -1,3 +1,0 @@
-Number Of Files in SoundBank folder: 1
-Number of instruments: 175
-Detected Format: #OPL_II#
