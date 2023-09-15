@@ -171,10 +171,12 @@ module functions
       retlog = DLGGET(gdlg, IDC_FILENAME,  tempName) 
       retlog = DLGGET(gdlg, IDC_LOAD    ,  tempLoad) 
   
-      inquire(file = tempLoad, exist = inputOK)
-      inquire(file = tempPath, exist = outputOK)
+      inquire(file      = tempLoad, exist = inputOK)
+      inquire(directory = tempPath, exist = outputOK)
       loadedOK     = midiF%Loaded
-      fileNameOK   = checkIfVGM(tempName)
+      
+      fileNameOK   = .FALSE.
+      if (checkIfVGM(tempName) == 0) fileNameOK = .TRUE.
       sbLoaded     = sBank%loaded  
       
       ok = .TRUE.
@@ -185,9 +187,14 @@ module functions
       if (loadedOK   .EQV. .FALSE.) ok = .FALSE.
       if (sbLoaded   .EQV. .FALSE.) ok = .FALSE.
 
+      if (dbg .EQV. .TRUE.) then
+          open(33, file = "buttonDBG.txt", action = 'write', position = 'append')
+          write(33, "(L, 1x, L, 1x, L, 1x, L, 1x, L, 1x, I1)") inputOk, outputOK, fileNameOK, loadedOK, sbLoaded, checkIfVGM(tempName)
+          close(33)
+      end if
       
       ! This is for debug only!
-      ok = .TRUE.
+      !ok = .TRUE.
       
       if (ok .EQV. .TRUE.) then
           retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .TRUE., DLG_ENABLE)

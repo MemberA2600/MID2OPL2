@@ -33,6 +33,6 @@ type(midiFile)         :: midiF
 type(midiPlayer)       :: midiP
 type(soundB)           :: sBank
 integer                :: selectedSB = 0
-
+logical, parameter     :: dbg = .TRUE.
 
 end module

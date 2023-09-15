@@ -1,1 +1,5 @@
-Max Tempo:                 140
+Full Delta:               1677120
+Max Tempo:                    140
+TPQN:                         480
+Max Time:                    489
+First Tempo:                 140

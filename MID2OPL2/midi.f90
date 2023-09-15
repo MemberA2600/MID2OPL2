@@ -330,10 +330,11 @@ module midi
        
      trueDeltaTimeAsText = ""
      this%messages(this%lastMessage)%trueDeltaTime = this%messages(this%lastMessage)%deltaTime 
-       
+     this%midiF%deltaFull                          = this%midiF%deltaFull + this%messages(this%lastMessage)%deltaTime   
+
+     
      do index = 1, 16, 1
           this%midiF%deltaSums(index) = this%midiF%deltaSums(index) + this%messages(this%lastMessage)%deltaTime 
-          this%midiF%deltaFull        = this%midiF%deltaFull        + this%messages(this%lastMessage)%deltaTime   
           
           if (index == channelNum) then
               this%messages(this%lastMessage)%trueDeltaTime =  this%midiF%deltaSums(index) 

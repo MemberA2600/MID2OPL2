@@ -70,6 +70,11 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
 
     call sBank%loadSBList(listOfSB)
     
+    if (dbg .EQV. .TRUE.) then
+          open(33, file = "buttonDBG.txt", action = 'write')
+          close(33, status = "delete")
+    end if
+          
     lret = DlgInit(IDD_MID2OPL2_DIALOG, gdlg)
     if (lret == FALSE) goto 99999
     lret = DlgSetSub(gdlg, IDC_BUTTON_CLOSE, MID2OPL2Close)
