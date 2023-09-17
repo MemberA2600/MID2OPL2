@@ -8,8 +8,8 @@ module midi
     public                                              :: midiFile, LoadFile, midiData, message
 
                                                          ! Turn these off at the end!
-    logical, parameter                                  :: debug = .FALSE., streamMode = .FALSE.  
-    logical                                             :: VLQdebug
+    logical, parameter                                  :: debug    = .FALSE., streamMode = .FALSE., dbg2 = .FALSE.  
+    logical, parameter                                  :: VLQdebug = .FALSE.
     
     type chunk
         logical                                         :: header
@@ -65,7 +65,7 @@ module midi
     end type
     
     type message   
-        integer(kind = 8)                              :: deltaTime, trueDeltaTime
+        integer(kind = 8)                              :: deltaTime !, trueDeltaTime
         character(len = 2)                             :: messageType
         type(metaMessage)                              :: metaM
         type(sysMessage)                               :: sysM
@@ -99,7 +99,6 @@ module midi
         type(chunkList)                                 :: chunks
         type(track)     , dimension(:), allocatable     :: tracks
         integer(kind=8), dimension(16)                  :: deltaSums
-        integer(kind=8)                                 :: deltaFull
         type(track)                                     :: midiStream
         
         contains
@@ -123,7 +122,7 @@ module midi
        do index = 1, this%lastMessage, 1
           tempMessages(index)%deltaTime   = this%messages(index)%deltaTime 
           tempMessages(index)%messageType = this%messages(index)%messageType 
-          tempMessages(index)%trueDeltaTime   = this%messages(index)%trueDeltaTime 
+          !tempMessages(index)%trueDeltaTime   = this%messages(index)%trueDeltaTime 
 
           select case(tempMessages(index)%messageType)
           case ("MT")    
@@ -183,7 +182,7 @@ module midi
        do index = 1, this%lastMessage, 1
           this%messages(index)%deltaTime   = tempMessages(index)%deltaTime
           this%messages(index)%messageType = tempMessages(index)%messageType
-          this%messages(index)%trueDeltaTime   = tempMessages(index)%trueDeltaTime
+          !this%messages(index)%trueDeltaTime   = tempMessages(index)%trueDeltaTime
 
           
           select case(this%messages(index)%messageType)
@@ -275,10 +274,10 @@ module midi
        character(len = 2), dimension(*)       :: hexArray
        character(len = 8), dimension(*)       :: binArray  
        integer                                :: stat
-       integer(kind = 8)                      :: index, channelNum
+       integer(kind = 8)                      :: index, channelNum, tempIndex
        integer(kind = 8), intent(inout)       :: byteIndex
        integer(kind = 8)                      :: arrSize
-       character(len=255)                     :: byteIndexAsText, lenghtAsText, deltaTimeAsText, trueDeltaTimeAsText  
+       character(len=255)                     :: byteIndexAsText, lenghtAsText, deltaTimeAsText !, trueDeltaTimeAsText  
        
        if (debug .EQV. .TRUE.) then
           open(12, file = "midiDump.txt", action="write", position="append")
@@ -291,9 +290,26 @@ module midi
        if (this%lastMessage == size(this%messages)) call this%doubleMe()
        this%lastMessage = this%lastMessage + 1
        
-       !call dumpTest(hexarray(byteIndex))
+       this%messages(this%lastMessage)%deltaTime = 0
+       
+       if (dbg2 .EQV. .TRUE.) then
+           tempIndex = byteIndex
+       end if    
+       
        call calculateVLQ(this%messages(this%lastMessage)%deltaTime, binArray, byteIndex)
-       !call dumpTest(hexarray(byteIndex))
+       
+       if (dbg2 .EQV. .TRUE.) then
+          open(37, file = "deltas.txt", action = "write", position = "append")
+          write(37, "(A, I0, 1x, I0)") "Indexes: ", tempIndex, byteIndex - 1
+          write(37, "(A)", advance = "NO") "Bytes:"
+          
+          do index = tempIndex, byteIndex-1, 1              
+             write(37, "(A)", advance = "NO") " " // hexArray(index)
+          end do 
+          
+          write(37, "(A)") ""
+          close(37)
+       end if 
              
        if (debug .EQV. .TRUE.) then
          write(byteIndexAsText, "(I0)") byteIndex            
@@ -324,35 +340,39 @@ module midi
            !byteIndex = byteIndex + 1
            
            call this%processAsMidiData(byteIndex, hexArray, binArray, arrSize)   
-           
            channelNum = this%messages(this%lastMessage)%midiD%channelNum
+                      
        end select
        
-     trueDeltaTimeAsText = ""
-     this%messages(this%lastMessage)%trueDeltaTime = this%messages(this%lastMessage)%deltaTime 
-     this%midiF%deltaFull                          = this%midiF%deltaFull + this%messages(this%lastMessage)%deltaTime   
+     !trueDeltaTimeAsText   = ""
 
+     if (dbg2 .EQV. .TRUE.) then
+         open(37, file = "deltas.txt", action = "write", position = "append")
+         write(37, "(I0, 1x, I0)") channelNum, this%messages(this%lastMessage)%deltaTime 
+         close(37)
+     end if 
      
-     do index = 1, 16, 1
-          this%midiF%deltaSums(index) = this%midiF%deltaSums(index) + this%messages(this%lastMessage)%deltaTime 
+     this%midiF%deltaSums(channelNum) = this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime 
+     !do index = 1, 16, 1
+          !this%midiF%deltaSums(index) = this%midiF%deltaSums(index) + this%messages(this%lastMessage)%deltaTime 
           
-          if (index == channelNum) then
-              this%messages(this%lastMessage)%trueDeltaTime =  this%midiF%deltaSums(index) 
+          !if (index == channelNum) then
+              !this%messages(this%lastMessage)%trueDeltaTime =  this%midiF%deltaSums(index) 
               
-              this%midiF%deltaSums(index)  = 0
-              write(trueDeltaTimeAsText, "(I0)") this%messages(this%lastMessage)%trueDeltaTime 
-          end if 
-     end do      
+              !this%midiF%deltaSums(index)  = 0
+              !write(trueDeltaTimeAsText, "(I0)") this%messages(this%lastMessage)%trueDeltaTime 
+          !end if 
+     !end do      
        
-     open(12, file = "midiDump.txt", action="write", position="append")
-     write(12, "(A)") "-> True DeltaTime: " // trim(trueDeltaTimeAsText)
-     close(12) 
+     !open(12, file = "midiDump.txt", action="write", position="append")
+     !write(12, "(A)") "-> True DeltaTime: " // trim(trueDeltaTimeAsText)
+     !close(12) 
      
      if (debug .EQV. .TRUE.) then
          open(12, file = "midiDump.txt", action="write", status="old", position="append")
          call this%writeDump()
          close(12) 
-    end if    
+     end if    
        
    end subroutine 
      
@@ -716,6 +736,7 @@ module midi
        case ("1001")
            this%messages(this%lastMessage)%midiD%lenght     = 2     
            this%messages(this%lastMessage)%midiD%typeAsText = "Note On (Channel " // channelNumAsText // ")"
+           this%messages(this%lastMessage)%midiD%channelNum = channelNum
            this%messages(this%lastMessage)%midiD%typeAsBin  = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000" 
            gotIt = .TRUE.
 
@@ -1153,9 +1174,7 @@ module midi
        integer(kind = 8)                      :: arrSize
        character(len = 255)                   :: trackNumAsText, sizeAsText   
        character(len = 3)                     :: advance
-       
-       ! VLQdebug = .TRUE.
-       
+             
        this%lastMessage = 0
        if (allocated(this%messages) .EQV. .FALSE.) then
            allocate(this%messages(64), stat = stat)
@@ -1455,7 +1474,13 @@ module midi
      this%loaded = .FALSE.
      this%TPQN   = 0
      this%fps    = 0
-     this%ptf    = 0 
+     this%ptf    = 0
+     
+     if (dbg2 .EQV. .TRUE.) then
+         open(37, file = "deltas.txt", action = "write")
+         write(37, "(A)") ""
+         close(37)
+     end if 
      
      if (allocated(this%bytes)    .EQV. .TRUE.)   deallocate(this%bytes)  
      if (allocated(this%hexas)    .EQV. .TRUE.)   deallocate(this%hexas)  
@@ -1518,7 +1543,6 @@ module midi
      
      trackNum = 0
      this%deltaSums = 0
-     this%deltaFull = 0
      
      do currentIndex = 1, this%chunks%last, 1  
         call this%chunks%listOfChunks(currentIndex)%processChunk(this, trackNum)

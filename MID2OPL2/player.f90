@@ -7,7 +7,8 @@ module player
     private
     public                                      :: midiPlayer, initPlayer
     
-    logical, parameter                          :: debug = .TRUE.
+    logical, parameter                          :: debug       = .TRUE.
+    logical                                     :: dbgLogFirst = .FALSE.
     
     type midiPlayer
         logical                                 :: success = .FALSE., divisionMode = .FALSE., dbgLogFirst
@@ -21,6 +22,7 @@ module player
         procedure                               :: DeltaTimeToMS => deltaTimeToMS
         procedure                               :: InitTempo     => initTempo    
 
+        
     end type
         
     contains    
@@ -34,9 +36,8 @@ module player
     
     end function
     
-    subroutine debugLog(txt, dbgLogFirst)
+    subroutine debugLog(txt)
         character(len = *)                      :: txt
-        logical, intent(inout)                  :: dbgLogFirst
     
         if (dbgLogFirst .EQV. .TRUE.) then
             dbgLogFirst = .FALSE.
@@ -57,8 +58,9 @@ module player
         class(midiPlayer), intent(inout)        :: this
         type(midiFile), intent(in), target      :: midiF
         type(soundB),   intent(in), target      :: sBank
+        integer(kind = 8)                       :: index, longestDelta
         
-        this%dbgLogFirst                        = .TRUE.
+        dbgLogFirst                        = .TRUE.
         
         this%midiF                              => midiF       
         this%sBank                              => sBank
@@ -71,23 +73,37 @@ module player
         
         this%tempo                              = this%initTempo("M")
         if (debug .EQV. .TRUE.) then
-            call debugLog("Full Delta:  " // trim(numToText(this%midiF%deltaFull)), this%dbgLogFirst)  
+            !call debugLog("Full Delta:  " // trim(numToText(this%midiF%deltaFull)), this%dbgLogFirst)  
             
             if (midiF%divisionMode .EQV. .FALSE.) then
-                call debugLog("Max Tempo:   " // trim(numToText(this%tempo))      , this%dbgLogFirst)    
-                call debugLog("TPQN:        " // trim(numToText(midiF%TPQN))      , this%dbgLogFirst)    
+                call debugLog("Max Tempo:   " // trim(numToText(this%tempo)))    
+                call debugLog("TPQN:        " // trim(numToText(midiF%TPQN)))    
             else
-                call debugLog("FPS:         " // trim(numToText(midiF%fps))       , this%dbgLogFirst)    
-                call debugLog("PTF:         " // trim(numToText(midiF%ptf))       , this%dbgLogFirst)   
+                call debugLog("FPS:         " // trim(numToText(midiF%fps)))    
+                call debugLog("PTF:         " // trim(numToText(midiF%ptf)))   
             end if
         end if   
         
-        this%maxTime                            = this%deltaTimeToMS(this%midiF%deltaFull, this%tempo)
-        this%tempo                              = this%initTempo("F") 
+        longestDelta = 0
+        do index = 1, midiF%numberOfTracks , 1
+           if (midiF%deltaSums(index) > longestDelta) longestDelta = midiF%deltaSums(index)
+        end do     
+        
         if (debug .EQV. .TRUE.) then
-            call debugLog("Max Time:   " // trim(numToText(this%maxTime)), this%dbgLogFirst)  
+            call debugLog("Delta Max:  " // trim(numToText(longestDelta)))  
+        end if     
+        
+        this%maxTime                            = this%deltaTimeToMS(longestDelta, this%tempo)
+        this%tempo                              = this%initTempo("F") 
+        
+        open(49, file = "fos.txt", action = "write")
+        write(49, *) this%maxTime
+        close(49)
+        
+        if (debug .EQV. .TRUE.) then
+            call debugLog("Max Time:   " // trim(numToText(this%maxTime)))  
             if (midiF%divisionMode .EQV. .FALSE.) then
-                call debugLog("First Tempo:" // trim(numToText(this%tempo))  , this%dbgLogFirst)    
+                call debugLog("First Tempo:" // trim(numToText(this%tempo)))    
             end if
         end if   
         
@@ -184,16 +200,28 @@ module player
         class(midiPlayer), intent(inout)        :: this
         integer(kind = 8), intent(in)           :: ticks
         integer          , intent(in)           :: tempo   
-        real(kind = 8)                          :: res
-        real(kind = 8)   , parameter            :: const = 1000.00
+        real(kind = 8)                          :: res 
+        real(kind = 8)                          :: tempoReal, tpqnREAL, fpsREAL, ptfREAL, realTicks
         
         res = 0
+        realTicks = ticks
         
         if (this%divisionMode .EQV. .FALSE.) then
-            res = (ticks * tempo) / (const * this%TPQN)
+            !res = ticks * (tempo / this%TPQN)
+            
+            tempoReal = 60000000 / tempo
+            tpqnREAL  = this%TPQN
+            
+            res       = realTicks * ( tempoReal / tpqnREAL)
         else    
-            res = ticks / (this%fps * this%ptf * const)  
-        end if    
+            !res = ticks / (this%fps * this%ptf)  
+            
+            ptfREAL   = this%ptf
+            fpsREAL   = this%fps
+            
+            res       = realTicks / (fpsREAL * ptfREAL)
+
+        end if           
         
     end function 
 

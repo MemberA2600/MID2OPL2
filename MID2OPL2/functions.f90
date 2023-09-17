@@ -192,10 +192,7 @@ module functions
           write(33, "(L, 1x, L, 1x, L, 1x, L, 1x, L, 1x, I1)") inputOk, outputOK, fileNameOK, loadedOK, sbLoaded, checkIfVGM(tempName)
           close(33)
       end if
-      
-      ! This is for debug only!
-      !ok = .TRUE.
-      
+           
       if (ok .EQV. .TRUE.) then
           retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .TRUE., DLG_ENABLE)
       else    
