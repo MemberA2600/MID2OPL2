@@ -1,7 +1,7 @@
 module player   
     use midi
     use soundbank
-    
+
     implicit none
     
     private
@@ -9,18 +9,43 @@ module player
     
     logical, parameter                          :: debug       = .TRUE.
     logical                                     :: dbgLogFirst = .FALSE.
+    type(midiFile), pointer                     :: midiF
+    type(soundB)  , pointer                     :: sBank
+    
+    type playerNotePointer
+        type(playerNote), pointer               :: p
+        logical                                 :: onFlag = .FALSE., offFlag = .FALSE. 
+         
+    end type    
+    
+    type playerNote
+        integer(kind = 2)                       :: instrument, volume, note, fNumber
+        logical                                 :: onFlag
+        integer(kind = 8)                       :: startDelta, endDelta        
+        
+        contains
+        procedure                               :: SetFreq   => setFreq
+    end type    
+    
+    type playerChannel
+        type(playerNote), dimension(:), allocatable :: playerNotes
+        type(playerNote), dimension(:), allocatable :: playerNotePointers
+
+        integer(kind = 8)                           :: lastNote = 0, lastPointer = 0
+        
+    end type    
     
     type midiPlayer
         logical                                 :: success = .FALSE., divisionMode = .FALSE., dbgLogFirst
         integer                                 :: TPQN, fps, ptf, tempo = 120 
-        type(midiFile), pointer                 :: midiF
-        type(soundB)  , pointer                 :: sBank
-        integer(kind = 8)                       :: maxTime
+        integer(kind = 8)                       :: maxTime, maxNumberOfNotes
+        type(playerChannel), dimension(16)      :: channels
         
         contains                        
         procedure                               :: InitPlayer    => initPlayer
         procedure                               :: DeltaTimeToMS => deltaTimeToMS
         procedure                               :: InitTempo     => initTempo    
+        procedure                               :: FillChannel   => fillChannel    
 
         
     end type
@@ -51,19 +76,20 @@ module player
     
     end subroutine
     
-    subroutine initPlayer(this, midiF, sBank)
+    subroutine initPlayer(this, midiFP, sBankP)
         use midi
         use soundbank
     
         class(midiPlayer), intent(inout)        :: this
-        type(midiFile), intent(in), target      :: midiF
-        type(soundB),   intent(in), target      :: sBank
-        integer(kind = 8)                       :: index, longestDelta
+        type(midiFile), intent(in), target      :: midiFP
+        type(soundB),   intent(in), target      :: sBankP
+        integer(kind = 8)                       :: index, longestDelta, subIndex
+        integer(kind = 1)                       :: stat
         
-        dbgLogFirst                        = .TRUE.
+        dbgLogFirst                             = .TRUE.
         
-        this%midiF                              => midiF       
-        this%sBank                              => sBank
+        midiF                                   => midiFP       
+        sBank                                   => sBankP
         
         this%success                            = .FALSE.
         this%TPQN                               = midiF%TPQN     
@@ -84,9 +110,12 @@ module player
             end if
         end if   
         
-        longestDelta = 0
+        longestDelta     = 0
+        this%maxNumberOfNotes = 0
+        
         do index = 1, midiF%numberOfTracks , 1
            if (midiF%deltaSums(index) > longestDelta) longestDelta = midiF%deltaSums(index)
+           if (midiF%tracks(index)%lastMessage > this%maxNumberOfNotes) this%maxNumberOfNotes = midiF%tracks(index)%lastMessage
         end do     
         
         if (debug .EQV. .TRUE.) then
@@ -96,9 +125,9 @@ module player
         this%maxTime                            = this%deltaTimeToMS(longestDelta, this%tempo)
         this%tempo                              = this%initTempo("F") 
         
-        open(49, file = "fos.txt", action = "write")
-        write(49, *) this%maxTime
-        close(49)
+        !open(49, file = "fos.txt", action = "write")
+        !write(49, *) this%maxTime
+        !close(49)
         
         if (debug .EQV. .TRUE.) then
             call debugLog("Max Time:   " // trim(numToText(this%maxTime)))  
@@ -107,8 +136,43 @@ module player
             end if
         end if   
         
+        do index = 1, 16, 1
+           allocate(this%channels(index)%playerNotes(this%maxNumberOfNotes), stat = stat)  
+           allocate(this%channels(index)%playerNotePointers(this%maxTime)  , stat = stat)       
+
+           this%channels(index)%lastNote = 0
+           do subIndex = 1, this%maxNumberOfNotes, 1
+              this%channels(index)%playerNotes(subIndex)%instrument = 0
+              this%channels(index)%playerNotes(subIndex)%volume     = 0
+              this%channels(index)%playerNotes(subIndex)%note       = 0
+              
+              this%channels(index)%playerNotes(subIndex)%onFlag     = .FALSE.
+           end do
+        end do    
+
+        do index = 1, midiF%numberOfTracks, 1 
+           call this%fillChannel(index)
+        end do
+        
     end subroutine
            
+    subroutine fillChannel(this, channelNum)
+        class(midiPlayer), intent(inout)        :: this 
+        integer(kind = 1)                       :: channelNum
+        integer(kind = 8)                       :: index
+        type(instrument), pointer               :: iProgram 
+        logical                                 :: LR
+        integer(kind = 8)                       :: deltaBuffer
+         
+        deltaBuffer         = 0
+        
+        do index = 1, midiF%tracks(channelNum)%lastMessage, 1
+
+            !
+        end do    
+        
+    end subroutine
+    
     function initTempo(this, mode) result(tempo)
         class(midiPlayer), intent(inout)        :: this 
         real(kind = 8)                          :: tempo
@@ -119,13 +183,13 @@ module player
         tempo = 0
         endIt = .FALSE.
         
-        do index = 1, this%midiF%numberOfTracks, 1
-            do subIndex = 1, this%midiF%tracks(index)%lastMessage, 1
-                if (this%midiF%tracks(index)%messages(subIndex)%messageType == 'MT') then     
-                    if (this%midiF%tracks(index)%messages(subIndex)%metaM%typeAsHex == '51') then
+        do index = 1, midiF%numberOfTracks, 1
+            do subIndex = 1, midiF%tracks(index)%lastMessage, 1
+                if (midiF%tracks(index)%messages(subIndex)%messageType == 'MT') then     
+                    if (midiF%tracks(index)%messages(subIndex)%metaM%typeAsHex == '51') then
                         
-                        if (this%midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum > tempo) then
-                            tempo = this%midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum
+                        if (midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum > tempo) then
+                            tempo = midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum
                             if (mode == 'F') endIt = .TRUE.
                         end if    
                     
@@ -206,16 +270,12 @@ module player
         res = 0
         realTicks = ticks
         
-        if (this%divisionMode .EQV. .FALSE.) then
-            !res = ticks * (tempo / this%TPQN)
-            
+        if (this%divisionMode .EQV. .FALSE.) then           
             tempoReal = 60000000 / tempo
             tpqnREAL  = this%TPQN
             
             res       = realTicks * ( tempoReal / tpqnREAL)
         else    
-            !res = ticks / (this%fps * this%ptf)  
-            
             ptfREAL   = this%ptf
             fpsREAL   = this%fps
             
@@ -225,5 +285,47 @@ module player
         
     end function 
 
+    !
+    !   This is just a guessing, so we can determinate where are really no
+    !   notes played, so we back move the notes to the empty parts and make it 
+    !   more compressed for the six only channels.
+    !
+    
+    !subroutine setVolume(this)
+    ! 
+    !    class(PlayerNote), intent(inout)       :: this
+    !    type(instrument), pointer              :: iProgram 
+    !    integer(kind = 2)                      :: ksl, totalLevel
+    !    
+    !    iProgram                                => sBank%instruments(this%instrument)
+    !    ksl                                     = iProgram%byte5
+    !    totalLevel                              = iProgram%byte6
+    !    
+    !end subroutine
+
+    subroutine setFreq(this, slotNum)
+        class(PlayerNote), intent(inout)       :: this
+        type(instrument), pointer              :: iProgram 
+        integer(kind = 1)                      :: slotNum
+        
+        iProgram                                => sBank%instruments(this%instrument)
+
+    end subroutine
+    
+    function valueOfPartOfByte(byteNum, startBit, lenght) result(res)
+        integer(kind = 2)                       :: byteNum, startBit, lenght 
+        character(len = 16)                     :: bitString
+        integer(kind = 1)                       :: index
+        integer(kind = 2)                       :: res
+        
+        write(bitString, "(B16)") byteNum
+        do index = 1, 16, 1
+           if (bitString(index:index) == " ") bitString(index:index) = "0"
+        end do
+    
+        read(bitString(startBit : startBit+lenght), "(I2)") res
+        
+    end function
+    
     
 end module

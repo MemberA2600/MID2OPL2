@@ -6,7 +6,7 @@ module soundbank
     implicit none
         
     private 
-    public                              :: soundB, loadSBList, importBank
+    public                              :: soundB, loadSBList, importBank, instrument
     
     logical, parameter                  :: debug  = .TRUE.
     
@@ -270,10 +270,7 @@ module soundbank
            if (debug .EQV. .TRUE. ) call writeLine("Note Offset: " // numToText(this%instruments(counter)%noteOffset) // "(" // tempWord // ")")
 
         end do    
-               
-        
-        
-        
+
         this%loaded = .TRUE.
 
 888 &        

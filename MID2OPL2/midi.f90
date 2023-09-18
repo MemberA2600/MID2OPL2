@@ -8,7 +8,7 @@ module midi
     public                                              :: midiFile, LoadFile, midiData, message
 
                                                          ! Turn these off at the end!
-    logical, parameter                                  :: debug    = .FALSE., streamMode = .FALSE., dbg2 = .FALSE.  
+    logical, parameter                                  :: debug    = .FALSE., streamMode = .FALSE.
     logical, parameter                                  :: VLQdebug = .FALSE.
     
     type chunk
@@ -292,24 +292,8 @@ module midi
        
        this%messages(this%lastMessage)%deltaTime = 0
        
-       if (dbg2 .EQV. .TRUE.) then
-           tempIndex = byteIndex
-       end if    
-       
+
        call calculateVLQ(this%messages(this%lastMessage)%deltaTime, binArray, byteIndex)
-       
-       if (dbg2 .EQV. .TRUE.) then
-          open(37, file = "deltas.txt", action = "write", position = "append")
-          write(37, "(A, I0, 1x, I0)") "Indexes: ", tempIndex, byteIndex - 1
-          write(37, "(A)", advance = "NO") "Bytes:"
-          
-          do index = tempIndex, byteIndex-1, 1              
-             write(37, "(A)", advance = "NO") " " // hexArray(index)
-          end do 
-          
-          write(37, "(A)") ""
-          close(37)
-       end if 
              
        if (debug .EQV. .TRUE.) then
          write(byteIndexAsText, "(I0)") byteIndex            
@@ -345,12 +329,6 @@ module midi
        end select
        
      !trueDeltaTimeAsText   = ""
-
-     if (dbg2 .EQV. .TRUE.) then
-         open(37, file = "deltas.txt", action = "write", position = "append")
-         write(37, "(I0, 1x, I0)") channelNum, this%messages(this%lastMessage)%deltaTime 
-         close(37)
-     end if 
      
      this%midiF%deltaSums(channelNum) = this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime 
      !do index = 1, 16, 1
@@ -1475,12 +1453,6 @@ module midi
      this%TPQN   = 0
      this%fps    = 0
      this%ptf    = 0
-     
-     if (dbg2 .EQV. .TRUE.) then
-         open(37, file = "deltas.txt", action = "write")
-         write(37, "(A)") ""
-         close(37)
-     end if 
      
      if (allocated(this%bytes)    .EQV. .TRUE.)   deallocate(this%bytes)  
      if (allocated(this%hexas)    .EQV. .TRUE.)   deallocate(this%hexas)  
