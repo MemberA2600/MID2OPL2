@@ -1,4 +1,3 @@
-   
 module soundbank
     
     use envelope

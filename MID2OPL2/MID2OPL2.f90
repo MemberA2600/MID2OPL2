@@ -239,7 +239,6 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
      
   retlog = DLGGET (gdlg, IDC_GD3Update, checkBox)
   mTypes = (/ "01", "03" /)
-  !open(19, file = "C:/putypurutty.txt", action = "WRITE")
   
   if (checkBox .EQV. .TRUE.) then
       boxIndex = 0
@@ -247,7 +246,6 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
           do trackIndex = 1, midiF%numberOfTracks, 1
              do index = 1, midiF%tracks(trackIndex)%lastMessage, 1 
                 if (midiF%tracks(trackIndex)%messages(index)%messageType == "MT") then
-                    !write(19, "(A, 1x, A)") midiF%tracks(trackIndex)%messages(index)%metaM%typeAsHex, midiF%tracks(trackIndex)%messages(index)%metaM%valueAsText
                     if (midiF%tracks(trackIndex)%messages(index)%metaM%typeAsHex == mTypes(typeIndex)) then
                        boxIndex = boxIndex + 1
                        select case(boxIndex)
@@ -269,7 +267,7 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
       end do
   end if
   
-  !close(19)
+  call enableDisableConvertButton()
   
 END SUBROUTINE 
 
@@ -444,9 +442,9 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
        goto 99998
         
     end if    
-    
+        
 99998 &  
-  END SUBROUTINE 
+    END SUBROUTINE 
             
     SUBROUTINE MID2OPL2EnterFileName( dlg, id, callbacktype)
     !DEC$ ATTRIBUTES DEFAULT :: MID2OPL2EnterFileName

@@ -7,31 +7,33 @@ module player
     private
     public                                      :: midiPlayer, initPlayer
     
-    logical, parameter                          :: debug       = .TRUE.
-    logical                                     :: dbgLogFirst = .FALSE.
+    logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
+    logical                                     :: dbgLogFirst          = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
+    integer, parameter                          :: maxNumberOfMembers   = 5
     
     type playerNotePointer
         type(playerNote), pointer               :: p
-        logical                                 :: onFlag = .FALSE., offFlag = .FALSE. 
          
     end type    
     
     type playerNote
-        integer(kind = 2)                       :: instrument, volume, note, fNumber
-        logical                                 :: onFlag
+        integer(kind = 2)                       :: instrument, volume, note, fNumber1, fnumber2
         integer(kind = 8)                       :: startDelta, endDelta        
-        
+        type(instrument), pointer               :: instumentP
+        logical                                 :: closed
+
         contains
         procedure                               :: SetFreq   => setFreq
     end type    
     
     type playerChannel
         type(playerNote), dimension(:), allocatable :: playerNotes
-        type(playerNote), dimension(:), allocatable :: playerNotePointers
-
-        integer(kind = 8)                           :: lastNote = 0, lastPointer = 0
+        logical                                     :: hasAnyNotes = .FALSE.
+        
+        type(instrument), pointer                   :: instumentP
+        integer(kind = 8)                           :: lastNote = 0, currInst = 0
         
     end type    
     
@@ -39,7 +41,15 @@ module player
         logical                                 :: success = .FALSE., divisionMode = .FALSE., dbgLogFirst
         integer                                 :: TPQN, fps, ptf, tempo = 120 
         integer(kind = 8)                       :: maxTime, maxNumberOfNotes
-        type(playerChannel), dimension(16)      :: channels
+        type(playerChannel), &
+             dimension(16, maxNumberOfMembers)  :: channels
+        type(playerNotePointer), dimension(:,:),&
+             & allocatable                      :: notePointers
+        type(playerNotePointer), dimension(:,:),&
+             & allocatable                      :: percussionPointers
+
+        
+        integer(kind = 1), dimension(16)        :: channelMemberNums = 1
         
         contains                        
         procedure                               :: InitPlayer    => initPlayer
@@ -47,7 +57,6 @@ module player
         procedure                               :: InitTempo     => initTempo    
         procedure                               :: FillChannel   => fillChannel    
 
-        
     end type
         
     contains    
@@ -58,6 +67,11 @@ module player
            
         txt                                     = ""
         write(txt, "(I20)") number
+        
+        do while(txt(1:1) == " ")
+           txt(1:19)  = txt(2:20)
+           txt(20:20) = " "
+        end do    
     
     end function
     
@@ -83,7 +97,7 @@ module player
         class(midiPlayer), intent(inout)        :: this
         type(midiFile), intent(in), target      :: midiFP
         type(soundB),   intent(in), target      :: sBankP
-        integer(kind = 8)                       :: index, longestDelta, subIndex
+        integer(kind = 8)                       :: index, longestDelta, subIndex, memberIndex
         integer(kind = 1)                       :: stat
         
         dbgLogFirst                             = .TRUE.
@@ -96,6 +110,8 @@ module player
         this%fps                                = midiF%fps
         this%ptf                                = midiF%ptf 
         this%divisionMode                       = midiF%divisionMode
+        
+        this%channelMemberNums = 1
         
         this%tempo                              = this%initTempo("M")
         if (debug .EQV. .TRUE.) then
@@ -125,10 +141,8 @@ module player
         this%maxTime                            = this%deltaTimeToMS(longestDelta, this%tempo)
         this%tempo                              = this%initTempo("F") 
         
-        !open(49, file = "fos.txt", action = "write")
-        !write(49, *) this%maxTime
-        !close(49)
-        
+        this%maxTime = longestDelta
+               
         if (debug .EQV. .TRUE.) then
             call debugLog("Max Time:   " // trim(numToText(this%maxTime)))  
             if (midiF%divisionMode .EQV. .FALSE.) then
@@ -136,21 +150,50 @@ module player
             end if
         end if   
         
+        if (allocated(this%notePointers) .EQV. .TRUE.) deallocate(this%notePointers, stat = stat)
+        allocate(this%notePointers(16, this%maxNumberOfNotes)        , stat = stat) 
+        if (debug .EQV. .TRUE.) then
+            call debugLog("Allocate note pointer array as 16:" // trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))  
+        end if
+        
+        if (allocated(this%percussionPointers) .EQV. .TRUE.) deallocate(this%percussionPointers, stat = stat)
+        allocate(this%percussionPointers(5, this%maxNumberOfNotes)  , stat = stat) 
+        if (debug .EQV. .TRUE.) then
+            call debugLog("Allocate percussion pointer array as " // trim(numToText(maxNumberOfMembers)) // ":" &
+                 &// trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))  
+        end if
+        
         do index = 1, 16, 1
-           allocate(this%channels(index)%playerNotes(this%maxNumberOfNotes), stat = stat)  
-           allocate(this%channels(index)%playerNotePointers(this%maxTime)  , stat = stat)       
-
-           this%channels(index)%lastNote = 0
-           do subIndex = 1, this%maxNumberOfNotes, 1
-              this%channels(index)%playerNotes(subIndex)%instrument = 0
-              this%channels(index)%playerNotes(subIndex)%volume     = 0
-              this%channels(index)%playerNotes(subIndex)%note       = 0
+           do memberIndex = 1, maxNumberOfMembers, 1 
+              if (allocated(this%channels(index, memberIndex)%playerNotes) .EQV. .TRUE.) &
+                 &deallocate(this%channels(index, memberIndex)%playerNotes, stat = stat)
+              allocate(this%channels(index, memberIndex)%playerNotes(this%maxNumberOfNotes), stat = stat)  
               
-              this%channels(index)%playerNotes(subIndex)%onFlag     = .FALSE.
+              if (debug .EQV. .TRUE.) then
+                 call debugLog("Allocate notes array " // trim(numToText(index)) // "," // trim(numToText(memberIndex)) // " as " // & 
+                               &trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))    
+              end if
+              
+              this%channels(index, memberIndex)%lastNote    = 0
+              this%channels(index, memberIndex)%currInst    = 0
+              this%channels(index, memberIndex)%hasAnyNotes = .FALSE.
+              
+              do subIndex = 1, this%maxNumberOfNotes, 1
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%instrument = 0
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%volume     = 0
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%note       = 0
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%startDelta = 0
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%endDelta   = 0
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%closed     = .TRUE.
+
+              end do
            end do
         end do    
 
         do index = 1, midiF%numberOfTracks, 1 
+           !if (debug .EQV. .TRUE.) then
+           !    call debugLog("Size of Channel Array " // trim(numToText(index)) // ":" // trim(numToText(size(this%channels(index, 1)%playerNotes)))) 
+           !end if
            call this%fillChannel(index)
         end do
         
@@ -158,17 +201,132 @@ module player
            
     subroutine fillChannel(this, channelNum)
         class(midiPlayer), intent(inout)        :: this 
-        integer(kind = 1)                       :: channelNum
-        integer(kind = 8)                       :: index
+        integer(kind = 1)                       :: channelNum, midiChannelNum, memberIndex, subIndex
+        integer(kind = 8)                       :: index, channel, lastNote, nextNote, tempLastNote
         type(instrument), pointer               :: iProgram 
         logical                                 :: LR
         integer(kind = 8)                       :: deltaBuffer
-         
-        deltaBuffer         = 0
+        integer(kind = 2)                       :: note
         
+        deltaBuffer         = 0
+        memberIndex         = 1
+                   
         do index = 1, midiF%tracks(channelNum)%lastMessage, 1
+           deltaBuffer = deltaBuffer + midiF%tracks(channelNum)%messages(index)%deltaTime
+                  
+           if (debug .EQV. .TRUE.) then
+               call debugLog("Source Channel: " // trim(numToText(channelNum))) 
+           end if     
+           select case(midiF%tracks(channelNum)%messages(index)%messageType)
+           case("MT")
+               select case(midiF%tracks(channelNum)%messages(index)%metaM%typeAsHex)
+               case("51")
+                    if (debug .EQV. .TRUE.) then
+                        call debugLog("MT Tempo")  
+                    end if 
+                    this%tempo = midiF%tracks(channelNum)%messages(index)%metaM%valueAsNum
+               end select
+           case("MD")
+               channel  = midiF%tracks(channelNum)%messages(index)%midiD%channelNum
+               lastNote = this%channels(channel, memberIndex)%lastNote
+               if (debug .EQV. .TRUE.) then
+                   call debugLog("MD: " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)))  
+               end if 
+               
+               select case(midiF%tracks(channelNum)%messages(index)%midiD%typeAsBin(1:4))
+               case("1000") 
+               ! Note Off 
+                 if (debug .EQV. .TRUE.) then
+                     call debugLog("Enter Note OFF")  
+                 end if
+                 memberIndex = 1  
+                 do subIndex = 1, this%channelMemberNums(channel), 1        
+                    if (this%channels(channel, subIndex)%hasAnyNotes .EQV. .FALSE.) cycle 
+                   
+                    tempLastNote = this%channels(channel, subIndex)%lastNote                    
+                    if (this%channels(channel, subIndex)%playerNotes(tempLastNote)%closed .EQV. .TRUE.) cycle 
 
-            !
+                    read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") note                     
+                    if (this%channels(channel, subIndex)%playerNotes(tempLastNote)%note == note .AND. &
+                      & this%channels(channel, subIndex)%playerNotes(tempLastNote)%instrument == &
+                      & this%channels(channel, subIndex)%currInst) then
+                        memberIndex = subIndex
+                        lastNote    = tempLastNote
+                        exit
+                    end if    
+                 end do
+
+                 if (debug .EQV. .TRUE.) then
+                     call debugLog("OFF: " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) // " " // trim(numToText(note)))  
+                 end if
+                 this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta = deltaBuffer
+                 this%channels(channel, memberIndex)%playerNotes(lastNote)%closed   = .TRUE.
+                 if (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta == &
+                    &this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta) then
+
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%instrument = 0
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%volume     = 0
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%note       = 0
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta = 0
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta   = 0       
+                     this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
+                 end if
+               case("1001") 
+               ! Note On
+                 if (debug .EQV. .TRUE.) then  
+                    call debugLog("Enter Note ON")
+                 end if   
+                 memberIndex = 1  
+                 
+                 do subIndex = 1, maxNumberOfMembers, 1
+                    nextNote = this%channels(channel, subIndex)%lastNote + 1
+                    if (this%channels(channel, subIndex)%playerNotes(nextNote)%note == 0) then
+                        memberIndex = subIndex
+                        exit
+                    end if    
+                 end do
+                 
+                 this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer
+                 this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument =  this%channels(channel, memberIndex)%currInst
+                 if (this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument /= 0) then
+                     this%channels(channel, memberIndex)%playerNotes(nextNote)%instumentP => this%channels(channel, memberIndex)%instumentP
+                 end if
+                 
+                 read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") &
+                     &this%channels(channel, memberIndex)%playerNotes(nextNote)%note                 
+
+                 read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(2), "(B8)") &
+                     &this%channels(channel, memberIndex)%playerNotes(nextNote)%volume   
+
+                 this%channels(channel, memberIndex)%hasAnyNotes = .TRUE.
+                 this%channels(channel, memberIndex)%playerNotes(nextNote)%closed = .FALSE.
+                 this%channels(channel, memberIndex)%lastNote  = nextNote
+
+                 if (debug .EQV. .TRUE.) then
+                     call debugLog("ON:  " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) // " Note: " // &
+                         &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%note)) // " | Velocity: " // &
+                         &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%volume)) )  
+                 end if
+                 
+               case("1100")
+               ! Program Change  
+                 if (debug .EQV. .TRUE.) then
+                     call debugLog("Enter Program Change")
+                 end if    
+                 read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin, "(B8)") &
+                     &this%channels(channel, memberIndex)%currInst   
+                 
+                 if (this%channels(channel, memberIndex)%currInst /= 0) then
+                     this%channels(channel, memberIndex)%instumentP => sBank%instruments(this%channels(channel, memberIndex)%currInst)
+                 end if
+                 
+                 if (debug .EQV. .TRUE.) then
+                     call debugLog("Instrument:  " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) // &
+                                  &" " // trim(numToText(this%channels(channel, memberIndex)%currInst)))  
+                 end if
+               end select
+           end select 
+           
         end do    
         
     end subroutine
@@ -305,10 +463,8 @@ module player
 
     subroutine setFreq(this, slotNum)
         class(PlayerNote), intent(inout)       :: this
-        type(instrument), pointer              :: iProgram 
         integer(kind = 1)                      :: slotNum
         
-        iProgram                                => sBank%instruments(this%instrument)
 
     end subroutine
     
