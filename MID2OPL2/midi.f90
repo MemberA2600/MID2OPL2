@@ -103,6 +103,8 @@ module midi
         
         contains
         procedure                                       :: loadFile    => LoadFile
+        procedure                                       :: DeAllocator => deAllocator
+        
         
    end type
    
@@ -1024,7 +1026,8 @@ module midi
        character(len=255)                     :: sizeAsText  
        character(len=3)                       :: advance
        
-       this%messages(this%lastMessage)%metaM%typeAsHex = hexArray(byteIndex)
+       this%messages(this%lastMessage)%metaM%valueAsNum = 0
+       this%messages(this%lastMessage)%metaM%typeAsHex  = hexArray(byteIndex)
        !call dumpTest(hexArray(byteIndex))
        
        byteIndex = byteIndex + 1
@@ -1449,6 +1452,8 @@ module midi
          end if
      end if    
      
+     if (this%loaded .EQV. .TRUE.) call this%deallocator()
+     
      this%loaded = .FALSE.
      this%TPQN   = 0
      this%fps    = 0
@@ -1523,6 +1528,45 @@ module midi
      this%loaded = .TRUE.
      
    end subroutine
-    
-    
+   
+   subroutine DeAllocator(this)
+     class(midiFile), intent(inout) :: this
+     integer(kind = 8)              :: trackIndex, messageIndex, chunkIndex, subIndex
+     integer(kind = 2)              :: stat  
+   
+     if (allocated(this%bytes)    .EQV. .TRUE.) deallocate(this%bytes   , stat = stat)   
+     if (allocated(this%hexas)    .EQV. .TRUE.) deallocate(this%hexas   , stat = stat)   
+     if (allocated(this%binaries) .EQV. .TRUE.) deallocate(this%binaries, stat = stat)   
+   
+     if (allocated(this%chunks%listOfChunks) .EQV. .TRUE.) then
+         
+         do chunkIndex = 1, size(this%chunks%listOfChunks), 1
+            if (allocated(this%chunks%listOfChunks(chunkIndex)%hexas)     .EQV. .TRUE. ) &
+                &deallocate(this%chunks%listOfChunks(chunkIndex)%hexas    , stat = stat)   
+            if (allocated(this%chunks%listOfChunks(chunkIndex)%binaries)  .EQV. .TRUE. ) &
+                &deallocate(this%chunks%listOfChunks(chunkIndex)%binaries , stat = stat)    
+         end do
+         
+         deallocate(this%chunks%listOfChunks, stat = stat)
+     end if    
+   
+     if (allocated(this%tracks) .EQV. .TRUE.) then
+         do trackIndex = 1, size(this%tracks), 1
+            if (allocated(this%tracks(trackIndex)%messages) .EQV. .TRUE.) then
+                do messageIndex = 1, size(this%tracks(trackIndex)%messages), 1
+                   if (allocated(this%tracks(trackIndex)%messages(messageIndex)%metaM%valueAsHex)  .EQV. .TRUE.) &
+                      &deallocate(this%tracks(trackIndex)%messages(messageIndex)%metaM%valueAsHex, stat = stat)  
+                   if (allocated(this%tracks(trackIndex)%messages(messageIndex)%sysM%valueAsHex )  .EQV. .TRUE.) &
+                      &deallocate(this%tracks(trackIndex)%messages(messageIndex)%sysM%valueAsHex,  stat = stat)                      
+                   if (allocated(this%tracks(trackIndex)%messages(messageIndex)%midiD%valueAsBin)  .EQV. .TRUE.) &
+                      &deallocate(this%tracks(trackIndex)%messages(messageIndex)%midiD%valueAsBin, stat = stat)                        
+                end do                
+                deallocate(this%tracks(trackIndex)%messages, stat = stat)
+            end if
+         end do 
+         deallocate(this%tracks, stat = stat)
+   end if
+     
+   end subroutine
+   
 end module

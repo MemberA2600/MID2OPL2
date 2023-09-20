@@ -50,21 +50,13 @@ module player
         real(kind = 8)                              :: freq
         
     end type    
-    
-    type freqCombo3
-        integer(kind = 2)                           :: fnum, octave      
-        real(kind = 8)                              :: value, difference
-        real(kind = 4)                              :: multi
-        
-    end type        
- 
-    type freqCombo2
-    !  
-    !   There are 13 different freq multipliers 
-    !    
+      
+    type freqCombo2   
         integer(kind = 2)                           :: instrument
         type(instrument), pointer                   :: instrumentP
-        type(freqCombo3), dimension(13)             :: multiTable
+        integer(kind = 2)                           :: fnum, octave      
+        real(kind = 8)                              :: value, diff, freq
+        real(kind = 4)                              :: multi
         
     end type
     
@@ -101,13 +93,13 @@ module player
 
         
         contains                        
-        procedure                                   :: InitPlayer     => initPlayer
-        procedure                                   :: DeltaTimeToMS  => deltaTimeToMS
-        procedure                                   :: InitTempo      => initTempo    
-        procedure                                   :: FillChannel    => fillChannel    
-        procedure                                   :: LoadTable      => loadTable    
-        procedure                                   :: GetFNums       => getFNums
-        procedure                                   :: LoadComboTable => loadComboTable    
+        procedure                                   :: InitPlayer           => initPlayer
+        procedure                                   :: DeltaTimeToMS        => deltaTimeToMS
+        procedure                                   :: InitTempo            => initTempo    
+        procedure                                   :: FillChannel          => fillChannel    
+        procedure                                   :: LoadTable            => loadTable    
+        procedure                                   :: getFNumAndOctave   => getFNumAndOctave
+        procedure                                   :: LoadComboTable       => loadComboTable    
         
     end type
         
@@ -281,17 +273,19 @@ module player
     subroutine loadComboTable(this)        
         class(midiPlayer), intent(inout)              :: this
         type(freqCombo2), dimension(:), allocatable   :: calculator
-        integer(kind = 2)                             :: stat, noteIndex, multiIndex, saveMultiIndex, instruIndex
-        real(kind = 4)                                :: lastMulti, currMulti 
-               
+        integer(kind = 2)                             :: stat, noteIndex, multiIndex, instruIndex, fnum, oct, calcIndex, lowIndex
+        real(kind = 4)                                :: multi
+        real(kind = 8)                                :: lowestDiff 
+        character(len = 25)                           :: val1, val2, val3  
+        
         !
         ! NoteIndex : 1-128, InstruIndex = 1-128, MultiIndex = 1-13
         !
-        ! 10 bits (1024) * 
+        ! 10 bits (1024) fnum * 3bit (8) oct  
         !
         
         if (allocated(calculator) .EQV. .TRUE.) deallocate(calculator, stat = stat)
-        allocate(calculator(1), stat = stat)
+        allocate(calculator(8192), stat = stat)
         
         !
         !  Notes are 0-127
@@ -304,67 +298,135 @@ module player
            do instruIndex = 1, 128 ,1
               this%comboTable(noteIndex)%instruTable(instruIndex)%instrument  =  instruIndex 
               this%comboTable(noteIndex)%instruTable(instruIndex)%instrumentP => sBank%instruments(instruIndex)
-           
-              lastMulti                   = 0
-              saveMultiIndex              = 0  
-              
-              do multiIndex = 1, 15, 1
-                 currMulti = multiNums(multiIndex) 
-                 if (currMulti == lastMulti) cycle 
-                 
-                 lastMulti                = currMulti
-                 saveMultiIndex           = saveMultiIndex + 1
-                 
-                 this%comboTable(noteIndex)%instruTable(instruIndex)%multiTable(saveMultiIndex)%multi = lastMulti
-                 
-              end do    
-           
-           end do    
-           
-        end do    
-        
-    end subroutine    
-        
-    subroutine getFNums(this, pNote)
-        class(midiPlayer), intent(inout)        :: this 
-        type(playerNote), intent(inout)         :: pNote
-        integer(kind = 2)                       :: note, fNum
-        integer(kind = 1)                       :: octave, index, multi
-        character(len = 16)                     :: bitString
-        
-        !
-        !   Sound bank has a changer, we will see if we really needed it.
-        !
-
-        note = pNote%note + pNote%instrumentP%noteOffset
-    
         !   
         !   There is a freq multi that is preset in the sound bank and can be different for
         !   the two slots of the channel. We are gonna use the second one only for calculation. 
+        !             
+              multiIndex = fetchDataFromInstrumentByte(&
+                           &this%comboTable(noteIndex)%instruTable(instruIndex)%instrumentP, 2, 1, 0, 4)
+              multi      = multiNums(multiIndex + 1)  
+
+              this%comboTable(noteIndex)%instruTable(instruIndex)%multi = multi
+              
+              calcIndex = 1
+              
+              do fnum = 0, 1023, 1
+                 do oct = 0, 7, 1
+                    calculator(calcIndex)%fnum   = fnum
+                    calculator(calcIndex)%octave = oct                    
+                    
+                    calculator(calcIndex)%freq         =  this%comboTable(noteIndex)%freq
+                    calculator(calcIndex)%instrument   =  this%comboTable(noteIndex)%instruTable(instruIndex)%instrument
+                    calculator(calcIndex)%multi        =  this%comboTable(noteIndex)%instruTable(instruIndex)%multi
+                    
         !
+        !   freq = freqBases(octave+1) + freqSteps(octave+1) * Fnum
+        !
+                    if (fnum == 0) then
+                        calculator(calcIndex)%value = 0
+                    else    
+                        calculator(calcIndex)%value = (freqBases(oct + 1) +  (freqSteps(oct+1)  * fnum)) * multi
+                    end if
+                  
+                    calculator(calcIndex)%diff = abs(calculator(calcIndex)%value - calculator(calcIndex)%freq) 
+                    calcIndex = calcIndex + 1
+                 end do 
+              end do                              
+              if (debug .EQV. .TRUE.) then
+                  call debugLog("Calculated all variants on comboTable item for note " // trim(numToText(noteIndex)) // " and instrument " // trim(numToText(instruIndex)) // "!")
+              end if   
+              
+              lowestDiff = -1
+              lowIndex   = 0
+              do calcIndex = 1, size(calculator), 1
+                 if (calculator(calcIndex)%diff < lowestDiff .OR. lowestDiff == -1) then
+                     lowestDiff = calculator(calcIndex)%diff
+                     lowIndex   = calcIndex
+                     
+                     if (lowestDiff == 0) exit
+                 end if 
+              end do    
+              if (debug .EQV. .TRUE.) then
+                  
+                  write(val1, "(F0.2)") calculator(lowIndex)%diff
+                  write(val2, "(F0.2)") calculator(lowIndex)%freq
+                  write(val3, "(F0.2)") calculator(lowIndex)%value
+                  
+                  call debugLog("The lowest difference is " // trim(val1) // " on " // trim(val2) // " - " // &
+                                                              &trim(val3) // " as index " // trim(numToText(lowIndex)) // "!")
+                  
+                  call debugLog("Selected fnum is " // trim(numToText(calculator(lowIndex)%fnum)) // " and octave " //&
+                      & trim(numToText(calculator(lowIndex)%octave)) // "!")
+              end if
+              
+              this%comboTable(noteIndex)%instruTable(instruIndex)%fnum   = calculator(lowIndex)%fnum
+              this%comboTable(noteIndex)%instruTable(instruIndex)%octave = calculator(lowIndex)%octave
+              this%comboTable(noteIndex)%instruTable(instruIndex)%value  = calculator(lowIndex)%value
+              this%comboTable(noteIndex)%instruTable(instruIndex)%diff   = calculator(lowIndex)%diff
+              
+           end do    
+           
+        end do    
+        this%loadedComboTable = .TRUE.
+        deallocate(calculator, stat = stat)
+        
+    end subroutine    
+        
+    subroutine getFNumAndOctave(this, pNote)
+        class(midiPlayer), intent(inout)        :: this 
+        type(playerNote), intent(inout)         :: pNote
+        integer(kind = 2)                       :: note
+        integer(kind = 1)                       :: instru
+        
+        !
+        !   Sound bank has a changer offset, we will see if we really needed it.
+        !
+        note   = pNote%note + pNote%instrumentP%noteOffset 
+        instru = pNote%instrument
+        
+        pNote%fNumber = this%comboTable(note)%instruTable(instru)%fnum
+        pNote%octave  = this%comboTable(note)%instruTable(instru)%octave         
+        
+    end subroutine
     
-        bitString = ""
-        write(bitString, "(B16)") pNote%instrumentP%byte1(2)
+    
+
+    function fetchDataFromInstrumentByte(instru, slotNum, byteNum, startBit, lenght) result(res)
+        type(instrument)            :: instru
+        integer(kind = 1)           :: byteNum, startBit, lenght, slotNum
+        integer(kind = 1)           :: index, sBit, eBit
+    
+        integer(kind = 2)           :: res
+        character(len = 16)         :: bitString        
+
+        bitString                   = ""
+        select case(byteNum)
+        case (1)
+            write(bitString, "(B16)") instru%byte1(slotNum)
+        case (2)
+            write(bitString, "(B16)") instru%byte2(slotNum)
+        case (3)
+            write(bitString, "(B16)") instru%byte3(slotNum)
+        case (4)
+            write(bitString, "(B16)") instru%byte4(slotNum)
+        case (5)
+            write(bitString, "(B16)") instru%byte5(slotNum)
+        case (6)
+            write(bitString, "(B16)") instru%byte6(slotNum)
+        case (7)
+            write(bitString, "(B16)") instru%feedback
+        end select    
+        
         do index = 1, 16, 1
            if (bitString(index:index) == " ") bitString(index:index) = "0"  
         end do   
         
-        read(bitString(12:16), "(B4)") multi       
+        sBit = 9 + (7 - startBit)
+        eBit = sBit - lenght
         
-        !
-        !   freq = freqBases(octave+1) + freqSteps(octave+1) * Fnum
-        !
-
-        do index = 1, 128, 1
-           if (pNote%note == this%noteFreqTable(index)%note) then
-               pNote%freq = this%noteFreqTable(index)%freq
-               exit
-           end if    
-        end do
-        
-        
-        
-    end subroutine
+        read(bitString(eBit:sBit), "(B" // trim(numToText(lenght)) // ")") res    
+    
+    end function
     
     subroutine fillChannel(this, channelNum)
         class(midiPlayer), intent(inout)        :: this 
@@ -440,8 +502,9 @@ module player
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%fNumber    = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%octave     = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%freq       = 0
-                     this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
+                     this%channels(channel, memberIndex)%lastNote                         = lastNote - 1                     
                  end if
+
                case("1001") 
                ! Note On
                  if (debug .EQV. .TRUE.) then  
@@ -473,13 +536,15 @@ module player
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%closed = .FALSE.
                  this%channels(channel, memberIndex)%lastNote  = nextNote
 
-                 call this%getFNums(this%channels(channel, memberIndex)%playerNotes(nextNote))
-                 
+                 call this%getFNumAndOctave(this%channels(channel, memberIndex)%playerNotes(nextNote))
                  if (debug .EQV. .TRUE.) then
-                     call debugLog("ON:  " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) // " Note: " // &
-                         &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%note)) // " | Velocity: " // &
-                         &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%volume)) )  
+                     call debugLog("ON:  " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) //   " Note: "          // &
+                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%note))          // " | Velocity: "      // &
+                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%volume))        // " | Freq Number: "   // &
+                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%fNumber))       // " | Octave Number: " // &
+                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%octave)))  
                  end if
+                 
                  
                case("1100")
                ! Program Change  
