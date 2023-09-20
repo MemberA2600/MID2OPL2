@@ -7,6 +7,15 @@ module player
     private
     public                                      :: midiPlayer, initPlayer
     
+    ! index = octave block
+    real(kind = 8), dimension(8), parameter     :: freqBases = (/ 0.047, 0.094, 0.189, 0.379, 0.758, 1.517, 3.034, 6.068 /)
+    real(kind = 8), dimension(8), parameter     :: freqSteps = (/ 0.048, 0.095, 0.190, 0.379, 0.759, 1.517, 3.034, 6.069 /)
+    
+    ! multi nibble on $20-$35
+    real(kind = 4), dimension(16), parameter    :: multiNums = (/ 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, &
+                                                                 &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
+    
+    
     logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
     logical                                     :: dbgLogFirst          = .FALSE.
     type(midiFile), pointer                     :: midiF
@@ -19,44 +28,87 @@ module player
     end type    
     
     type playerNote
-        integer(kind = 2)                       :: instrument, volume, note, fNumber1, fnumber2
+        integer(kind = 2)                       :: instrument, volume, note, fNumber, octave
+        real(kind = 8)                          :: freq
         integer(kind = 8)                       :: startDelta, endDelta        
-        type(instrument), pointer               :: instumentP
+        type(instrument), pointer               :: instrumentP
         logical                                 :: closed
 
-        contains
-        procedure                               :: SetFreq   => setFreq
     end type    
     
     type playerChannel
         type(playerNote), dimension(:), allocatable :: playerNotes
         logical                                     :: hasAnyNotes = .FALSE.
         
-        type(instrument), pointer                   :: instumentP
+        type(instrument), pointer                   :: instrumentP
         integer(kind = 8)                           :: lastNote = 0, currInst = 0
         
     end type    
     
+    type noteFreqPair
+        integer(kind = 2)                           :: note
+        real(kind = 8)                              :: freq
+        
+    end type    
+    
+    type freqCombo3
+        integer(kind = 2)                           :: fnum, octave      
+        real(kind = 8)                              :: value, difference
+        real(kind = 4)                              :: multi
+        
+    end type        
+ 
+    type freqCombo2
+    !  
+    !   There are 13 different freq multipliers 
+    !    
+        integer(kind = 2)                           :: instrument
+        type(instrument), pointer                   :: instrumentP
+        type(freqCombo3), dimension(13)             :: multiTable
+        
+    end type
+    
+    type freqCombo
+    !  
+    !   There are 128 different non-percussion instruments 
+    !    
+        real(kind = 8)                              :: freq
+        type(freqCombo2), dimension(128)            :: instruTable
+        
+    end type
+    
     type midiPlayer
-        logical                                 :: success = .FALSE., divisionMode = .FALSE., dbgLogFirst
-        integer                                 :: TPQN, fps, ptf, tempo = 120 
-        integer(kind = 8)                       :: maxTime, maxNumberOfNotes
+        logical                                     :: success = .FALSE., divisionMode = .FALSE., dbgLogFirst
+        integer                                     :: TPQN, fps, ptf, tempo = 120 
+        integer(kind = 8)                           :: maxTime, maxNumberOfNotes
         type(playerChannel), &
-             dimension(16, maxNumberOfMembers)  :: channels
+             dimension(16, maxNumberOfMembers)      :: channels
         type(playerNotePointer), dimension(:,:),&
-             & allocatable                      :: notePointers
+             & allocatable                          :: notePointers
         type(playerNotePointer), dimension(:,:),&
-             & allocatable                      :: percussionPointers
+             & allocatable                          :: percussionPointers
 
         
-        integer(kind = 1), dimension(16)        :: channelMemberNums = 1
+        integer(kind = 1), dimension(16)            :: channelMemberNums = 1
+        type(noteFreqPair), dimension(128)          :: noteFreqTable
+        logical                                     :: loadedTable       = .FALSE.
+        
+        !
+        ! 128 midi notes = 128 freq values
+        !
+        type(freqCombo),    dimension(128)          :: comboTable
+        logical                                     :: loadedComboTable  = .FALSE.
+
         
         contains                        
-        procedure                               :: InitPlayer    => initPlayer
-        procedure                               :: DeltaTimeToMS => deltaTimeToMS
-        procedure                               :: InitTempo     => initTempo    
-        procedure                               :: FillChannel   => fillChannel    
-
+        procedure                                   :: InitPlayer     => initPlayer
+        procedure                                   :: DeltaTimeToMS  => deltaTimeToMS
+        procedure                                   :: InitTempo      => initTempo    
+        procedure                                   :: FillChannel    => fillChannel    
+        procedure                                   :: LoadTable      => loadTable    
+        procedure                                   :: GetFNums       => getFNums
+        procedure                                   :: LoadComboTable => loadComboTable    
+        
     end type
         
     contains    
@@ -112,6 +164,9 @@ module player
         this%divisionMode                       = midiF%divisionMode
         
         this%channelMemberNums = 1
+        
+        if (this%loadedTable      .EQV. .FALSE.) call this%loadTable()
+        if (this%loadedComboTable .EQV. .FALSE.) call this%loadComboTable()
         
         this%tempo                              = this%initTempo("M")
         if (debug .EQV. .TRUE.) then
@@ -185,6 +240,9 @@ module player
                   this%channels(index, memberIndex)%playerNotes(subIndex)%startDelta = 0
                   this%channels(index, memberIndex)%playerNotes(subIndex)%endDelta   = 0
                   this%channels(index, memberIndex)%playerNotes(subIndex)%closed     = .TRUE.
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%fNumber    = 0
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%octave     = 0
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%freq       = 0
 
               end do
            end do
@@ -198,7 +256,116 @@ module player
         end do
         
     end subroutine
+         
+    subroutine loadTable(this)        
+        class(midiPlayer), intent(inout)        :: this
+        integer(kind = 2)                       :: stat, index
+        character(len = 30)                     :: writeOut
+        
+        open(41, file = "note_freq.txt", action = "read")
+        
+        do index = 128, 1, -1
+            read(41, *) this%noteFreqTable(index)%note, this%noteFreqTable(index)%freq
+            
+            if (debug .EQV. .TRUE.) then
+                write(writeOut, "(I0, 1x, F0.2)") this%noteFreqTable(index)%note, this%noteFreqTable(index)%freq
+                call debugLog("Loaded to NoteFreqTable: " // writeOut)
+            end if    
+        end do
+        
+        close(41)
+        this%loadedTable = .TRUE.
+        
+    end subroutine
+        
+    subroutine loadComboTable(this)        
+        class(midiPlayer), intent(inout)              :: this
+        type(freqCombo2), dimension(:), allocatable   :: calculator
+        integer(kind = 2)                             :: stat, noteIndex, multiIndex, saveMultiIndex, instruIndex
+        real(kind = 4)                                :: lastMulti, currMulti 
+               
+        !
+        ! NoteIndex : 1-128, InstruIndex = 1-128, MultiIndex = 1-13
+        !
+        ! 10 bits (1024) * 
+        !
+        
+        if (allocated(calculator) .EQV. .TRUE.) deallocate(calculator, stat = stat)
+        allocate(calculator(1), stat = stat)
+        
+        !
+        !  Notes are 0-127
+        !
+        do noteIndex = 1, 128, 1
+           this%comboTable(noteIndex)%freq = this%noteFreqTable(noteIndex)%freq
+        !
+        !  Non-Percussion Instruments are 0-127
+        !
+           do instruIndex = 1, 128 ,1
+              this%comboTable(noteIndex)%instruTable(instruIndex)%instrument  =  instruIndex 
+              this%comboTable(noteIndex)%instruTable(instruIndex)%instrumentP => sBank%instruments(instruIndex)
            
+              lastMulti                   = 0
+              saveMultiIndex              = 0  
+              
+              do multiIndex = 1, 15, 1
+                 currMulti = multiNums(multiIndex) 
+                 if (currMulti == lastMulti) cycle 
+                 
+                 lastMulti                = currMulti
+                 saveMultiIndex           = saveMultiIndex + 1
+                 
+                 this%comboTable(noteIndex)%instruTable(instruIndex)%multiTable(saveMultiIndex)%multi = lastMulti
+                 
+              end do    
+           
+           end do    
+           
+        end do    
+        
+    end subroutine    
+        
+    subroutine getFNums(this, pNote)
+        class(midiPlayer), intent(inout)        :: this 
+        type(playerNote), intent(inout)         :: pNote
+        integer(kind = 2)                       :: note, fNum
+        integer(kind = 1)                       :: octave, index, multi
+        character(len = 16)                     :: bitString
+        
+        !
+        !   Sound bank has a changer, we will see if we really needed it.
+        !
+
+        note = pNote%note + pNote%instrumentP%noteOffset
+    
+        !   
+        !   There is a freq multi that is preset in the sound bank and can be different for
+        !   the two slots of the channel. We are gonna use the second one only for calculation. 
+        !
+    
+        bitString = ""
+        write(bitString, "(B16)") pNote%instrumentP%byte1(2)
+        do index = 1, 16, 1
+           if (bitString(index:index) == " ") bitString(index:index) = "0"  
+        end do   
+        
+        read(bitString(12:16), "(B4)") multi       
+        
+        !
+        !   freq = freqBases(octave+1) + freqSteps(octave+1) * Fnum
+        !
+
+        do index = 1, 128, 1
+           if (pNote%note == this%noteFreqTable(index)%note) then
+               pNote%freq = this%noteFreqTable(index)%freq
+               exit
+           end if    
+        end do
+        
+        
+        
+    end subroutine
+    
     subroutine fillChannel(this, channelNum)
         class(midiPlayer), intent(inout)        :: this 
         integer(kind = 1)                       :: channelNum, midiChannelNum, memberIndex, subIndex
@@ -207,6 +374,7 @@ module player
         logical                                 :: LR
         integer(kind = 8)                       :: deltaBuffer
         integer(kind = 2)                       :: note
+        character(len = 16)                     :: word
         
         deltaBuffer         = 0
         memberIndex         = 1
@@ -269,6 +437,9 @@ module player
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%note       = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta   = 0       
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%fNumber    = 0
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%octave     = 0
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%freq       = 0
                      this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
                  end if
                case("1001") 
@@ -289,7 +460,7 @@ module player
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument =  this%channels(channel, memberIndex)%currInst
                  if (this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument /= 0) then
-                     this%channels(channel, memberIndex)%playerNotes(nextNote)%instumentP => this%channels(channel, memberIndex)%instumentP
+                     this%channels(channel, memberIndex)%playerNotes(nextNote)%instrumentP => this%channels(channel, memberIndex)%instrumentP
                  end if
                  
                  read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") &
@@ -302,6 +473,8 @@ module player
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%closed = .FALSE.
                  this%channels(channel, memberIndex)%lastNote  = nextNote
 
+                 call this%getFNums(this%channels(channel, memberIndex)%playerNotes(nextNote))
+                 
                  if (debug .EQV. .TRUE.) then
                      call debugLog("ON:  " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) // " Note: " // &
                          &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%note)) // " | Velocity: " // &
@@ -316,8 +489,10 @@ module player
                  read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin, "(B8)") &
                      &this%channels(channel, memberIndex)%currInst   
                  
+                 this%channels(channel, memberIndex)%currInst = this%channels(channel, memberIndex)%currInst + 1
+                 
                  if (this%channels(channel, memberIndex)%currInst /= 0) then
-                     this%channels(channel, memberIndex)%instumentP => sBank%instruments(this%channels(channel, memberIndex)%currInst)
+                     this%channels(channel, memberIndex)%instrumentP => sBank%instruments(this%channels(channel, memberIndex)%currInst)
                  end if
                  
                  if (debug .EQV. .TRUE.) then
@@ -449,25 +624,6 @@ module player
     !   more compressed for the six only channels.
     !
     
-    !subroutine setVolume(this)
-    ! 
-    !    class(PlayerNote), intent(inout)       :: this
-    !    type(instrument), pointer              :: iProgram 
-    !    integer(kind = 2)                      :: ksl, totalLevel
-    !    
-    !    iProgram                                => sBank%instruments(this%instrument)
-    !    ksl                                     = iProgram%byte5
-    !    totalLevel                              = iProgram%byte6
-    !    
-    !end subroutine
-
-    subroutine setFreq(this, slotNum)
-        class(PlayerNote), intent(inout)       :: this
-        integer(kind = 1)                      :: slotNum
-        
-
-    end subroutine
-    
     function valueOfPartOfByte(byteNum, startBit, lenght) result(res)
         integer(kind = 2)                       :: byteNum, startBit, lenght 
         character(len = 16)                     :: bitString
@@ -480,6 +636,8 @@ module player
         end do
     
         read(bitString(startBit : startBit+lenght), "(I2)") res
+        
+        
         
     end function
     

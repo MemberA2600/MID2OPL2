@@ -5,10 +5,11 @@ module soundbank
     implicit none
         
     private 
-    public                              :: soundB, loadSBList, importBank, instrument
+    public                              :: soundB, loadSBList, importBank, instrument, numOfInstruments
     
-    logical, parameter                  :: debug  = .TRUE.
-    
+    logical, parameter                  :: debug            = .FALSE.
+    integer                             :: numOfInstruments = 175
+
     type instrument
         character(len = 32)              :: name       
         logical                          :: fixedPitch, doubleVoice ! DOP                           $C0 - $C8 (0)
@@ -28,7 +29,6 @@ module soundbank
     type soundB
         character(len = 500)                                :: name = ""
         logical                                             :: loaded = .FALSE.
-        integer                                             :: numOfInstruments = 175
         type(instrument), dimension(:), allocatable         :: instruments
         type(adTable)                                       :: eTable
         
@@ -165,10 +165,10 @@ module soundbank
         read(17, iostat=stat) bytes
         CLOSE(17)
         
-        this%numOfInstruments = (numOfBytes - 8) / 68
-        if (debug .EQV. .TRUE. ) call writeLine("Number of instruments: " // trim(numToText(this%numOfInstruments)))
+        numOfInstruments = (numOfBytes - 8) / 68
+        if (debug .EQV. .TRUE. ) call writeLine("Number of instruments: " // trim(numToText(numOfInstruments)))
      
-        allocate(this%instruments(this%numOfInstruments), stat = stat)
+        allocate(this%instruments(numOfInstruments), stat = stat)
         do index = 1, 8, 1
            !if (debug .EQV. .TRUE. ) call writeLine("ByteIndex #" // trim(numToText(index)) // ": " // trim(numToText(bytes(index))))
            theFormat(index:index) = achar(bytes(index))
@@ -178,9 +178,9 @@ module soundbank
         if (theFormat /= "#OPL_II#") goto 888
  
         index     = 9                                - 36
-        nameIndex = 9 + (this%numOfInstruments * 36) - 32
+        nameIndex = 9 + (numOfInstruments * 36)      - 32
         
-        do counter = 1, this%numOfInstruments, 1
+        do counter = 1, numOfInstruments, 1
            index     = index     + 36
            nameIndex = nameIndex + 32
             
@@ -248,21 +248,12 @@ module soundbank
            
            this%instruments(counter)%feedback = instData(11)
 
-           if (this%instruments(counter)%doubleVoice .EQV. .FALSE.) then
-               this%instruments(counter)%byte1(2) = 0
-               this%instruments(counter)%byte2(2) = 0           
-               this%instruments(counter)%byte3(2) = 0
-               this%instruments(counter)%byte4(2) = 0
-               this%instruments(counter)%byte5(2) = 0
-               this%instruments(counter)%byte6(2) = 0
-           else
-               this%instruments(counter)%byte1(2) = instData(12)
-               this%instruments(counter)%byte2(2) = instData(13)          
-               this%instruments(counter)%byte3(2) = instData(14)
-               this%instruments(counter)%byte4(2) = instData(15)
-               this%instruments(counter)%byte5(2) = instData(16)
-               this%instruments(counter)%byte6(2) = instData(17)
-           end if  
+           this%instruments(counter)%byte1(2) = instData(12)
+           this%instruments(counter)%byte2(2) = instData(13)          
+           this%instruments(counter)%byte3(2) = instData(14)
+           this%instruments(counter)%byte4(2) = instData(15)
+           this%instruments(counter)%byte5(2) = instData(16)
+           this%instruments(counter)%byte6(2) = instData(17)
            
            ! Should we add +12?
            this%instruments(counter)%noteOffset = twoCompilantsWordStringToNumber(instData(19:20)) 
