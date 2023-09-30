@@ -19,6 +19,8 @@ implicit none
 !  Parameters
 
 integer*4, parameter, public :: SIZEOFAPPNAME = 100, textLen = 500
+logical, parameter, public   :: dbg = .FALSE.
+
 
 !  Global data
 
@@ -33,6 +35,6 @@ type(midiFile)         :: midiF
 type(midiPlayer)       :: midiP
 type(soundB)           :: sBank
 integer                :: selectedSB = 0
-logical, parameter     :: dbg = .FALSE.
+logical                :: ignorePercussion = .FALSE.
 
 end module

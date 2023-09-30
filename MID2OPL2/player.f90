@@ -1,7 +1,7 @@
 module player   
     use midi
     use soundbank
-
+    
     implicit none
     
     private
@@ -18,13 +18,17 @@ module player
     
     logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
     logical                                     :: dbgLogFirst          = .FALSE.
+    logical                                     :: ignorePercussion     = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
-    integer, parameter                          :: maxNumberOfMembers   = 5
+    integer(kind = 1), parameter                :: maxNumberOfMembers   = 9, &
+                                                 & maxPercussItems      = 3
     
     type playerNotePointer
         type(playerNote), pointer               :: p
-         
+        !logical                                :: used = .FALSE. 
+        integer(kind = 8)                       :: startDelta, endDelta        
+
     end type    
     
     type playerNote
@@ -32,7 +36,7 @@ module player
         real(kind = 8)                          :: freq
         integer(kind = 8)                       :: startDelta, endDelta        
         type(instrument), pointer               :: instrumentP
-        logical                                 :: closed
+        logical                                 :: closed = .TRUE., placed = .FALSE.
 
     end type    
     
@@ -40,9 +44,30 @@ module player
         type(playerNote), dimension(:), allocatable :: playerNotes
         logical                                     :: hasAnyNotes = .FALSE.
         
+        integer(kind = 8)                           :: numOfNotes = 0, sumOfDuration = 0
+        
         type(instrument), pointer                   :: instrumentP
         integer(kind = 8)                           :: lastNote = 0, currInst = 0
         
+    end type    
+    
+    type instrumentOccurence
+        !type(instrument), pointer                    :: instrument
+        integer(kind = 8)                            :: occurs    = 0
+        integer(kind = 2)                            :: instruNum = 0
+        
+    end type    
+    
+    type instrumentOccurenceTable
+        type(instrumentOccurence), dimension(:), allocatable    :: ioTable
+        type(instrumentOccurence), dimension(:), allocatable    :: tempTable
+        integer(kind = 2)                                       :: lenght, lastOne
+        
+    end type
+    
+    type ranking
+        integer(kind = 1)                            :: channelNum  = 0  
+        real(kind = 8)                               :: value       = 0.0   
     end type    
     
     type noteFreqPair
@@ -69,17 +94,21 @@ module player
         
     end type
     
+    type pointerChannel
+        type(playerNotePointer), dimension(:), allocatable :: notePointers
+        integer(kind = 8)                                  :: lastOne = 0
+        
+    end type
+    
     type midiPlayer
         logical                                     :: success = .FALSE., divisionMode = .FALSE., dbgLogFirst
         integer                                     :: TPQN, fps, ptf, tempo = 120 
         integer(kind = 8)                           :: maxTime, maxNumberOfNotes
         type(playerChannel), &
-             dimension(16, maxNumberOfMembers)      :: channels
-        type(playerNotePointer), dimension(:,:),&
-             & allocatable                          :: notePointers
-        type(playerNotePointer), dimension(:,:),&
-             & allocatable                          :: percussionPointers
-
+        &     dimension(16, maxNumberOfMembers)     :: channels
+        type(pointerChannel), dimension(16)         :: notePointerChannels
+        !type(playerNotePointer), dimension(:,:),&
+        !     & allocatable                          :: percussionPointers
         
         integer(kind = 1), dimension(16)            :: channelMemberNums = 1
         type(noteFreqPair), dimension(128)          :: noteFreqTable
@@ -93,13 +122,15 @@ module player
 
         
         contains                        
-        procedure                                   :: InitPlayer           => initPlayer
-        procedure                                   :: DeltaTimeToMS        => deltaTimeToMS
-        procedure                                   :: InitTempo            => initTempo    
-        procedure                                   :: FillChannel          => fillChannel    
-        procedure                                   :: LoadTable            => loadTable    
-        procedure                                   :: getFNumAndOctave   => getFNumAndOctave
-        procedure                                   :: LoadComboTable       => loadComboTable    
+        procedure                                   :: InitPlayer                 => initPlayer
+        procedure                                   :: DeltaTimeToMS              => deltaTimeToMS
+        procedure                                   :: InitTempo                  => initTempo    
+        procedure                                   :: FillChannel                => fillChannel    
+        procedure                                   :: LoadTable                  => loadTable    
+        procedure                                   :: getFNumAndOctave           => getFNumAndOctave
+        procedure                                   :: LoadComboTable             => loadComboTable    
+        procedure                                   :: reAlignNotes               => reAlignNotes    
+        procedure                                   :: checkChannelInstruMonotony => checkChannelInstruMonotony
         
     end type
         
@@ -111,6 +142,20 @@ module player
            
         txt                                     = ""
         write(txt, "(I20)") number
+        
+        do while(txt(1:1) == " ")
+           txt(1:19)  = txt(2:20)
+           txt(20:20) = " "
+        end do    
+    
+    end function
+
+    function realToText(number) result(txt)
+        real(kind = 8), intent(in)              :: number
+        character(len = 20)                     :: txt
+           
+        txt                                     = ""
+        write(txt, "(f0.2)") number
         
         do while(txt(1:1) == " ")
            txt(1:19)  = txt(2:20)
@@ -134,7 +179,7 @@ module player
     
     end subroutine
     
-    subroutine initPlayer(this, midiFP, sBankP)
+    subroutine initPlayer(this, midiFP, sBankP, ignore)
         use midi
         use soundbank
     
@@ -143,7 +188,9 @@ module player
         type(soundB),   intent(in), target      :: sBankP
         integer(kind = 8)                       :: index, longestDelta, subIndex, memberIndex
         integer(kind = 1)                       :: stat
+        logical                                 :: ignore
         
+        ignorePercussion                        = ignore
         dbgLogFirst                             = .TRUE.
         
         midiF                                   => midiFP       
@@ -197,14 +244,22 @@ module player
             end if
         end if   
         
-        if (allocated(this%notePointers) .EQV. .TRUE.) deallocate(this%notePointers, stat = stat)
-        allocate(this%notePointers(16, this%maxNumberOfNotes)        , stat = stat) 
+
+        do index = 1, 16, 1
+           if (allocated(this%notePointerChannels(index)%notePointers) .EQV. .TRUE.)&
+            & deallocate(this%notePointerChannels(index)%notePointers, stat = stat)
+           allocate(this%notePointerChannels(index)%notePointers(this%maxNumberOfNotes) , stat = stat) 
+        
+           this%notePointerChannels(index)%lastOne = 0
+            
+        end do
+
         if (debug .EQV. .TRUE.) then
             call debugLog("Allocate note pointer array as 16:" // trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))  
         end if
         
-        if (allocated(this%percussionPointers) .EQV. .TRUE.) deallocate(this%percussionPointers, stat = stat)
-        allocate(this%percussionPointers(5, this%maxNumberOfNotes)  , stat = stat) 
+        !if (allocated(this%percussionPointers) .EQV. .TRUE.) deallocate(this%percussionPointers, stat = stat)
+        !allocate(this%percussionPointers(5, this%maxNumberOfNotes)  , stat = stat) 
         if (debug .EQV. .TRUE.) then
             call debugLog("Allocate percussion pointer array as " // trim(numToText(maxNumberOfMembers)) // ":" &
                  &// trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))  
@@ -221,9 +276,13 @@ module player
                                &trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))    
               end if
               
-              this%channels(index, memberIndex)%lastNote    = 0
-              this%channels(index, memberIndex)%currInst    = 0
-              this%channels(index, memberIndex)%hasAnyNotes = .FALSE.
+              this%channels(index, memberIndex)%lastNote       = 0
+              this%channels(index, memberIndex)%currInst       = 0
+              this%channels(index, memberIndex)%hasAnyNotes    = .FALSE.
+              this%channels(index, memberIndex)%numOfNotes     = 0
+              this%channels(index, memberIndex)%sumOfDuration  = 0
+
+              
               
               do subIndex = 1, this%maxNumberOfNotes, 1
                   this%channels(index, memberIndex)%playerNotes(subIndex)%instrument = 0
@@ -235,20 +294,295 @@ module player
                   this%channels(index, memberIndex)%playerNotes(subIndex)%fNumber    = 0
                   this%channels(index, memberIndex)%playerNotes(subIndex)%octave     = 0
                   this%channels(index, memberIndex)%playerNotes(subIndex)%freq       = 0
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%placed     = .FALSE.
 
               end do
            end do
         end do    
 
         do index = 1, midiF%numberOfTracks, 1 
-           !if (debug .EQV. .TRUE.) then
-           !    call debugLog("Size of Channel Array " // trim(numToText(index)) // ":" // trim(numToText(size(this%channels(index, 1)%playerNotes)))) 
-           !end if
            call this%fillChannel(index)
         end do
         
+        call this%reAlignNotes()
+        
     end subroutine
+    
+    subroutine reAlignNotes(this)
+    
+      class(midiPlayer), intent(inout), target :: this
+      integer(kind = 8)                        :: channelIndex, memberIndex, saveIndex, lastIndex, largestRankChannel, noteIndex, subIndex, startIndex
+      real(kind = 8)                           :: largestRank, lastLargest
+      type(ranking), dimension(16)             :: rankings, orderedRankings  
+      type(instrumentOccurenceTable)           :: ioT
+      integer(kind = 1), dimension(16)         :: rankedOnes  
+      integer(kind = 2)                        :: stat
+      real(kind = 8)                           :: monotony
+      integer(kind = 2), dimension(2)          :: chanMemb
+      
+      saveIndex     = 0
+      lastIndex     = 0
+      
+      rankedOnes    = -1
+      rankedOnes(1) = 10
+      
+      if (allocated(iot%ioTable)   .EQV. .TRUE.) deallocate(iot%ioTable,   stat = stat)
+      if (allocated(iot%tempTable) .EQV. .TRUE.) deallocate(iot%tempTable, stat = stat)     
+      
+      do channelIndex = 1, 16, 1
+         if (channelIndex == 10) cycle    
+             
+         if (this%channels(channelIndex,1)%hasAnyNotes .EQV. .TRUE.) then
+             saveIndex = saveIndex +1 
+             lastIndex = saveIndex 
+                    
+             call this%checkChannelInstruMonotony(channelIndex, ioT, monotony)
+             
+             rankings(saveIndex)%channelNum  =  channelIndex
+             rankings(saveIndex)%value       =  this%channels(channelIndex,1)%numOfNotes * (this%channels(channelIndex,1)%sumOfDuration / 10) * monotony
+
+             if (debug .EQV. .TRUE.) then
+                call debugLog("ChannelIndex: " // trim(numToText(channelIndex))                                // &
+                         &" Number of Notes: " // trim(numToText(this%channels(channelIndex,1)%numOfNotes))    // & 
+                         &" Sum of Duration: " // trim(numToText(this%channels(channelIndex,1)%sumOfDuration)) // &
+                         &" Value: "           // trim(realToText(rankings(saveIndex)%value)))
+                 
+                !call debugLog(trim(numToText(saveIndex)) // " " // trim(numToText(rankings(saveIndex)%channelNum)))
+                
+             end if         
+         end if  
+      end do     
+      
+      if (allocated(iot%ioTable)   .EQV. .TRUE.) deallocate(iot%ioTable,   stat = stat)
+      if (allocated(iot%tempTable) .EQV. .TRUE.) deallocate(iot%tempTable, stat = stat)  
+      
+      lastLargest           = 4294967295
+      do saveIndex = 1, lastIndex, 1
+         largestRank        = 0
+         largestRankChannel = 0
+          
+         do channelIndex = 1, lastIndex , 1 
+             
+            if (rankings(channelIndex)%value > largestRank  .AND. &
+            &   rankings(channelIndex)%value > 0            .AND. &    
+            &   rankings(channelIndex)%value < lastLargest) then
+                largestRank        = rankings(channelIndex)%value
+                largestRankChannel = rankings(channelIndex)%channelNum
+                !call debugLog(trim(realToText(rankings(channelIndex)%value)))                        
+            end if
+         end do
          
+         if (largestRank == 0) then
+             lastIndex = saveIndex - 1
+             exit
+         end if
+             
+         orderedRankings(saveIndex)%channelNum = largestRankChannel
+         orderedRankings(saveIndex)%value      = largestRank
+         lastLargest                           = largestRank
+         if (debug .EQV. .TRUE.) then
+              
+             call debugLog("#" // trim(numToText(saveIndex)) // " channel: " // &
+                                & trim(numToText(largestRankChannel))        // " with value " // &
+                                & trim(realToText(largestRank)) // "!")
+             
+         end if   
+      end do      
+
+      do saveIndex = 1, lastIndex, 1
+         if (ignorePercussion .EQV. .FALSE.) then
+             rankedOnes(saveIndex + 1) = orderedRankings(saveIndex)%channelNum 
+         else
+             rankedOnes(saveIndex)     = orderedRankings(saveIndex)%channelNum 
+         end if 
+      end do
+             
+      saveIndex  = 0
+      startIndex = 1
+         
+      if (ignorePercussion .EQV. .FALSE.) then 
+          lastIndex  = lastIndex + 1
+          startIndex = 2
+          if (debug .EQV. .TRUE.) then
+              call debugLog("--- Start Alignment of Percussion Notes ---")    
+          end if  
+          
+          saveIndex = memberIndex + 1
+          do memberIndex = 1, maxNumberOfMembers, 1 
+             if (this%channels(10, &
+                 &memberIndex)%hasAnyNotes .EQV. .FALSE.      ) exit
+             if (memberIndex      > this%channelMemberNums(10)) exit
+             if (memberIndex      > maxPercussItems           ) exit
+             
+             do noteIndex = 1, this%channels(10, memberIndex)%lastNote, 1  
+                if (debug .EQV. .TRUE.) then
+                    call debugLog("Saving Percussion Channel (#10) Member #" // trim(numToText(memberIndex)) // &
+                        & "'s Note #" // trim(numToText(noteIndex)) // " on the Note #" // &
+                        & trim(numToText(this%notePointerChannels(memberIndex)%lastOne + 1)) // " of Pointer Channel #" // &
+                        & trim(numToText(memberIndex)) // "!")    
+                end if   
+                 
+                 
+                 
+                this%notePointerChannels(memberIndex)%lastOne = this%notePointerChannels(memberIndex)%lastOne + 1
+                
+                this%notePointerChannels(memberIndex)%notePointers(this%notePointerChannels(memberIndex)%lastOne)%p => &
+                    &this%channels(10, memberIndex)%playerNotes(noteIndex)
+                
+                this%notePointerChannels(memberIndex)%notePointers(this%notePointerChannels(memberIndex)%lastOne)%startDelta = &
+              & this%channels(10, memberIndex)%playerNotes(noteIndex)%startDelta
+                
+                this%notePointerChannels(memberIndex)%notePointers(this%notePointerChannels(memberIndex)%lastOne)%endDelta   = &
+              & this%channels(10, memberIndex)%playerNotes(noteIndex)%endDelta               
+                    
+             end do   
+         end do      
+      end if
+      
+      chanMemb     = (/ 0 , 0 /)
+      channelIndex = rankedOnes(startIndex)  
+      
+     ! do memberIndex = 1, lastIndex, 1
+         call debugLog(trim(numToText(memberIndex)) // " " // trim(numToText(rankedOnes(memberIndex))))
+     ! end do     
+      
+      do memberIndex   = 1, maxNumberOfMembers, 1
+         if (saveIndex > 9 ) then
+             chanMemb(1) = channelIndex
+             chanMemb(2) = memberIndex
+             exit 
+         end if
+         
+         do subIndex  = startIndex, lastIndex, 1
+             
+             ! How can it put here the -1?
+             channelIndex = rankedOnes(subIndex)
+             
+             if (this%channels(channelIndex, &
+                 &memberIndex)%hasAnyNotes .EQV. .FALSE.           ) cycle
+             if (memberIndex > this%channelMemberNums(channelIndex)) cycle
+             
+             saveIndex = saveIndex + 1              
+             if (saveIndex > 9 ) then
+                 chanMemb(1) = channelIndex
+                 chanMemb(2) = memberIndex
+             exit 
+
+             do noteIndex = 1, this%channels(channelIndex, memberIndex)%lastNote, 1  
+                this%notePointerChannels(saveIndex)%lastOne = this%notePointerChannels(saveIndex)%lastOne + 1
+                
+                this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%p => &
+                    &this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)
+                
+                this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%startDelta = &
+              & this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%startDelta
+                
+                this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%endDelta   = &
+              & this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%endDelta               
+                    
+             end do   
+          end if
+             
+         end do    
+         if (saveIndex > 9 ) then
+             chanMemb(1) = channelIndex
+             chanMemb(2) = memberIndex
+             exit 
+         end if
+      
+      end do
+      
+      
+      
+      
+    end subroutine
+    
+    subroutine checkChannelInstruMonotony(this, channelIndex, ioT, res)
+          class(midiPlayer), intent(inout)              :: this
+          type(instrumentOccurenceTable), intent(inout) :: ioT
+          integer(kind = 1)                             :: channelIndex  
+          integer(kind = 8)                             :: noteIndex, instruIndex, foundIndex = 0, subIndex, biggestOne, allOfThem
+          integer(kind = 2)                             :: stat, memberIndex
+          integer(kind = 2), parameter                  :: defSize = 16
+          real(kind = 8), intent(inout)                 :: res                  
+          character                                     :: L
+          
+          res        = 0.50
+          biggestOne = 0
+          allOfThem  = 0
+          
+          allocate(ioT%ioTable(defSize), stat = stat)
+          ioT%lenght  = defSize
+          ioT%lastOne = 0
+          
+          do memberIndex = 1, maxNumberOfMembers, 1
+             do noteIndex = 1, this%channels(channelIndex, memberIndex)%lastNote, 1
+                foundIndex = 0
+                if (ioT%lastOne > 0) then
+                    do instruIndex = 1, ioT%lastOne, 1 
+                       if (this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%instrument == ioT%ioTable(instruIndex)%instruNum) then
+                          foundIndex = instruIndex
+                          exit
+                       end if 
+                    end do  
+                end if
+                
+                if (foundIndex == 0) then
+                                        
+                    if (ioT%lastOne == ioT%lenght) then
+                        allocate(iot%tempTable(ioT%lenght), stat = stat)
+
+                        do subIndex = 1, ioT%lastOne, 1
+                           iot%tempTable(subIndex)%occurs    = ioT%ioTable(instruIndex)%occurs
+                           iot%tempTable(subIndex)%instruNum = ioT%ioTable(instruIndex)%instruNum                        
+                        end do
+                    
+                        deallocate(ioT%ioTable, stat = stat)
+                        ioT%lenght = ioT%lenght * 2
+                        allocate(ioT%ioTable(ioT%lenght), stat = stat)
+                    
+                        if (ioT%lastOne > ioT%lastOne) then
+                            do subIndex = 1, ioT%lenght, 1
+                               ioT%ioTable(instruIndex)%occurs    = iot%tempTable(subIndex)%occurs
+                               ioT%ioTable(instruIndex)%instruNum = iot%tempTable(subIndex)%instruNum                         
+                            end do
+                        end if    
+
+                        deallocate(iot%tempTable, stat = stat)
+                    end if    
+                    
+                    ioT%lastOne                        = ioT%lastOne + 1 
+                    foundIndex                         = ioT%lastOne
+                    ioT%ioTable(foundIndex)%instruNum  = this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%instrument
+                    ioT%ioTable(foundIndex)%occurs     = 0
+                end if     
+                !if (debug .EQV. .TRUE.) then
+                !    write(L, "(L1)") this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%closed
+                !    call debugLog(trim(numToText(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%startDelta)) // " - " &
+                !              &// trim(numToText(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%endDelta)) // &
+                !              & " | " // L // " | " // trim(numToText(memberIndex)))
+                !end if
+                ioT%ioTable(foundIndex)%occurs         = ioT%ioTable(foundIndex)%occurs + (this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%endDelta - this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%startDelta)
+                
+             end do
+          end do    
+          
+          do subIndex = 1, ioT%lastOne, 1
+             allOfThem = allOfThem + ioT%ioTable(subIndex)%occurs  
+             if (biggestOne < ioT%ioTable(subIndex)%occurs) biggestOne = ioT%ioTable(subIndex)%occurs   
+          end do    
+          
+          res = biggestOne / allOfThem
+          if (debug .EQV. .TRUE.) then    
+             call debugLog("Monotony Value of #" // trim(numToText(channelIndex)) // ": " // &
+                          & trim(realToText(res)) // "( " // trim(numToText(biggestOne)) // "/" // trim(numToText(allOfThem)) //  " )!")
+          end if 
+          
+          
+          deallocate(ioT%ioTable, stat = stat)
+          
+    end subroutine
+          
     subroutine loadTable(this)        
         class(midiPlayer), intent(inout)        :: this
         integer(kind = 2)                       :: stat, index
@@ -435,7 +769,7 @@ module player
         type(instrument), pointer               :: iProgram 
         logical                                 :: LR
         integer(kind = 8)                       :: deltaBuffer
-        integer(kind = 2)                       :: note
+        integer(kind = 2)                       :: note, currInst
         character(len = 16)                     :: word
         
         deltaBuffer         = 0
@@ -469,26 +803,23 @@ module player
                  if (debug .EQV. .TRUE.) then
                      call debugLog("Enter Note OFF")  
                  end if
+                 
                  memberIndex = 1  
-                 do subIndex = 1, this%channelMemberNums(channel), 1        
+
+                 do subIndex = 1, this%channelMemberNums(channel), 1 
                     if (this%channels(channel, subIndex)%hasAnyNotes .EQV. .FALSE.) cycle 
-                   
-                    tempLastNote = this%channels(channel, subIndex)%lastNote                    
-                    if (this%channels(channel, subIndex)%playerNotes(tempLastNote)%closed .EQV. .TRUE.) cycle 
-
-                    read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") note                     
-                    if (this%channels(channel, subIndex)%playerNotes(tempLastNote)%note == note .AND. &
-                      & this%channels(channel, subIndex)%playerNotes(tempLastNote)%instrument == &
-                      & this%channels(channel, subIndex)%currInst) then
-                        memberIndex = subIndex
-                        lastNote    = tempLastNote
-                        exit
-                    end if    
+                     
+                    tempLastNote = this%channels(channel, subIndex)%lastNote     
+                    read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") note
+                    if (note /= this%channels(channel, subIndex)%playerNotes(tempLastNote)%note) cycle
+                    if (        this%channels(channel, subIndex)%currInst /= &
+                      &         this%channels(channel, subIndex)%playerNotes(tempLastNote)%instrument) cycle
+                    
+                    memberIndex = subIndex
+                    lastNote    = tempLastNote
+                    exit
                  end do
-
-                 if (debug .EQV. .TRUE.) then
-                     call debugLog("OFF: " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) // " " // trim(numToText(note)))  
-                 end if
+                 
                  this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta = deltaBuffer
                  this%channels(channel, memberIndex)%playerNotes(lastNote)%closed   = .TRUE.
                  if (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta == &
@@ -502,9 +833,22 @@ module player
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%fNumber    = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%octave     = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%freq       = 0
-                     this%channels(channel, memberIndex)%lastNote                         = lastNote - 1                     
+                     this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
+                 else    
+                     this%channels(channel, memberIndex)%numOfNotes    = this%channels(channel, memberIndex)%numOfNotes    + 1
+                     this%channels(channel, memberIndex)%sumOfDuration = this%channels(channel, memberIndex)%sumOfDuration + &
+                                                                       & (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta -&
+                                                                       &  this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta)
+
                  end if
 
+                 if (debug .EQV. .TRUE.) then
+                     call debugLog("OFF: " // trim(numToText(channel)) // " " &
+                                          &// trim(numToText(memberIndex)) // " " &
+                                          &// trim(numToText(this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta)) // " " &
+                                          &// trim(numToText(note)))  
+                 end if
+                 
                case("1001") 
                ! Note On
                  if (debug .EQV. .TRUE.) then  
@@ -513,15 +857,29 @@ module player
                  memberIndex = 1  
                  
                  do subIndex = 1, maxNumberOfMembers, 1
-                    nextNote = this%channels(channel, subIndex)%lastNote + 1
-                    if (this%channels(channel, subIndex)%playerNotes(nextNote)%note == 0) then
-                        memberIndex = subIndex
-                        exit
-                    end if    
-                 end do
+                    lastNote = this%channels(channel, subIndex)%lastNote 
+                    
+                    if (lastNote == 0) then
+                        memberIndex = subIndex    
+                        exit                    
+                    end if
+                        
+                    if (this%channels(channel, subIndex)%playerNotes(lastNote)%closed     .EQV. .FALSE. ) cycle
+                    if (this%channels(channel, subIndex)%playerNotes(lastNote)%startDelta == deltabuffer) cycle
+                        memberIndex = subIndex    
+                        exit                        
+                 end do    
+                 
+                 !call debugLog("FUCK " // trim(numToText(memberIndex)))
+                 
+                 lastNote = this%channels(channel, memberIndex)%lastNote
+                 nextNote = lastNote + 1
+                 
+                 if (this%channelMemberNums(channel) < memberIndex) this%channelMemberNums(channel) = memberIndex
                  
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument =  this%channels(channel, memberIndex)%currInst
+                 
                  if (this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument /= 0) then
                      this%channels(channel, memberIndex)%playerNotes(nextNote)%instrumentP => this%channels(channel, memberIndex)%instrumentP
                  end if
@@ -535,10 +893,11 @@ module player
                  this%channels(channel, memberIndex)%hasAnyNotes = .TRUE.
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%closed = .FALSE.
                  this%channels(channel, memberIndex)%lastNote  = nextNote
-
+                 
                  call this%getFNumAndOctave(this%channels(channel, memberIndex)%playerNotes(nextNote))
                  if (debug .EQV. .TRUE.) then
-                     call debugLog("ON:  " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) //   " Note: "          // &
+                     call debugLog("ON:  " // trim(numToText(channel)) // " " // &
+                                         &trim(numToText(memberIndex)) // " " // trim(numToText(deltaBuffer)) //   " Note: "          // &
                     &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%note))          // " | Velocity: "      // &
                     &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%volume))        // " | Freq Number: "   // &
                     &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%fNumber))       // " | Octave Number: " // &
@@ -551,18 +910,20 @@ module player
                  if (debug .EQV. .TRUE.) then
                      call debugLog("Enter Program Change")
                  end if    
-                 read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin, "(B8)") &
-                     &this%channels(channel, memberIndex)%currInst   
+                 read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin, "(B8)") currInst   
+                 currInst = currInst + 1                     
                  
-                 this%channels(channel, memberIndex)%currInst = this%channels(channel, memberIndex)%currInst + 1
+                 do subIndex = 1, maxNumberOfMembers,1 
+                     this%channels(channel, subIndex)%currInst = currInst
+                     if (currInst /= 0) then
+                         this%channels(channel, subIndex)%instrumentP => sBank%instruments(currInst)
+                     end if
                  
-                 if (this%channels(channel, memberIndex)%currInst /= 0) then
-                     this%channels(channel, memberIndex)%instrumentP => sBank%instruments(this%channels(channel, memberIndex)%currInst)
-                 end if
+                 end do
                  
                  if (debug .EQV. .TRUE.) then
                      call debugLog("Instrument:  " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) // &
-                                  &" " // trim(numToText(this%channels(channel, memberIndex)%currInst)))  
+                                  &" " // trim(numToText(currInst)))  
                  end if
                end select
            end select 

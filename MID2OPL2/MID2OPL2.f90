@@ -476,7 +476,7 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
       use functions
       use, intrinsic :: iso_c_binding 
 
-    call midiP%initPlayer(midiF, sBank)
+    call midiP%initPlayer(midiF, sBank, ignorePercussion)
       
     END SUBROUTINE 
 
