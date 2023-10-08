@@ -294,8 +294,10 @@ SUBROUTINE MID2OPL2VGMPath( dlg, id, callbacktype)
   character(c_char)    :: string
 
   loadText = fdialog('"OpenFolder" "Open Folder" "*"')  
-  if (loadText /= "") retlog = DLGSET(gdlg, IDC_OUTPUT, loadText)
-  outPath = loadText 
+  if (loadText /= "") then
+      retlog = DLGSET(gdlg, IDC_OUTPUT, loadText)
+      outPath = loadText 
+  end if
   call checkOutPut(loadText)
   call enableDisableConvertButton()
   
