@@ -16,7 +16,7 @@ module player
                                                                  &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
     
     
-    logical, parameter                          :: debug                = .FALSE. , printTable = .TRUE.
+    logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
     logical                                     :: dbgLogFirst          = .FALSE.
     logical                                     :: ignorePercussion     = .FALSE.
     type(midiFile), pointer                     :: midiF
@@ -28,7 +28,8 @@ module player
         type(playerNote), pointer               :: p
         !logical                                :: used = .FALSE. 
         integer(kind = 8)                       :: startDelta, endDelta        
-
+        integer(kind = 2)                       :: originalChannel, originalMember
+        
     end type    
     
     type playerNote
@@ -132,6 +133,7 @@ module player
         procedure                                   :: detectBestPlaceForNote     => detectBestPlaceForNote
         procedure                                   :: insertTheNote              => insertTheNote
         procedure                                   :: printTheTable              => printTheTable
+        procedure                                   :: saveNotePointer            => saveNotePointer
         
     end type
         
@@ -450,27 +452,12 @@ module player
              saveIndex = memberIndex + 1
              
              do noteIndex = 1, this%channels(10, memberIndex)%lastNote, 1  
-                if (debug .EQV. .TRUE.) then
-                    call debugLog("Saving Percussion Channel (#10) Member #" // trim(numToText(memberIndex)) // &
-                        & "'s Note #" // trim(numToText(noteIndex)) // " on the Note #" // &
-                        & trim(numToText(this%notePointerChannels(memberIndex)%lastOne + 1)) // " of Pointer Channel #" // &
-                        & trim(numToText(memberIndex)) // "!")    
-                end if    
-                
-                this%notePointerChannels(memberIndex)%lastOne = this%notePointerChannels(memberIndex)%lastOne + 1
-                
-                this%notePointerChannels(memberIndex)%notePointers(this%notePointerChannels(memberIndex)%lastOne)%p => &
-                    &this%channels(10, memberIndex)%playerNotes(noteIndex)
-                
-                this%notePointerChannels(memberIndex)%notePointers(this%notePointerChannels(memberIndex)%lastOne)%startDelta = &
-              & this%channels(10, memberIndex)%playerNotes(noteIndex)%startDelta
-                
-                this%notePointerChannels(memberIndex)%notePointers(this%notePointerChannels(memberIndex)%lastOne)%endDelta   = &
-              & this%channels(10, memberIndex)%playerNotes(noteIndex)%endDelta               
-                    
+                call this%saveNotePointer(10, memberIndex, noteIndex, memberIndex) 
              end do   
          end do      
       end if
+      
+      !goto 789
       
       chanMemb     = (/ 0 , 0 /)
       channelIndex = rankedOnes(startIndex)  
@@ -494,23 +481,7 @@ module player
              end if
              
              do noteIndex = 1, this%channels(channelIndex, memberIndex)%lastNote, 1  
-                if (debug .EQV. .TRUE.) then
-                    call debugLog("Saving Channel #" // trim(numToText(channelIndex)) // " Member #" // trim(numToText(memberIndex)) // &
-                        & "'s Note #" // trim(numToText(noteIndex)) // " on the Note #" // &
-                        & trim(numToText(this%notePointerChannels(saveIndex)%lastOne + 1)) // " of Pointer Channel #" // &
-                        & trim(numToText(saveIndex)) // "!")    
-                end if    
-                this%notePointerChannels(saveIndex)%lastOne = this%notePointerChannels(saveIndex)%lastOne + 1
-                
-                this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%p => &
-                    &this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)
-                
-                this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%startDelta = &
-              & this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%startDelta
-                
-                this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%endDelta   = &
-              & this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%endDelta               
-                    
+                call this%saveNotePointer(channelIndex, memberIndex, noteIndex, saveIndex) 
              end do   
              
              chanMemb(1) = subIndex
@@ -538,6 +509,7 @@ module player
            
        end if    
        
+       !goto 789  
        if (saveIndex > 9) then
        
            call debugLog("Place what remained!")
@@ -602,32 +574,137 @@ module player
                      end if    
                      
                      if (foundIt .EQV. .TRUE.) &
-                        &call this%insertTheNote(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex), insertHere, saveHere)
+                        &call this%insertTheNote(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex), insertHere, saveHere, channelIndex, memberIndex)
                                    
                     end do
                  end do              
               end do    
        end if   
-       
+789 &       
        if (printTable .EQV. .TRUE.) call this%printTheTable()
        
     end subroutine
     
+    subroutine saveNotePointer(this, channelIndex, memberIndex, noteIndex, saveIndex)
+        class(midiPlayer), intent(inout), target         :: this
+        integer(kind = 8)                                :: channelIndex, memberIndex, saveIndex, noteIndex
+
+        if (debug .EQV. .TRUE.) then
+            call debugLog("Saving Channel #" // trim(numToText(channelIndex)) // " Member #" // trim(numToText(memberIndex)) // &
+                        & "'s Note #" // trim(numToText(noteIndex)) // " on the Note #" // &
+                        & trim(numToText(this%notePointerChannels(saveIndex)%lastOne + 1)) // " of Pointer Channel #" // &
+                        & trim(numToText(saveIndex)) // "!")    
+        end if     
+        this%notePointerChannels(saveIndex)%lastOne = this%notePointerChannels(saveIndex)%lastOne + 1
+                
+        this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%p => &
+       &this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)
+                
+        this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%startDelta = &
+       &this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%startDelta
+                
+        this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%endDelta   = &
+       &this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%endDelta       
+                
+        this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%originalChannel = channelIndex
+        this%notePointerChannels(saveIndex)%notePointers(this%notePointerChannels(saveIndex)%lastOne)%originalMember  = memberIndex
+    end subroutine
+    
+    
     subroutine printTheTable(this)
        class(midiPlayer), intent(inout)                 :: this
-
+       integer(kind = 2)                                :: index, channelNum, pointerCNum, pointerNNum, memberNum
+       type(playerNote), pointer                        :: note 
+       logical                                          :: foundIt, first, veryfirst
        
+       open(94, file = "channelsData.txt", action = "write")
        
+       do channelNum = 1, 9, 1
+          if (this%notePointerChannels(channelNum)%lastOne == 0) cycle 
+           
+          write(94, "(A)") "--------------------------------------------" 
+          write(94, "(A)") "Channel #" // trim(numToText(channelNum)) // " (" // trim(numToText(this%notePointerChannels(channelNum)%lastOne)) //")'s Notes:"      
+          write(94, "(A)") "--------------------------------------------" 
+          
+          do index = 1, this%notePointerChannels(channelNum)%lastOne, 1             
+              note => this%notePointerChannels(channelNum)%notePointers(index)%p
+                            
+              write(94, "(A)") "Note #" // trim(numToText(index)) // ", DeltaTime: " // &
+                 & trim(numToText(this%notePointerChannels(channelNum)%notePointers(index)%startDelta)) // " - " // &
+                 & trim(numToText(this%notePointerChannels(channelNum)%notePointers(index)%endDelta)) // " (" // &
+                 & trim(numToText(this%notePointerChannels(channelNum)%notePointers(index)%endDelta-this%notePointerChannels(channelNum)%notePointers(index)%startDelta)) // "), " &
+                 & // "NoteNum: " // trim(numToText(note%note)) // ", Instrument: " // trim(numToText(note%instrument)) // &
+                 &", Original Channel: " // trim(numToText(this%notePointerChannels(channelNum)%notePointers(index)%originalChannel)) // &
+                 &", Original Member: " // trim(numToText(this%notePointerChannels(channelNum)%notePointers(index)%originalMember))
+          end do    
+       end do    
+       
+       veryfirst = .TRUE.
+       
+       do channelNum = 1, 16, 1
+           do memberNum = 1, maxNumberOfMembers, 1 
+               first = .TRUE.
+               if (this%channels(channelNum, memberNum)%hasAnyNotes .EQV. .FALSE.) cycle
+         
+               do index = 1, this%channels(channelNum, memberNum)%lastNote, 1
+                  foundIt = .FALSE. 
+                  
+                  do pointerCNum = 1, 9, 1 
+                     do pointerNNum = 1, this%notePointerChannels(pointerCNum)%lastOne, 1
+                        if (this%notePointerChannels(pointerCNum)%notePointers(pointerNNum)%p%instrument == &
+                           &this%channels(channelNum, memberNum)%playerNotes(index)%instrument .AND. &
+                           &this%notePointerChannels(pointerCNum)%notePointers(pointerNNum)%startDelta == &
+                           &this%channels(channelNum, memberNum)%playerNotes(index)%startDelta .AND. & 
+                           &this%notePointerChannels(pointerCNum)%notePointers(pointerNNum)%endDelta == &
+                           &this%channels(channelNum, memberNum)%playerNotes(index)%endDelta .AND. &                             
+                           &this%notePointerChannels(pointerCNum)%notePointers(pointerNNum)%p%note == &
+                           &this%channels(channelNum, memberNum)%playerNotes(index)%note) then
+                            foundIt = .TRUE.
+                            exit
+                        end if    
+                     end do 
+                     
+                     if (foundIt .EQV. .TRUE.) exit
+                  end do 
+                  
+                  if (foundIt .EQV. .FALSE.) then
+                      if (veryfirst .EQV. .TRUE.) then
+                          veryfirst = .FALSE.
+                          write(94, "(a)") "" 
+                          write(94, "(A)") ">>> Missing Notes: <<<"     
+                          write(94, "(A)") "***********************"         
+                      end if
+                      
+                      if (first .EQV. .TRUE.) then
+                          first = .FALSE.
+                          write(94, "(A)") "------------------------------------------------" 
+                          write(94, "(A)") "MidiChannel #" // trim(numToText(channelNum)) // &
+                                          &"| Member #"    // trim(numToText(memberNum))  // "'s Note(s):"      
+                          write(94, "(A)") "------------------------------------------------"  
+                      end if
+                      
+                      write(94, "(A)") "Note #" // trim(numToText(index)) // &
+                                      &", NoteNum: "    // trim(numToText(this%channels(channelNum, memberNum)%playerNotes(index)%note))       //&
+                                      &", Instrument: " // trim(numToText(this%channels(channelNum, memberNum)%playerNotes(index)%instrument)) //&                      
+                                      &" (" // trim(numToText(this%channels(channelNum, memberNum)%playerNotes(index)%startDelta)) //&  
+                                     &" - " // trim(numToText(this%channels(channelNum, memberNum)%playerNotes(index)%endDelta)) // ")"   
+                      end if
+              
+              end do
+          end do 
+       end do    
+       close(94)
        
     end subroutine
            
-    subroutine insertTheNote(this, note, insertHere, saveHere)
+    subroutine insertTheNote(this, note, insertHere, saveHere, channelIndex, memberIndex)
        class(midiPlayer), intent(inout)                 :: this
        type(playerNote), target                         :: note
        integer(kind = 8)                                :: insertHere, saveHere 
        type(pointerChannel)                             :: tempChannel 
        integer(kind = 2)                                :: stat
        integer(kind = 8)                                :: newSize, index, plusOne, oldSize
+       integer(kind = 2)                                :: channelIndex, memberIndex
         
        oldSize = size(this%notePointerChannels(saveHere)%notePointers)
        plusOne = this%notePointerChannels(saveHere)%lastOne + 1
@@ -644,21 +721,30 @@ module player
        
        if (insertHere > 1) then
            do index = 1, insertHere - 1, 1
-              tempChannel%notePointers(index)%p          => this%notePointerChannels(saveHere)%notePointers(index)%p 
-              tempChannel%notePointers(index)%startDelta =  this%notePointerChannels(saveHere)%notePointers(index)%startDelta
-              tempChannel%notePointers(index)%endDelta   =  this%notePointerChannels(saveHere)%notePointers(index)%endDelta       
+              tempChannel%notePointers(index)%p               => this%notePointerChannels(saveHere)%notePointers(index)%p 
+              tempChannel%notePointers(index)%startDelta      =  this%notePointerChannels(saveHere)%notePointers(index)%startDelta
+              tempChannel%notePointers(index)%endDelta        =  this%notePointerChannels(saveHere)%notePointers(index)%endDelta 
+              tempChannel%notePointers(index)%originalChannel =  this%notePointerChannels(saveHere)%notePointers(index)%originalChannel 
+              tempChannel%notePointers(index)%originalMember  =  this%notePointerChannels(saveHere)%notePointers(index)%originalMember
+
            end do    
        end if
            
-       tempChannel%notePointers(insertHere)%p            => note
-       tempChannel%notePointers(insertHere)%startDelta   =  note%startDelta
-       tempChannel%notePointers(insertHere)%endDelta     =  note%endDelta
+       tempChannel%notePointers(insertHere)%p               => note
+       tempChannel%notePointers(insertHere)%startDelta      =  note%startDelta
+       tempChannel%notePointers(insertHere)%endDelta        =  note%endDelta
+       tempChannel%notePointers(insertHere)%originalChannel =  channelIndex
+       tempChannel%notePointers(insertHere)%originalMember  =  memberIndex
+
        
        if (insertHere < this%notePointerChannels(saveHere)%lastOne) then
-           do index = insertHere + 1, this%notePointerChannels(saveHere)%lastOne, 1
-              tempChannel%notePointers(index)%p          => this%notePointerChannels(saveHere)%notePointers(index-1)%p 
-              tempChannel%notePointers(index)%startDelta =  this%notePointerChannels(saveHere)%notePointers(index-1)%startDelta
-              tempChannel%notePointers(index)%endDelta   =  this%notePointerChannels(saveHere)%notePointers(index-1)%endDelta       
+           do index = insertHere + 1, plusOne, 1
+              tempChannel%notePointers(index)%p               => this%notePointerChannels(saveHere)%notePointers(index-1)%p 
+              tempChannel%notePointers(index)%startDelta      =  this%notePointerChannels(saveHere)%notePointers(index-1)%startDelta
+              tempChannel%notePointers(index)%endDelta        =  this%notePointerChannels(saveHere)%notePointers(index-1)%endDelta       
+              tempChannel%notePointers(index)%originalChannel =  this%notePointerChannels(saveHere)%notePointers(index-1)%originalChannel     
+              tempChannel%notePointers(index)%originalMember  =  this%notePointerChannels(saveHere)%notePointers(index-1)%originalMember    
+
            end do  
        end if
        
@@ -670,9 +756,12 @@ module player
        end if       
        
        do index = 1, plusOne, 1
-          this%notePointerChannels(saveHere)%notePointers(index)%p          => tempChannel%notePointers(index)%p
-          this%notePointerChannels(saveHere)%notePointers(index)%startDelta =  tempChannel%notePointers(index)%startDelta
-          this%notePointerChannels(saveHere)%notePointers(index)%endDelta   =  tempChannel%notePointers(index)%endDelta     
+          this%notePointerChannels(saveHere)%notePointers(index)%p               => tempChannel%notePointers(index)%p
+          this%notePointerChannels(saveHere)%notePointers(index)%startDelta      =  tempChannel%notePointers(index)%startDelta
+          this%notePointerChannels(saveHere)%notePointers(index)%endDelta        =  tempChannel%notePointers(index)%endDelta     
+          this%notePointerChannels(saveHere)%notePointers(index)%originalChannel = tempChannel%notePointers(index)%originalChannel
+          this%notePointerChannels(saveHere)%notePointers(index)%originalMember  = tempChannel%notePointers(index)%originalMember
+
        end do   
        
        this%notePointerChannels(saveHere)%lastOne = plusOne
