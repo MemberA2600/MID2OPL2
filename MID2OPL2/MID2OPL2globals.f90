@@ -6,6 +6,7 @@ include 'midi.f90'
 include 'sb.f90'
 include 'envelopeTable.f90'
 include 'player.f90'
+include 'vgmFile.f90'
 
 module MID2OPL2Globals
 use iflogm
@@ -13,6 +14,7 @@ use ifwinty
 use midi
 use soundbank
 use player
+use VGM
 
 implicit none
 
@@ -20,7 +22,6 @@ implicit none
 
 integer*4, parameter, public :: SIZEOFAPPNAME = 100, textLen = 500
 logical, parameter, public   :: dbg = .FALSE.
-
 
 !  Global data
 
@@ -34,6 +35,7 @@ character(len=8)       :: currentDate
 type(midiFile)         :: midiF
 type(midiPlayer)       :: midiP
 type(soundB)           :: sBank
+type(vgmFile)          :: myVGM
 integer                :: selectedSB = 0
 logical                :: ignorePercussion = .FALSE.
 

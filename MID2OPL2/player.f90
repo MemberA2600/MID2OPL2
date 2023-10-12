@@ -1,11 +1,13 @@
 module player   
     use midi
     use soundbank
+
     
     implicit none
     
     private
-    public                                      :: midiPlayer, initPlayer
+    public                                      :: midiPlayer, initPlayer, deltaTimeToMS, numToText, realToText, &
+                                                 & playerNotePointer, deAllocator
     
     ! index = octave block
     real(kind = 8), dimension(8), parameter     :: freqBases = (/ 0.047, 0.094, 0.189, 0.379, 0.758, 1.517, 3.034, 6.068 /)
@@ -16,14 +18,18 @@ module player
                                                                  &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
     
     
-    logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
+    logical, parameter                          :: debug                = .FALSE. , printTable = .TRUE.
     logical                                     :: dbgLogFirst          = .FALSE.
-    logical                                     :: ignorePercussion     = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
-    integer(kind = 1), parameter                :: maxNumberOfMembers   = 9, &
-                                                 & maxPercussItems      = 3
     
+    !
+    ! These should be controllable in the future
+    !
+    integer(kind = 1), parameter                :: maxNumberOfMembers   = 9
+    integer(kind = 1), parameter                :: maxPercussItems      = 3
+    logical                                     :: ignorePercussion     = .FALSE.
+                                                
     type playerNotePointer
         type(playerNote), pointer               :: p
         !logical                                :: used = .FALSE. 
@@ -38,7 +44,8 @@ module player
         integer(kind = 8)                       :: startDelta, endDelta        
         type(instrument), pointer               :: instrumentP
         logical                                 :: closed = .TRUE., placed = .FALSE.
-
+        integer(kind = 4)                       :: tempo 
+        
     end type    
     
     type playerChannel
@@ -134,10 +141,16 @@ module player
         procedure                                   :: insertTheNote              => insertTheNote
         procedure                                   :: printTheTable              => printTheTable
         procedure                                   :: saveNotePointer            => saveNotePointer
-        
+        procedure                                   :: deAllocator                => deAllocator
     end type
         
     contains    
+    
+    subroutine deAllocator(this)
+         class(midiPlayer), intent(inout)          :: this    
+    
+         
+    end subroutine     
     
     subroutine fixChannel10(this, note, channel)    
          class(midiPlayer)  , intent(inout)        :: this       
@@ -324,7 +337,7 @@ module player
                   this%channels(index, memberIndex)%playerNotes(subIndex)%octave     = 0
                   this%channels(index, memberIndex)%playerNotes(subIndex)%freq       = 0
                   this%channels(index, memberIndex)%playerNotes(subIndex)%placed     = .FALSE.
-
+                  this%channels(index, memberIndex)%playerNotes(subIndex)%tempo      = 0
               end do
            end do
         end do    
@@ -347,7 +360,7 @@ module player
       type(ranking), dimension(16)             :: rankings, orderedRankings  
       type(instrumentOccurenceTable)           :: ioT
       integer(kind = 1), dimension(16)         :: rankedOnes  
-      integer(kind = 2)                        :: stat
+      integer(kind = 2)                        :: stat, byteIndex
       real(kind = 8)                           :: monotony
       integer(kind = 2), dimension(2)          :: chanMemb
       logical                                  :: foundIt, finished 
@@ -356,6 +369,7 @@ module player
       integer(kind = 2), dimension(9)          :: dominants 
       integer(kind = 8)                        :: largestCount, iNum, saveHere
       integer(kind = 8), dimension(9)          :: startIndexes 
+      character(len = 4)                       :: mode 
       
       saveIndex     = 0
       lastIndex     = 0
@@ -456,9 +470,7 @@ module player
              end do   
          end do      
       end if
-      
-      !goto 789
-      
+           
       chanMemb     = (/ 0 , 0 /)
       channelIndex = rankedOnes(startIndex)  
       saveIndex    = saveIndex - 1
@@ -509,7 +521,6 @@ module player
            
        end if    
        
-       !goto 789  
        if (saveIndex > 9) then
        
            call debugLog("Place what remained!")
@@ -568,6 +579,17 @@ module player
                      end if    
                      
                      if (foundIt .EQV. .FALSE.) then
+                             
+                         do byteIndex = 1, 11, 1
+                            write(mode, "(I0)") byteIndex
+                            call this%detectBestPlaceForNote(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex), &
+                                     &mode ,startIndexes, insertHere, saveHere, foundIt,            &
+                                     &this%channels(channelIndex, memberIndex)%lastNote)  
+                            
+                         end do
+                     end if
+                     
+                     if (foundIt .EQV. .FALSE.) then
                         call this%detectBestPlaceForNote(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex), &
                             &"NONE" ,startIndexes, insertHere, saveHere, foundIt,            &
                             &this%channels(channelIndex, memberIndex)%lastNote) 
@@ -580,7 +602,7 @@ module player
                  end do              
               end do    
        end if   
-789 &       
+789    &       
        if (printTable .EQV. .TRUE.) call this%printTheTable()
        
     end subroutine
@@ -613,7 +635,8 @@ module player
     
     subroutine printTheTable(this)
        class(midiPlayer), intent(inout)                 :: this
-       integer(kind = 2)                                :: index, channelNum, pointerCNum, pointerNNum, memberNum
+       integer(kind = 2)                                :: channelNum, pointerCNum, pointerNNum, memberNum
+       integer(kind = 8)                                :: index
        type(playerNote), pointer                        :: note 
        logical                                          :: foundIt, first, veryfirst
        
@@ -783,6 +806,9 @@ module player
        logical, intent(inout)                         :: foundIt
        integer(kind = 8), intent(in)                  :: lastNote
        logical                                        :: f1, f2
+       integer(kind = 2)                              :: byteNum, stat, theSame, slotIndex
+       type(instrument), pointer                      :: newI, oldI
+       
        saveHere     = -1
        
        do saveIndex = 1, 9, 1
@@ -843,6 +869,34 @@ module player
                           foundIT    = .TRUE.
                       end if
                   end if    
+                  
+                  read(mode, *, iostat = stat) byteNum
+                  
+                  if (foundIt .EQV. .FALSE.) then
+                      if (stat == 0 .AND. insertIndex /= 1) then
+                          theSame = 0  
+                      
+                          oldI => sBank%instruments(this%notePointerChannels(saveIndex)%notePointers(insertIndex)%p%instrument)
+                          newI => sBank%instruments(note%instrument)
+                      
+                          if (newI%feedback == oldi%feedback) then
+                              if (newI%doubleVoice .EQV. oldI%doubleVoice) theSame = theSame + 1
+                          end if 
+                              
+                          do slotIndex = 1, 2, 1
+                             if (newI%byte1(slotIndex) == oldi%byte1(slotIndex)) theSame = theSame + 1
+                             if (newI%byte2(slotIndex) == oldi%byte2(slotIndex)) theSame = theSame + 1
+                             if (newI%byte3(slotIndex) == oldi%byte3(slotIndex)) theSame = theSame + 1
+                             if (newI%byte4(slotIndex) == oldi%byte4(slotIndex)) theSame = theSame + 1
+                             if (newI%byte5(slotIndex) == oldi%byte5(slotIndex) .AND. &
+                               & newI%byte6(slotIndex) == oldi%byte6(slotIndex)) theSame = theSame + 1
+
+                          end do    
+                      end if 
+                      
+                      if (theSame >= byteNum) foundIt = .TRUE.
+                      
+                  end if               
               else
                   foundIT    = .TRUE.
               end if
@@ -854,8 +908,8 @@ module player
               end if
           end do
           if (foundIt .EQV. .TRUE.) then
-              call debugLog("Found place for note on pointerChannel #" // trim(numToText(saveHere)) // &
-                           &" on position #" // trim(numToText(insertHere)) // "!")
+              if (debug .EQV. .TRUE.) call debugLog("Found place for note on pointerChannel #" // trim(numToText(saveHere)) // &
+                                                  &" on position #" // trim(numToText(insertHere)) // "!")
               
               exit
           end if
@@ -925,12 +979,7 @@ module player
                     ioT%ioTable(foundIndex)%instruNum  = this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%instrument
                     ioT%ioTable(foundIndex)%occurs     = 0
                 end if     
-                !if (debug .EQV. .TRUE.) then
-                !    write(L, "(L1)") this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%closed
-                !    call debugLog(trim(numToText(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%startDelta)) // " - " &
-                !              &// trim(numToText(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%endDelta)) // &
-                !              & " | " // L // " | " // trim(numToText(memberIndex)))
-                !end if
+
                 ioT%ioTable(foundIndex)%occurs         = ioT%ioTable(foundIndex)%occurs + (this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%endDelta - this%channels(channelIndex, memberIndex)%playerNotes(noteIndex)%startDelta)
                 
              end do
@@ -1222,6 +1271,7 @@ module player
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%fNumber    = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%octave     = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%freq       = 0
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%tempo      = 0
                      this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
                  else    
                      this%channels(channel, memberIndex)%numOfNotes    = this%channels(channel, memberIndex)%numOfNotes    + 1
@@ -1282,6 +1332,7 @@ module player
                  this%channels(channel, memberIndex)%hasAnyNotes = .TRUE.
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%closed = .FALSE.
                  this%channels(channel, memberIndex)%lastNote  = nextNote
+                 this%channels(channel, memberIndex)%playerNotes(nextNote)%tempo  = this%tempo
                  
                  if (channel == 10) call this%fixChannel10(this%channels(channel, memberIndex)%playerNotes(nextNote),&
                      & this%channels(channel, memberIndex))

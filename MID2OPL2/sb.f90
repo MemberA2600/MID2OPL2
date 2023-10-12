@@ -239,6 +239,10 @@ module soundbank
               call writeLine("Fixed Note:  " // trim(numToText(this%instruments(counter)%fixedNote)))
            end if
            
+           !
+           !  Seems like even on FM, they are both sets
+           !
+           
            this%instruments(counter)%byte1(1) = instData(5 )
            this%instruments(counter)%byte2(1) = instData(6 )        
            this%instruments(counter)%byte3(1) = instData(7 )

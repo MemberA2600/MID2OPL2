@@ -479,7 +479,8 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
       use, intrinsic :: iso_c_binding 
 
     call midiP%initPlayer(midiF, sBank, ignorePercussion)
-      
+    call myVGM%buildVGM(midiP, sBank)  
+    
     END SUBROUTINE 
 
     SUBROUTINE MID2OPL2ChangeBank(dlg, id, callbacktype)

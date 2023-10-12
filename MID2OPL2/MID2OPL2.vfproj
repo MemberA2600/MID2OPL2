@@ -40,7 +40,8 @@
 		<File RelativePath=".\player.f90"/>
 		<File RelativePath=".\sb.f90"/>
 		<File RelativePath=".\seq.f90">
-			<FileConfiguration Name="Debug|Win32" ExcludedFromBuild="true"/></File></Filter>
+			<FileConfiguration Name="Debug|Win32" ExcludedFromBuild="true"/></File>
+		<File RelativePath=".\vgmFile.f90"/></Filter>
 		<File RelativePath=".\ReadMe.txt"/>
 		<File RelativePath=".\Resource.h">
 			<FileConfiguration Name="Debug|Win32">
