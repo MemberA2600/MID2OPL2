@@ -6,7 +6,7 @@ module player
     implicit none
     
     private
-    public                                      :: midiPlayer, initPlayer, deltaTimeToMS, numToText, realToText, &
+    public                                      :: midiPlayer, initPlayer, deltaTimeToMS, &
                                                  & playerNotePointer, deAllocator
     
     ! index = octave block
@@ -43,7 +43,7 @@ module player
         real(kind = 8)                          :: freq
         integer(kind = 8)                       :: startDelta, endDelta        
         type(instrument), pointer               :: instrumentP
-        logical                                 :: closed = .TRUE., placed = .FALSE.
+        logical                                 :: closed = .TRUE.
         integer(kind = 4)                       :: tempo 
         
     end type    
@@ -336,7 +336,6 @@ module player
                   this%channels(index, memberIndex)%playerNotes(subIndex)%fNumber    = 0
                   this%channels(index, memberIndex)%playerNotes(subIndex)%octave     = 0
                   this%channels(index, memberIndex)%playerNotes(subIndex)%freq       = 0
-                  this%channels(index, memberIndex)%playerNotes(subIndex)%placed     = .FALSE.
                   this%channels(index, memberIndex)%playerNotes(subIndex)%tempo      = 0
               end do
            end do
@@ -580,7 +579,7 @@ module player
                      
                      if (foundIt .EQV. .FALSE.) then
                              
-                         do byteIndex = 1, 11, 1
+                         do byteIndex = 1, 10, 1
                             write(mode, "(I0)") byteIndex
                             call this%detectBestPlaceForNote(this%channels(channelIndex, memberIndex)%playerNotes(noteIndex), &
                                      &mode ,startIndexes, insertHere, saveHere, foundIt,            &
@@ -1154,6 +1153,7 @@ module player
         if (debug .eqv. .TRUE.) call debugLog("Note with offset: " // trim(numToText(note)) // ", Instrument: " // trim(numToText(instru))) 
         
         pNote%fNumber = this%comboTable(note)%instruTable(instru)%fnum
+        pNote%freq    = this%comboTable(note)%freq
         pNote%octave  = this%comboTable(note)%instruTable(instru)%octave         
                    
     end subroutine
@@ -1320,7 +1320,7 @@ module player
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument =  this%channels(channel, memberIndex)%currInst
                  
                  if (this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument /= 0) then
-                     this%channels(channel, memberIndex)%playerNotes(nextNote)%instrumentP => this%channels(channel, memberIndex)%instrumentP
+                     this%channels(channel, memberIndex)%playerNotes(nextNote)%instrumentP => sBank%instruments(this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument)
                  end if
                  
                  read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") &

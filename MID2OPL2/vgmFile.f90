@@ -6,6 +6,8 @@ module VGM
     
     private
     public                                         :: vgmFile, buildVGM
+    logical                                        :: first = .TRUE.
+    logical, parameter                             :: debug = .TRUE. 
     
     type(midiPlayer), pointer                      :: midiP
     type(soundB)    , pointer                      :: sBank   
@@ -45,7 +47,7 @@ module VGM
     end type    
     
     type byteTriple
-        integer(kind = 8)                           :: command, register, value
+        integer(kind = 2)                           :: command, register, value
     end type    
        
     type VGMData
@@ -70,6 +72,7 @@ module VGM
         type(deltaAndBytes), dimension(:), allocatable :: timedData
         integer(kind = 8)                              :: lastOne  = 0  
         integer(kind = 2)                              :: currInst = 0 
+        logical                                        :: firstNote = .TRUE.
         
         contains
         
@@ -104,6 +107,8 @@ module VGM
        midiP => midiPP
        sBank => sBankP
        
+       first = .TRUE.
+       
        if (allocated(this%chipData%byteTriples) .EQV. .TRUE.) deallocate(this%chipData%byteTriples, stat = stat)
        this%chipData%lastOne      = 0
        this%header%eofOffset      = 0
@@ -113,8 +118,10 @@ module VGM
        
        do channelIndex = 1, 9, 1
           if (allocated(this%dataChannels(channelIndex)%timedData) .EQV. .TRUE.) deallocate(this%dataChannels(channelIndex)%timedData, stat = stat) 
-          this%dataChannels(channelIndex)%lastOne  = 0        
-          this%dataChannels(channelIndex)%currInst = 0        
+          this%dataChannels(channelIndex)%lastOne   = 0        
+          this%dataChannels(channelIndex)%currInst  = 0     
+          this%dataChannels(channelIndex)%firstNote = .TRUE.     
+          
        
           if (midiP%notePointerChannels(channelIndex)%lastOne > 0) then
               allocate(this%dataChannels(channelIndex)%timedData(midiP%notePointerChannels(channelIndex)%lastOne), stat = stat)
@@ -138,19 +145,20 @@ module VGM
       integer(kind = 2)                             :: channelIndex
       
       this%lastOne           = this%lastOne + 1
+      newIstrument           = .FALSE.
       
-      if (this%lastOne == 1) then
+      if (this%lastOne == 0) then
           newIstrument = .TRUE.
       else
           if (this%currInst /= noteP%p%instrument) newIstrument = .TRUE.
       end if
       
-      call this%timedData(this%lastOne)%addNote(noteP, noteP%p%instrument, this%currInst, newIstrument, channelIndex)
+      call this%timedData(this%lastOne)%addNote(noteP, noteP%p%instrument, this%currInst, newIstrument, channelIndex, this%firstNote)
       this%currInst   = noteP%p%instrument
       
    end subroutine
    
-   subroutine addNote(this, noteP, instru, old, newOne, channelIndex)
+   subroutine addNote(this, noteP, instru, old, newOne, channelIndex, firstNote)
       class(deltaAndBytes)   , intent(inout)        :: this
       type(playerNotePointer), intent(in)           :: noteP
       logical                                       :: newOne
@@ -159,10 +167,33 @@ module VGM
       integer(kind = 2)                             :: dataIndex, slotIndex
       integer(kind = 2)                             :: channelIndex
       character(len = 8)                            :: tempByte
-      integer(kind = 1)                             :: bitIndex
-      character(len = 10)                           :: bits10
-
+      integer(kind = 1)                             :: bitIndex, lenOfName
+      character(len = 10)                           :: bits10      
+      logical, intent(inout)                        :: firstNote
+      character(len = 32)                           :: iName
       
+      call debugLog("*** Adding New Note to Channel #" // trim(numToText(channelIndex)) // "!")
+      
+      lenOfName = 0
+      iName     = sBank%instruments(noteP%P%instrument)%name
+      
+      do bitIndex = 1, len(iName), 1
+         if (iName(bitIndex:bitIndex) /= " " .AND. &
+            &iachar(iName(bitIndex:bitIndex)) /= 0) then
+             lenOfName = bitIndex
+         end if
+      end do     
+      
+      call debugLog("Duration: " // trim(numToText(noteP%startDelta)) // "-" // trim(numToText(noteP%endDelta)) // " (" // &
+                   & trim(numToText(noteP%endDelta-noteP%startDelta)) // ")")
+      
+      call debugLog("Instrument: " // trim(numToText(noteP%P%instrument)) // " (" // &
+                                     & iName(1:lenOfName) // ")")
+      
+      call debuglog("NoteNum: " // trim(numToText(noteP%P%note)) // ", Octave: " // trim(numToText(noteP%P%octave)))
+      call debuglog("Frequency: " // trim(realToText(noteP%P%freq)) // ", FreqNum: " // trim(numToText(noteP%P%fnumber)) // &
+                  & " (" // numToBin(noteP%P%fnumber, 10) // ")")
+            
       do dataIndex = 1, size(this%byteTriples), 1
          this%byteTriples(dataIndex)%command  = z'5a'  
          this%byteTriples(dataIndex)%register = 0  
@@ -175,109 +206,186 @@ module VGM
       this%framesBefore = 0
       
       if (newOne .EQV. .TRUE.) then
-          newI => sBank%instruments(instru)         
-          oldI => sBank%instruments(old)         
-
+          newI => sBank%instruments(instru)     
+          if (firstNote .EQV. .FALSE.) oldI => sBank%instruments(old)         
+          
+          call debuglog(">> Instrument Settings Updating! <<")
+                    
+          !
+          ! This goto thing is an ugly hack, so it will never check the old instrument, 
+          ! if we are on the very first one.
+          !
+          
+          if (firstNote .EQV. .TRUE.) goto 1000
+          
           if (oldI%feedback /= newI%feedback .OR. (oldI%doubleVoice .NEQV. newI%doubleVoice)) then
+1000 &
               this%lastOne = this%lastOne + 1
               tempByte     = ""
-              
+                          
               this%byteTriples(this%lastOne)%register = z'C0' + (channelIndex - 1)
-
-              write(tempByte(5:7), "(B3)") newI%feedback 
+             
+              write(tempByte(5:8), "(B4)") newI%feedback 
               
               do bitIndex = 1, 8, 1
                  if (tempByte(bitIndex:bitIndex) == " ") tempByte(bitIndex:bitIndex) = "0" 
               end do   
               
               if (newI%doubleVoice .EQV. .TRUE.) tempByte(8:8) = "1"
-              
+
               read(tempByte, "(B8)") this%byteTriples(this%lastOne)%value
-              
+
+              call debugLog("Update Feedback / Double Voice on Channel #" // trim(numToText(channelIndex)) // ":")
+              call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+              call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+
+              if (firstNote .EQV. .TRUE.) goto 1001
           end if    
-          
+1001 &
           do slotIndex = 1, 2, 1
-             
+             if (firstNote .EQV. .TRUE.) goto 1002
+          
              if (newI%byte1(slotIndex) /= oldI%byte1(slotIndex)) then 
+1002 &
                  this%lastOne = this%lastOne + 1
    
                  this%byteTriples(this%lastOne)%register = getAddress(channelIndex, slotIndex, z'20')
                  this%byteTriples(this%lastOne)%value    = newI%byte1(slotIndex)
+                 
+                 call debugLog("Update Tremolo / Vibrato / Sustain / KSR / Multi on Channel #"&
+                           & // trim(numToText(channelIndex)) // " Slot #" // trim(numToText(slotIndex)) // ":")
+                 call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+                 call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+                 
+                 if (firstNote .EQV. .TRUE.) goto 1003
              end if
              
              if (newI%byte2(slotIndex) /= oldI%byte2(slotIndex)) then 
+1003 &
                  this%lastOne = this%lastOne + 1
    
                  this%byteTriples(this%lastOne)%register = getAddress(channelIndex, slotIndex, z'60')
                  this%byteTriples(this%lastOne)%value    = newI%byte2(slotIndex)
+                                 
+                 call debugLog("Update Attack Rate / Decay Rate on Channel #"&
+                           & // trim(numToText(channelIndex)) // " Slot #" // trim(numToText(slotIndex)) // ":")
+                 call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+                 call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+                 
+                 if (firstNote .EQV. .TRUE.) goto 1004
              end if
              
              if (newI%byte3(slotIndex) /= oldI%byte3(slotIndex)) then 
+1004 &
                  this%lastOne = this%lastOne + 1
    
                  this%byteTriples(this%lastOne)%register = getAddress(channelIndex, slotIndex, z'80')
                  this%byteTriples(this%lastOne)%value    = newI%byte3(slotIndex)
+                 
+                 call debugLog("Update Sustain level / Release rate on Channel #"&
+                           & // trim(numToText(channelIndex)) // " Slot #" // trim(numToText(slotIndex)) // ":")
+                 call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+                 call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+                 
+                 if (firstNote .EQV. .TRUE.) goto 1005
              end if             
              
              if (newI%byte4(slotIndex) /= oldI%byte4(slotIndex)) then 
+1005 &
                  this%lastOne = this%lastOne + 1
    
                  this%byteTriples(this%lastOne)%register = getAddress(channelIndex, slotIndex, z'e0')
                  this%byteTriples(this%lastOne)%value    = newI%byte4(slotIndex)
+                 
+                 call debugLog("Update Waveform Select on Channel #"&
+                           & // trim(numToText(channelIndex)) // " Slot #" // trim(numToText(slotIndex)) // ":")
+                 call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+                 call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+                 
+                 if (firstNote .EQV. .TRUE.) goto 1006
              end if                      
 
              if (newI%byte5(slotIndex) /= oldI%byte5(slotIndex) .OR. newI%byte6(slotIndex) /= oldI%byte6(slotIndex)) then 
+1006 &
                  this%lastOne = this%lastOne + 1
    
                  this%byteTriples(this%lastOne)%register = getAddress(channelIndex, slotIndex, z'40')
-                 
+                                 
                  tempByte = ""
                  write(tempByte(1:2), "(B2)") newI%byte5(slotIndex)
-                 write(tempByte(3:8), "(B6)") newI%byte4(slotIndex)
+                 write(tempByte(3:8), "(B6)") newI%byte6(slotIndex)
                  
                  do bitIndex = 1, 8, 1
                     if (tempByte(bitIndex:bitIndex) == " ") tempByte(bitIndex:bitIndex) = "0" 
                  end do   
+
+                 call debugLog(tempByte // " " // trim(numToText(newI%byte5(slotIndex))) // " " // trim(numToText(newI%byte6(slotIndex))))
                  
                  read(tempByte, "(B8)") this%byteTriples(this%lastOne)%value
-
+                 
+                 call debugLog("Update Key Scale Level / Output Level on Channel #"&
+                           & // trim(numToText(channelIndex)) // " Slot #" // trim(numToText(slotIndex)) // ":")
+                 call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+                 call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+                 
+                 if (firstNote .EQV. .TRUE.) goto 1007
              end if   
+1007 &
              
           end do    
-          this%lastOne = this%lastOne + 1
-          bits10       = ""
-          
-          write(bits10, "(B10)") noteP%p%fNumber 
-          do bitIndex = 1, 10, 1
-              if (bits10(bitIndex:bitIndex) == " ") bits10 = "0"
-          end do  
-          
-          ! low byte    
-          this%byteTriples(this%lastOne)%register = z'A0' + (channelIndex - 1)
-          read(bits10(3:10), "(B8)") this%byteTriples(this%lastOne)%value
-
-          this%lastOne = this%lastOne + 1
-          ! high byte
-          
-          this%byteTriples(this%lastOne)%register = z'B0' + (channelIndex - 1)
-          tempByte      = "00000000"
-          tempByte(7:8) = bits10(1:2)
-          
-          write(tempByte(4:6), "(B3)") noteP%p%octave
-          do bitIndex = 1, 8, 1
-              if (tempByte(bitIndex:bitIndex) == " ") tempByte = "0"
-          end do  
-          
-          tempByte(3:3) = "1"
-          read(tempByte, "(B8)") this%byteTriples(this%lastOne)%value
-          
-          ! Note Off Byte
-          this%lastOne = this%lastOne + 1
-          
-          tempByte(3:3) = "0"
-          read(tempByte, "(B8)") this%byteTriples(this%lastOne)%value
-          
+          if (firstNote .EQV. .TRUE.) goto 1008
       end if
+
+1008  &
+      firstNote    = .FALSE.
+          
+      this%lastOne = this%lastOne + 1
+      bits10       = ""
+          
+      write(bits10, "(B10)") noteP%p%fNumber 
+      do bitIndex = 1, 10, 1
+          if (bits10(bitIndex:bitIndex) == " ") bits10 = "0"
+      end do  
+         
+      ! low byte    
+      this%byteTriples(this%lastOne)%register = z'A0' + (channelIndex - 1)
+      read(bits10(3:10), "(B8)") this%byteTriples(this%lastOne)%value
+
+      call debugLog("Set New Frequency Low Byte on Channel #" // trim(numToText(channelIndex)) // ":")
+      call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+      call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+          
+      this%lastOne = this%lastOne + 1
+      ! high byte
+          
+      this%byteTriples(this%lastOne)%register = z'B0' + (channelIndex - 1)
+      tempByte      = "00000000"
+      tempByte(7:8) = bits10(1:2)
+         
+      write(tempByte(4:6), "(B3)") noteP%p%octave
+      do bitIndex = 1, 8, 1
+          if (tempByte(bitIndex:bitIndex) == " ") tempByte = "0"
+      end do  
+          
+      tempByte(3:3) = "1"
+      read(tempByte, "(B8)") this%byteTriples(this%lastOne)%value
+          
+      call debugLog("Set New Frequency High Byte / Octave / None ON on Channel #" // trim(numToText(channelIndex)) // ":")
+      call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+      call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+          
+      ! Note Off Byte
+      this%lastOne = this%lastOne + 1
+          
+      tempByte(3:3) = "0"
+      read(tempByte, "(B8)") this%byteTriples(this%lastOne)%value
+      this%byteTriples(this%lastOne)%register = this%byteTriples(this%lastOne-1)%register    
+      
+      call debugLog("Set New Frequency High Byte / Octave / None OFF on Channel #" // trim(numToText(channelIndex)) // ":")
+      call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
+      call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
+          
+      call debugLog("**************************************************")
       
    end subroutine
    
@@ -320,5 +428,84 @@ module VGM
        res = milliSeconds / sampleRate
        
    end function
+ 
+   subroutine debugLog(txt)
+        character(len = *), intent(in)         :: txt
+            
+        if (debug .eqv. .TRUE.) then
+            if (first .EQV. .TRUE.) then
+                first = .FALSE.
+                open(91, file = "vgmLog.txt", action = "write")
+                
+            else
+                open(91, file = "vgmLog.txt", action = "write", position = "append")
+            end if 
+            
+            write(91, "(A)") txt
+            close(91)
+         end if
+            
+   end subroutine
    
-end module
+    function numToText(number) result(txt)
+        integer(kind = 8), intent(in)           :: number
+        character(len = 20)                     :: txt
+           
+        txt                                     = ""
+        write(txt, "(I20)") number
+        
+        do while(txt(1:1) == " ")
+           txt(1:19)  = txt(2:20)
+           txt(20:20) = " "
+        end do    
+    
+    end function
+
+    function realToText(number) result(txt)
+        real(kind = 8), intent(in)              :: number
+        character(len = 20)                     :: txt
+           
+        txt                                     = ""
+        write(txt, "(f0.2)") number
+        
+        do while(txt(1:1) == " ")
+           txt(1:19)  = txt(2:20)
+           txt(20:20) = " "
+        end do    
+    
+    end function   
+
+    function numToHex(number) result(txt)
+        integer(kind = 2), intent(in)          :: number
+        character(len = 2)                     :: txt
+        integer(kind = 1)                      :: index   
+        
+        txt                                     = ""
+        write(txt, "(Z2)") number
+        
+        do index = 1, 2, 1
+           if (txt(index:index) == " ") txt(index:index) = "0"  
+        end do    
+    
+    end function
+  
+    function numToBin(number, bits) result(txt)
+        integer(kind = 1), intent(in)           :: bits
+        integer(kind = 2), intent(in)           :: number
+        character(len = bits)                   :: txt
+        integer(kind = 1)                       :: index      
+        
+        txt                                     = ""
+        write(txt, "(B"// trim(numToText(bits)) // ")") number
+        
+        do index = 1, bits, 1
+           if (txt(index:index) == " ") txt(index:index) = "0"  
+        end do     
+    
+    end function
+    
+    
+    
+ end module
+    
+    

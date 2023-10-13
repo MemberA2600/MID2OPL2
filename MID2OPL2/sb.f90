@@ -52,9 +52,9 @@ module soundbank
         allocator  = 0
         
         if (debug .EQV. .TRUE.) then
-           inquire( file = "debug.txt", exist = ok)
+           inquire( file = "sbLog.txt", exist = ok)
            if (ok .EQV. .TRUE.) then
-               open(19, file = "debug.txt", iostat = io, action = "WRITE")
+               open(19, file = "sbLog.txt", iostat = io, action = "WRITE")
                close(19, status = "delete")
            end if 
         end if   
@@ -113,7 +113,7 @@ module soundbank
         character(len = *)          :: text 
     
         if (debug .EQV. .TRUE.) then
-           open(19, file = "debug.txt", iostat = io, action = "WRITE", access = "APPEND")
+           open(19, file = "sbLog.txt", iostat = io, action = "WRITE", access = "APPEND")
            write(19, "(A)") trim(text)
            close(19)
         end if   
@@ -140,7 +140,7 @@ module soundbank
         class(soundB), intent(inout)                 :: this
         character(len = *)                           :: path
         logical                                      :: ok = .FALSE.
-        integer(kind = 2)                            :: stat
+        integer(kind = 2)                            :: stat, slotIndex
         integer(kind = 8)                            :: numOfBytes, index, nameIndex, counter, subIndex
         integer(kind = 1), dimension(:), allocatable :: bytes
         character(len = 8)                           :: theFormat
@@ -190,6 +190,7 @@ module soundbank
            do subIndex = 1, 32, 1
               this%instruments(counter)%name(subIndex:subIndex) = achar(instName(subIndex)) 
            end do    
+           if (debug .EQV. .TRUE. ) call writeLine("-------------------------------------------------------------------------------------------")
            if (debug .EQV. .TRUE. ) call writeLine("Name of Instrument #" // trim(numToText(counter)) // ": " // this%instruments(counter)%name)
            
            tempWord = ""
@@ -243,25 +244,54 @@ module soundbank
            !  Seems like even on FM, they are both sets
            !
            
-           this%instruments(counter)%byte1(1) = instData(5 )
-           this%instruments(counter)%byte2(1) = instData(6 )        
-           this%instruments(counter)%byte3(1) = instData(7 )
-           this%instruments(counter)%byte4(1) = instData(8 )
-           this%instruments(counter)%byte5(1) = instData(9 )
-           this%instruments(counter)%byte6(1) = instData(10)
+           this%instruments(counter)%byte1(1) = byteConvert(instData(5 ), 0, 7)
+           this%instruments(counter)%byte2(1) = byteConvert(instData(6 ), 0, 7)        
+           this%instruments(counter)%byte3(1) = byteConvert(instData(7 ), 0, 7)
+           this%instruments(counter)%byte4(1) = byteConvert(instData(8 ), 0, 7)
+           this%instruments(counter)%byte5(1) = byteConvert(instData(9 ), 6, 7)
+           this%instruments(counter)%byte6(1) = byteConvert(instData(10), 0, 5)
            
-           this%instruments(counter)%feedback = instData(11)
+           this%instruments(counter)%feedback = byteConvert(instData(11), 1, 3)
 
-           this%instruments(counter)%byte1(2) = instData(12)
-           this%instruments(counter)%byte2(2) = instData(13)          
-           this%instruments(counter)%byte3(2) = instData(14)
-           this%instruments(counter)%byte4(2) = instData(15)
-           this%instruments(counter)%byte5(2) = instData(16)
-           this%instruments(counter)%byte6(2) = instData(17)
+           this%instruments(counter)%byte1(2) = byteConvert(instData(12), 0, 7)
+           this%instruments(counter)%byte2(2) = byteConvert(instData(13), 0, 7)         
+           this%instruments(counter)%byte3(2) = byteConvert(instData(14), 0, 7)
+           this%instruments(counter)%byte4(2) = byteConvert(instData(15), 0, 7)
+           this%instruments(counter)%byte5(2) = byteConvert(instData(16), 6, 7)
+           this%instruments(counter)%byte6(2) = byteConvert(instData(17), 0, 5)
            
+           if (debug .EQV. .TRUE. ) then
+               call writeLine(">> Bytes of Data <<")
+               call writeLine("Feedback Byte: " // trim(numToText(this%instruments(counter)%feedback)) // &
+                            & " (" // numToBin(this%instruments(counter)%feedback, 8) // ")")
+               
+               do slotIndex = 1, 2, 1
+                  call writeLine("Tremolo / Vibrato / Sustain / KSR / Multi Byte on " // trim(numToText(slotIndex))// ": " // &
+                               &  trim(numToText(this%instruments(counter)%byte1(slotIndex))) // &
+                               & " (" // numToBin(this%instruments(counter)%byte1(slotIndex), 8) // ")")
+                  call writeLine("Attack Rate / Decay Rate Byte on " // trim(numToText(slotIndex))// ": " // &
+                               &  trim(numToText(this%instruments(counter)%byte2(slotIndex))) // &
+                               & " (" // numToBin(this%instruments(counter)%byte2(slotIndex), 8) // ")")                   
+                  call writeLine("Sustain Level / Release Rate on " // trim(numToText(slotIndex))// ": " // &
+                               &  trim(numToText(this%instruments(counter)%byte3(slotIndex))) // &
+                               & " (" // numToBin(this%instruments(counter)%byte3(slotIndex), 8) // ")")                   
+                  call writeLine("Waveform Select Byte on " // trim(numToText(slotIndex))// ": " // &
+                               &  trim(numToText(this%instruments(counter)%byte4(slotIndex))) // &
+                               & " (" // numToBin(this%instruments(counter)%byte4(slotIndex), 8) // ")")                   
+                  call writeLine("Key Scale Level Byte on " // trim(numToText(slotIndex))// ": " // &
+                               &  trim(numToText(this%instruments(counter)%byte5(slotIndex))) // &
+                               & " (" // numToBin(this%instruments(counter)%byte5(slotIndex), 8) // ")")                   
+                  call writeLine("Output Level Byte on " // trim(numToText(slotIndex))// ": " // &
+                               &  trim(numToText(this%instruments(counter)%byte6(slotIndex))) // &
+                               & ", inverted as: " // trim(numToText(63-this%instruments(counter)%byte6(slotIndex))) // &
+                               & " (" // numToBin(this%instruments(counter)%byte6(slotIndex), 8) // ")")                  
+              end do     
+               
+           end if
+        
            ! Should we add +12?
            this%instruments(counter)%noteOffset = twoCompilantsWordStringToNumber(instData(19:20)) 
-           if (debug .EQV. .TRUE. ) call writeLine("Note Offset: " // numToText(this%instruments(counter)%noteOffset) // "(" // tempWord // ")")
+           if (debug .EQV. .TRUE. ) call writeLine("Note Offset: " // trim(numToText(this%instruments(counter)%noteOffset)) // " (" // tempWord // ")")
 
         end do    
 
@@ -270,6 +300,25 @@ module soundbank
 888 &        
         deallocate(bytes, stat = stat)
     end subroutine
+    
+    function byteConvert(oneByte, first, last) result(twoByte)
+        integer(kind = 1)  :: oneByte, first, last
+        integer(kind = 2)  :: twoByte
+        character(len = 8) :: bits
+        integer(kind = 1)  :: index, fB, lB
+
+        fB = 8-first
+        lB = 8-last
+        
+        write(bits, "(B8)") oneByte
+        
+        do index = 1, 8, 1
+           if (bits(index:index) == " ") bits(index:index) = "0" 
+        end do    
+        
+        read(bits(lb:fb), "(B" // trim(numToText(fb - lb + 1)) // ")") twoByte
+        
+    end function
     
     function twoCompilantsWordStringToNumber(instData) result(r)
         integer(kind = 1), dimension(2)     :: instData
@@ -361,6 +410,21 @@ module soundbank
            
         read(tempWord, "(B16)") r
         
+    end function
+    
+    function numToBin(number, bits) result(txt)
+        integer(kind = 1), intent(in)           :: bits
+        integer(kind = 2), intent(in)           :: number
+        character(len = bits)                   :: txt
+        integer(kind = 1)                       :: index      
+        
+        txt                                     = ""
+        write(txt, "(B"// trim(numToText(bits)) // ")") number
+        
+        do index = 1, bits, 1
+           if (txt(index:index) == " ") txt(index:index) = "0"  
+        end do     
+    
     end function
     
 end module
