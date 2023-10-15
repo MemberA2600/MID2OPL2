@@ -56,15 +56,21 @@ module VGM
     end type
     
     type deltaAndBytes
-        
         type(byteTriple), dimension(14)             :: byteTriples
         integer(kind = 8)                           :: startDelta = 0, endDelta = 0
-        integer(kind = 8)                           :: framesBefore = 0
         integer(kind = 2)                           :: lastOne = 0  
         
         contains
         
         procedure                                   :: addNote  => addNote
+        
+    end type    
+        
+    type dataPointer
+        type(deltaAndBytes), pointer                :: p
+        integer(kind = 8)                           :: startDelta   = 0
+        integer(kind = 8)                           :: framesBefore = 0
+        logical                                     :: noteOn       = .FALSE.
         
     end type    
     
@@ -78,12 +84,22 @@ module VGM
         
         procedure                                      :: addData => addData 
         
-    end type 
+        end type 
     
+    type dataPointerChannel
+        type(dataPointer), dimension(:), allocatable   :: timedData
+        integer(kind = 8)                              :: lastOne  = 0, size = 0, tempStartIndex = 1        
+        
+        contains
+        procedure                                      :: addNoteP => addNoteP 
+        
+    end type     
+        
     type vgmFile
         type(VGMHeader)                                :: header
         type(VGMData)                                  :: chipData
         type(dataChannel), dimension(9)                :: dataChannels 
+        type(dataPointerChannel)                       :: pointers
         
         contains
         procedure                                      :: buildVGM         => buildVGM
@@ -92,6 +108,119 @@ module VGM
    end type
     
    contains     
+    
+   subroutine addNoteP(this, note)
+       class(dataPointerChannel), intent(inout)         :: this
+       type(deltaAndBytes), intent(in), target          :: note
+       type(dataPointer), dimension(:), allocatable     :: tempData
+
+       integer(kind = 2)                                :: stat
+       integer(kind = 8)                                :: insertIndex, tempIndex
+       logical                                          :: insert = .FALSE.     ! False = Add, True = Inster
+             
+       if (this%lastOne == 1) then
+           insertIndex = 1
+       else 
+           do tempIndex = this%tempStartIndex, 1
+              if (tempIndex   > this%lastOne) then
+                  insertIndex = this%lastOne
+                  exit
+              end if
+              
+              if (note%startDelta < this%timedData(tempIndex)%startDelta) then
+                  insertIndex = tempIndex - 1
+                  insert      = .TRUE.  
+                  exit
+              end if    
+           end do
+       end if 
+       
+       if (insert .EQV. .TRUE.) then
+           if (allocated(tempData) .EQV. .TRUE.) deallocate(tempData, stat = stat)
+           allocate(tempData(this%size), stat = stat)
+           
+           do tempIndex = 1, this%lastOne, 1
+              tempData(tempIndex)%p            => this%timedData(tempIndex)%p
+              tempData(tempIndex)%startDelta   =  this%timedData(tempIndex)%startDelta
+              tempData(tempIndex)%framesBefore =  this%timedData(tempIndex)%framesBefore
+              tempData(tempIndex)%noteOn       =  this%timedData(tempIndex)%noteOn 
+           end do     
+           
+           do tempIndex = 1, insertIndex, 1
+              this%timedData(tempIndex)%p                => tempData(tempIndex)%p 
+              this%timedData(tempIndex)%startDelta       =  tempData(tempIndex)%startDelta
+              this%timedData(tempIndex)%framesBefore     =  tempData(tempIndex)%framesBefore
+              this%timedData(tempIndex)%noteOn           =  tempData(tempIndex)%noteOn      
+           end do   
+           
+           do tempIndex = insertIndex + 1, this%lastOne, 1
+              this%timedData(tempIndex)%p                => tempData(tempIndex)%p 
+              this%timedData(tempIndex)%startDelta       =  tempData(tempIndex)%startDelta
+              this%timedData(tempIndex)%framesBefore     =  tempData(tempIndex)%framesBefore
+              this%timedData(tempIndex)%noteOn           =  tempData(tempIndex)%noteOn      
+           end do   
+           
+           !deallocate(tempData, stat = stat) 
+       end if   
+       
+       this%timedData(insertIndex)%startDelta   =  note%startDelta
+       this%timedData(insertIndex)%framesBefore =  0
+       this%timedData(insertIndex)%noteOn       =  .TRUE.
+       this%timedData(insertIndex)%p            => note
+       
+       this%lastOne = this%lastOne + 1
+       
+       if (insert .EQV. .FALSE.) then
+           insertIndex = insertIndex + 1
+       else
+           do tempIndex = this%tempStartIndex, 1
+              if (tempIndex   > this%lastOne) then
+                  insertIndex = this%lastOne
+                  exit
+              end if
+              
+              if (note%endDelta < this%timedData(tempIndex)%startDelta) then
+                  insertIndex = tempIndex - 1
+                  insert      = .TRUE.  
+                  exit
+              end if    
+           end do
+           
+           !if (allocated(tempData) .EQV. .TRUE.) deallocate(tempData, stat = stat)
+           !allocate(tempData(this%size), stat = stat)
+           
+           do tempIndex = 1, this%lastOne, 1
+              tempData(tempIndex)%p            => this%timedData(tempIndex)%p
+              tempData(tempIndex)%startDelta   =  this%timedData(tempIndex)%startDelta
+              tempData(tempIndex)%framesBefore =  this%timedData(tempIndex)%framesBefore
+              tempData(tempIndex)%noteOn       =  this%timedData(tempIndex)%noteOn 
+           end do     
+           
+           do tempIndex = 1, insertIndex, 1
+              this%timedData(tempIndex)%p                => tempData(tempIndex)%p 
+              this%timedData(tempIndex)%startDelta       =  tempData(tempIndex)%startDelta
+              this%timedData(tempIndex)%framesBefore     =  tempData(tempIndex)%framesBefore
+              this%timedData(tempIndex)%noteOn           =  tempData(tempIndex)%noteOn      
+           end do   
+           
+           do tempIndex = insertIndex + 1, this%lastOne, 1
+              this%timedData(tempIndex)%p                => tempData(tempIndex)%p 
+              this%timedData(tempIndex)%startDelta       =  tempData(tempIndex)%startDelta
+              this%timedData(tempIndex)%framesBefore     =  tempData(tempIndex)%framesBefore
+              this%timedData(tempIndex)%noteOn           =  tempData(tempIndex)%noteOn      
+           end do   
+           
+           deallocate(tempData, stat = stat) 
+       end if 
+       
+       this%timedData(insertIndex)%startDelta   =  note%startDelta
+       this%timedData(insertIndex)%framesBefore =  0
+       this%timedData(insertIndex)%noteOn       =  .FALSE.
+       this%timedData(insertIndex)%p            => note
+       
+       this%lastOne = this%lastOne + 1
+       
+   end subroutine
     
    subroutine buildVGM(this, midiPP, sBankP) 
        use player
@@ -132,9 +261,33 @@ module VGM
           end if          
        end do    
        
+       this%pointers%lastOne = 0
+       this%pointers%size    = 0
+
+       do channelIndex  = 1, 9, 1
+          this%pointers%size = this%dataChannels(channelIndex)%lastOne
+       end do 
+       
+       !
+       ! Note On and Off is different pointer now. 
+       !
+       this%pointers%size = this%pointers%size * 2
+       
+       if (allocated(this%pointers%timedData) .EQV. .TRUE.) deallocate(this%pointers%timedData, stat = stat)
+       allocate(this%pointers%timedData(this%pointers%size), stat = stat) 
+       
+       do channelIndex = 1, 9, 1
+          this%pointers%tempStartIndex = 1
+          do noteIndex = 1, this%dataChannels(channelIndex)%lastOne, 1 
+             call this%pointers%addNoteP(this%dataChannels(channelIndex)%timedData(noteIndex)) 
+          end do   
+       end do    
+       
        call midiP%deAllocator()
        
    end subroutine
+   
+   
    
    subroutine addData(this, noteP, channelIndex)
       use player 
@@ -203,7 +356,6 @@ module VGM
       this%lastOne      = 0
       this%startDelta   = 0
       this%endDelta     = 0
-      this%framesBefore = 0
       
       if (newOne .EQV. .TRUE.) then
           newI => sBank%instruments(instru)     
