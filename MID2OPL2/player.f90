@@ -730,9 +730,6 @@ module player
         
        oldSize = size(this%notePointerChannels(saveHere)%notePointers)
        plusOne = this%notePointerChannels(saveHere)%lastOne + 1
-       
-       if (allocated(tempChannel%notePointers) .EQV. .TRUE. ) deallocate(tempChannel%notePointers, stat = stat)
-       allocate(tempChannel%notePointers(plusOne), stat = stat) 
 
        if (debug .EQV. .TRUE.) call debugLog("Insertion Data: Size of the original array: " // trim(numToText(oldSize))                    // &
                                            & ", the last note's position: " // trim(numToText(this%notePointerChannels(saveHere)%lastOne))    )
@@ -741,55 +738,75 @@ module player
        if (debug .EQV. .TRUE.) call debugLog("Source: " // trim(numToText(size(this%notePointerChannels(saveHere)%notePointers))) &
                                           & // ", Destination: " // trim(numToText(size(tempChannel%notePointers))))       
        
-       if (insertHere > 1) then
-           do index = 1, insertHere - 1, 1
-              tempChannel%notePointers(index)%p               => this%notePointerChannels(saveHere)%notePointers(index)%p 
-              tempChannel%notePointers(index)%startDelta      =  this%notePointerChannels(saveHere)%notePointers(index)%startDelta
-              tempChannel%notePointers(index)%endDelta        =  this%notePointerChannels(saveHere)%notePointers(index)%endDelta 
-              tempChannel%notePointers(index)%originalChannel =  this%notePointerChannels(saveHere)%notePointers(index)%originalChannel 
-              tempChannel%notePointers(index)%originalMember  =  this%notePointerChannels(saveHere)%notePointers(index)%originalMember
-
-           end do    
-       end if
-           
-       tempChannel%notePointers(insertHere)%p               => note
-       tempChannel%notePointers(insertHere)%startDelta      =  note%startDelta
-       tempChannel%notePointers(insertHere)%endDelta        =  note%endDelta
-       tempChannel%notePointers(insertHere)%originalChannel =  channelIndex
-       tempChannel%notePointers(insertHere)%originalMember  =  memberIndex
-
-       
-       if (insertHere < this%notePointerChannels(saveHere)%lastOne) then
-           do index = insertHere + 1, plusOne, 1
-              tempChannel%notePointers(index)%p               => this%notePointerChannels(saveHere)%notePointers(index-1)%p 
-              tempChannel%notePointers(index)%startDelta      =  this%notePointerChannels(saveHere)%notePointers(index-1)%startDelta
-              tempChannel%notePointers(index)%endDelta        =  this%notePointerChannels(saveHere)%notePointers(index-1)%endDelta       
-              tempChannel%notePointers(index)%originalChannel =  this%notePointerChannels(saveHere)%notePointers(index-1)%originalChannel     
-              tempChannel%notePointers(index)%originalMember  =  this%notePointerChannels(saveHere)%notePointers(index-1)%originalMember    
-
-           end do  
-       end if
-       
        if (plusOne > oldSize) then
+           if (allocated(tempChannel%notePointers) .EQV. .TRUE. ) deallocate(tempChannel%notePointers, stat = stat)
+           allocate(tempChannel%notePointers(plusOne), stat = stat) 
+       
+           if (insertHere > 1) then
+               do index = 1, insertHere - 1, 1
+                  tempChannel%notePointers(index)%p               => this%notePointerChannels(saveHere)%notePointers(index)%p 
+                  tempChannel%notePointers(index)%startDelta      =  this%notePointerChannels(saveHere)%notePointers(index)%startDelta
+                  tempChannel%notePointers(index)%endDelta        =  this%notePointerChannels(saveHere)%notePointers(index)%endDelta 
+                  tempChannel%notePointers(index)%originalChannel =  this%notePointerChannels(saveHere)%notePointers(index)%originalChannel 
+                  tempChannel%notePointers(index)%originalMember  =  this%notePointerChannels(saveHere)%notePointers(index)%originalMember
+
+               end do    
+           end if
+           
+           tempChannel%notePointers(insertHere)%p               => note
+           tempChannel%notePointers(insertHere)%startDelta      =  note%startDelta
+           tempChannel%notePointers(insertHere)%endDelta        =  note%endDelta
+           tempChannel%notePointers(insertHere)%originalChannel =  channelIndex
+           tempChannel%notePointers(insertHere)%originalMember  =  memberIndex
+
+       
+           if (insertHere < this%notePointerChannels(saveHere)%lastOne) then
+               do index = insertHere + 1, plusOne, 1
+                  tempChannel%notePointers(index)%p               => this%notePointerChannels(saveHere)%notePointers(index-1)%p 
+                  tempChannel%notePointers(index)%startDelta      =  this%notePointerChannels(saveHere)%notePointers(index-1)%startDelta
+                  tempChannel%notePointers(index)%endDelta        =  this%notePointerChannels(saveHere)%notePointers(index-1)%endDelta       
+                  tempChannel%notePointers(index)%originalChannel =  this%notePointerChannels(saveHere)%notePointers(index-1)%originalChannel     
+                  tempChannel%notePointers(index)%originalMember  =  this%notePointerChannels(saveHere)%notePointers(index-1)%originalMember    
+
+               end do  
+           end if
+       
            deallocate(this%notePointerChannels(saveHere)%notePointers, stat = stat)
            newSize = size(this%notePointerChannels(saveHere)%notePointers) * 2
        
-           allocate(this%notePointerChannels(saveHere)%notePointers(newSize), stat = stat)
-       end if       
+           allocate(this%notePointerChannels(saveHere)%notePointers(newSize), stat = stat)     
        
-       do index = 1, plusOne, 1
-          this%notePointerChannels(saveHere)%notePointers(index)%p               => tempChannel%notePointers(index)%p
-          this%notePointerChannels(saveHere)%notePointers(index)%startDelta      =  tempChannel%notePointers(index)%startDelta
-          this%notePointerChannels(saveHere)%notePointers(index)%endDelta        =  tempChannel%notePointers(index)%endDelta     
-          this%notePointerChannels(saveHere)%notePointers(index)%originalChannel = tempChannel%notePointers(index)%originalChannel
-          this%notePointerChannels(saveHere)%notePointers(index)%originalMember  = tempChannel%notePointers(index)%originalMember
+           do index = 1, plusOne, 1
+              this%notePointerChannels(saveHere)%notePointers(index)%p               => tempChannel%notePointers(index)%p
+              this%notePointerChannels(saveHere)%notePointers(index)%startDelta      =  tempChannel%notePointers(index)%startDelta
+              this%notePointerChannels(saveHere)%notePointers(index)%endDelta        =  tempChannel%notePointers(index)%endDelta     
+              this%notePointerChannels(saveHere)%notePointers(index)%originalChannel = tempChannel%notePointers(index)%originalChannel
+              this%notePointerChannels(saveHere)%notePointers(index)%originalMember  = tempChannel%notePointers(index)%originalMember
 
-       end do   
+           end do   
        
-       this%notePointerChannels(saveHere)%lastOne = plusOne
+           this%notePointerChannels(saveHere)%lastOne = plusOne
        
-       deallocate(tempChannel%notePointers, stat = stat)
-       
+           deallocate(tempChannel%notePointers, stat = stat)
+           
+       else
+            if (plusOne > 1) then
+                do index = plusOne, insertHere +1, -1
+                  this%notePointerChannels(saveHere)%notePointers(index)%p               => this%notePointerChannels(saveHere)%notePointers(index - 1)%p    
+                  this%notePointerChannels(saveHere)%notePointers(index)%startDelta      =  this%notePointerChannels(saveHere)%notePointers(index - 1)%startDelta
+                  this%notePointerChannels(saveHere)%notePointers(index)%endDelta        =  this%notePointerChannels(saveHere)%notePointers(index - 1)%endDelta  
+                  this%notePointerChannels(saveHere)%notePointers(index)%originalChannel =  this%notePointerChannels(saveHere)%notePointers(index - 1)%originalChannel
+                  this%notePointerChannels(saveHere)%notePointers(index)%originalMember  =  this%notePointerChannels(saveHere)%notePointers(index - 1)%originalMember
+
+                end do  
+           end if 
+                
+           this%notePointerChannels(saveHere)%notePointers(insertHere)%p                 => note
+           this%notePointerChannels(saveHere)%notePointers(insertHere)%startDelta        =  note%startDelta
+           this%notePointerChannels(saveHere)%notePointers(insertHere)%endDelta          =  note%endDelta
+           this%notePointerChannels(saveHere)%notePointers(insertHere)%originalChannel =  channelIndex
+           this%notePointerChannels(saveHere)%notePointers(insertHere)%originalMember  =  memberIndex
+       end if
     end subroutine
     
     subroutine detectBestPlaceForNote(this, note, mode, startIndexes, insertHere, saveHere, foundIt, lastNote)

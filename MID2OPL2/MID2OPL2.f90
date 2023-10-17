@@ -213,7 +213,6 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
   use ifauto
   use MID2OPL2Globals
   use user32
-  use iso_c_binding 
   use kernel32
   use functions
   use, intrinsic :: iso_c_binding  
@@ -279,7 +278,6 @@ SUBROUTINE MID2OPL2VGMPath( dlg, id, callbacktype)
   use ifauto
   use MID2OPL2Globals
   use user32
-  use iso_c_binding 
   use kernel32
   use functions
   use, intrinsic :: iso_c_binding  
@@ -311,7 +309,6 @@ SUBROUTINE MID2OPL2BoxChanged( dlg, id, callbacktype)
   use ifauto
   use MID2OPL2Globals
   use user32
-  use iso_c_binding 
   use kernel32
   use functions
   use, intrinsic :: iso_c_binding  
@@ -350,7 +347,6 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
   use ifauto
   use MID2OPL2Globals
   use user32
-  use iso_c_binding 
   use kernel32
   use functions
   use, intrinsic :: iso_c_binding  
@@ -456,7 +452,6 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
       use ifauto
       use MID2OPL2Globals
       use user32
-      use iso_c_binding 
       use kernel32
       use functions
       use, intrinsic :: iso_c_binding 
@@ -473,13 +468,38 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
       use ifauto
       use MID2OPL2Globals
       use user32
-      use iso_c_binding 
       use kernel32
       use functions
       use, intrinsic :: iso_c_binding 
-
-    call midiP%initPlayer(midiF, sBank, ignorePercussion)
-    call myVGM%buildVGM(midiP, sBank)  
+      
+     implicit none
+     include 'resource.fd'
+  
+     type (dialog)                      :: dlg
+     integer                            :: id, callbacktype      
+     character(len = 500), dimension(7) :: tags
+     integer(SINT)                      :: iret, retlog
+     character(len=4)                   :: year
+     character(len=2)                   :: month, day
+     character                          :: dummy
+     character(len=500)                 :: temp
+     
+     retlog = DLGGET(dlg, IDC_TRACKNAME  , tags(1))
+     retlog = DLGGET(dlg, IDC_GAMENAME   , tags(2))
+     retlog = DLGGET(dlg, IDC_SYSTEMNAME , tags(3))
+     retlog = DLGGET(dlg, IDC_AUTHORNAME , tags(4))
+     
+     retlog = DLGGET(dlg, IDC_YEAR       , year)
+     retlog = DLGGET(dlg, IDC_MONTH      , month)
+     retlog = DLGGET(dlg, IDC_DAY        , day)
+     
+     tags(5) = trim(year) // "/" // trim(month) // "/" // trim(day)
+     
+     retlog = DLGGET(dlg, IDC_CONVERTEDBY, tags(6))
+     retlog = DLGGET(dlg, IDC_NOTES      , tags(7))
+     
+     call midiP%initPlayer(midiF, sBank, ignorePercussion)
+     call myVGM%buildVGM(midiP, sBank, tags)  
     
     END SUBROUTINE 
 

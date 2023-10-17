@@ -22,6 +22,8 @@ module VGM
         !
         integer(kind = 8)                          :: eofOffset = 0, gd3Offset = 0, allWaitSamples = 0, dataOffset = z'4c' 
         integer(kind = 1)                          :: volume = 0 
+        integer(kind = 8)                          :: gd3Size, gd3Last
+        integer(kind = 4)                          :: gd3DataSize 
         
         !
         ! Based on Monkey Island intro VGM.
@@ -43,7 +45,15 @@ module VGM
                                                     & z'00', z'00', z'00', z'00', z'00', z'00', z'00', z'00', &
                                                     & z'00', z'00', z'00', z'00', z'00', z'00', z'00', z'00', &
                                                     & z'00', z'00', z'00', z'00', z'00', z'00', z'00', z'00' /)
-
+        
+        integer(kind = 1), dimension(:), allocatable &
+                                                   & :: gd3Bytes
+        
+        contains
+        procedure                                   :: changeHeader => changeHeader
+        procedure                                   :: doubleGD3    => doubleGD3
+        procedure                                   :: addGD3       => addGD3
+        
     end type    
     
     type byteTriple
@@ -59,7 +69,7 @@ module VGM
         type(byteTriple), dimension(14)             :: byteTriples
         integer(kind = 8)                           :: startDelta = 0, endDelta = 0
         integer(kind = 2)                           :: lastOne = 0  
-        
+        integer(kind = 2)                           :: tempo
         contains
         
         procedure                                   :: addNote  => addNote
@@ -91,147 +101,411 @@ module VGM
         integer(kind = 8)                              :: lastOne  = 0, size = 0, tempStartIndex = 1        
         
         contains
-        procedure                                      :: addNoteP => addNoteP 
+        procedure                                      :: addNoteP     => addNoteP 
+        procedure                                      :: getPosition  => getPosition 
         
     end type     
+        
+    type byteList
+        integer(kind = 1), dimension(:), allocatable   :: bytes 
+        integer(kind = 8)                              :: lastOne = 0, theSize = 0 
+        
+        contains
+        procedure                                      :: doubleMe   => doubleMe
+        procedure                                      :: addBytes   => addBytes
+        procedure                                      :: addTriple  => addTriple
+        procedure                                      :: addOne     => addOne
+        procedure                                      :: initMe     => initMe
+        
+    end type    
         
     type vgmFile
         type(VGMHeader)                                :: header
         type(VGMData)                                  :: chipData
         type(dataChannel), dimension(9)                :: dataChannels 
         type(dataPointerChannel)                       :: pointers
+        type(byteList)                                 :: bList 
         
         contains
         procedure                                      :: buildVGM         => buildVGM
-        procedure                                      :: deltaToSamples   => deltaToSamples
-        
+             
    end type
     
    contains     
     
+   subroutine addGD3(this, tag_)
+      class(vgmHeader), intent(inout)                 :: this
+      character(len = 500)                            :: tag  
+      character(len = 500), intent(in)                :: tag_        
+      integer(kind = 2)                               :: index, num, subIndex, lenOfText
+      character(len = 4)                              :: asHex
+    
+      tag = tag_
+      
+      lenOfText = 0
+      do index = 500, 1, -1
+         if (tag(index:index) /= " " .AND. ichar(tag(index:index)) /= 0 .AND. ichar(tag(index:index)) /= 32) then
+            lenOfText = index   
+            exit
+         end if 
+      end do     
+            
+      if (lenOfText > 0) then
+          do while(tag(1:1) == " ") 
+             tag(1:lenOfText-1) = tag(2:lenOfText) 
+             lenOfText = lenOfText - 1
+             
+             if (lenOfText == 0) exit
+          end do    
+          
+          call debugLog("Converting tag: " // tag(1:lenOfText) // " Len: " // trim(numToText(lenOfText)))
+      
+          do index = 1, lenOfText, 1
+             num   = ichar(tag(index:index), 2) 
+             write(asHex, "(Z4)") num
+         
+             do subIndex = 1, 4, 1
+                if (asHex(subIndex : subIndex) == " ") asHex(subIndex : subIndex) = "0" 
+             end do    
+         
+             call debugLog("Letter: " // tag(index:index) // " " // trim(numToText(num)) // " " // asHex) 
+         
+          end do
+      
+      end if      
+   end subroutine
+    
+   subroutine doubleGD3(this)
+      class(vgmHeader), intent(inout)                 :: this
+      integer(kind = 2)                               :: stat     
+      integer(kind = 1), dimension(:), allocatable    :: tempBytes
+      integer(kind = 8)                               :: index
+      
+      if (allocated(tempBytes) .EQV. .TRUE.) deallocate(tempBytes, stat = stat) 
+      
+      allocate(tempBytes(this%gd3Size), stat = stat)
+      
+      do index = 1, this%gd3Last, 1
+         tempBytes(index) = this%gd3Bytes(index)  
+      end do    
+      
+      deallocate(this%gd3Bytes, stat = stat)
+      allocate(this%gd3Bytes(this%gd3Size * 2), stat = stat)
+      
+      do index = 1, this%gd3Last, 1
+         this%gd3Bytes(index) = tempBytes(index)  
+      end do   
+      
+      this%gd3Size = this%gd3Size * 2
+      
+      deallocate(tempBytes, stat = stat) 
+      
+   end subroutine
+    
+   subroutine changeHeader(this, offset, value)
+       class(vgmHeader), intent(inout)                 :: this
+       integer(kind = 1)                               :: offset 
+       character(len = 8)                              :: bytes4 
+       integer(kind = 2)                               :: stat, index 
+       integer(kind = 8)                               :: value 
+       integer(kind = 1), dimension(4)                 :: theBytes                                 
+       
+       write(bytes4, "(Z8)") value
+       
+       do index = 1, 4, 1
+          read(bytes4((index * 2) - 1 : (index * 2) ), "(Z2)") theBytes(5 - index)
+       end do    
+       
+       do index = 1, 4, 1
+          this%headerBytes(index + offset) = theBytes(index) 
+       end do    
+           
+   end subroutine
+    
+   subroutine doubleMe(this) 
+        class(byteList), intent(inout)                 :: this
+        integer(kind = 1), dimension(:), allocatable   :: tempBytes 
+        integer(kind = 2)                              :: stat 
+        integer(kind = 8)                              :: index 
+        
+        if (allocated(tempBytes) .EQV. .TRUE. ) deallocate(tempBytes, stat = stat)
+        allocate(tempBytes(this%theSize), stat = stat)
+        
+        do index = 1, this%theSize, 1
+           tempBytes(index)   =   this%bytes(index) 
+        end do    
+        
+        deallocate(this%bytes, stat = stat)
+        allocate(this%bytes(this%theSize * 2), stat = stat)
+        
+        do index = 1, this%theSize, 1
+           this%bytes(index) = tempBytes(index) 
+        end do   
+        
+        this%theSize = this%theSize * 2 
+        deallocate(tempBytes, stat = stat)
+        
+   end subroutine     
+
+   subroutine addBytes(this, bytes, waits) 
+        class(byteList), intent(inout)         :: this
+        integer(kind = 8), intent(inout)       :: waits 
+        type(dataPointer)                      :: bytes 
+        integer(kind = 1), dimension(3)        :: threeBytes
+        integer(kind = 2)                      :: index
+        integer(kind = 1)                      :: single
+        character(len= 2)                      :: hexByte
+        integer(kind = 8)                      :: buffer 
+        character(len = 4)                     :: hex4 
+        
+        waits = 0
+        
+        if (bytes%FramesBefore > 0) then
+            buffer = bytes%FramesBefore
+
+            do while(buffer >= 65535)
+               threeBytes(1) = z'61'
+               threeBytes(2) = z'FF'
+               threeBytes(3) = z'FF'
+                        
+               call this%addTriple(threeBytes)
+               call debugLog("Wait 65535 samples!")        
+               buffer = buffer - 65535
+               waits  = waits + 65535
+            end do  
+            
+            if (buffer > 0 ) then
+                if (buffer < 16) then
+                    hexByte      = numToHex(buffer - 1)
+                    hexByte(1:1) = "7" 
+                
+                    read(hexByte, "(Z2)") single
+                    call this%addOne(single)
+                    call debugLog("Wait " // trim(numToText(buffer)) // " samples!")   
+                else
+                    select case(buffer)
+                    case(735)
+                         call this%addOne(z'62')   
+                         call debugLog("Wait 735 samples!") 
+                         waits  = waits + 735
+
+                    case(882)
+                         call this%addOne(z'63')
+                         call debugLog("Wait 882 samples!") 
+                         waits  = waits + 882
+
+                    case default    
+                        threeBytes(1) = z'61'
+                        
+                        hex4 = ""
+                        write(hex4, "(Z4)") buffer
+                        
+                        do index = 1, 4, 1
+                           if (hex4(index : index) == " ") hex4(index : index) = "0"
+                        end do    
+                        
+                        read(hex4(3:4), "(Z2)") threeBytes(2) 
+                        read(hex4(1:2), "(Z2)") threeBytes(3)
+                        
+
+                        call this%addTriple(threeBytes) 
+                        call debugLog("Wait " // trim(numToText(buffer)) // " samples!") 
+                        waits  = waits + buffer
+
+                    end select    
+                end if    
+            end if    
+            
+        end if
+        
+        if (bytes%noteOn .EQV. .FALSE.) then
+            call debugLog("-- Note Off --") 
+            threeBytes(1) = bytes%p%byteTriples(bytes%p%lastOne)%command
+            threeBytes(2) = bytes%p%byteTriples(bytes%p%lastOne)%register
+            threeBytes(3) = bytes%p%byteTriples(bytes%p%lastOne)%value
+        
+            call this%addTriple(threeBytes)
+        else
+            call debugLog("-- Note On --") 
+            do index = 1, bytes%p%lastOne - 1, 1
+               threeBytes(1) = bytes%p%byteTriples(index)%command
+               threeBytes(2) = bytes%p%byteTriples(index)%register
+               threeBytes(3) = bytes%p%byteTriples(index)%value 
+                
+               call this%addTriple(threeBytes)
+            end do
+        end if
+        
+   end subroutine        
+
+   subroutine addOne(this, b)
+        class(byteList), intent(inout)         :: this
+        integer(kind = 1)                      :: b 
+        integer(kind = 1)                      :: index 
+        
+        if ((this%lastOne + 1) > this%theSize) call this%doubleMe()  
+        call debugLog(numToHex(b))
+        
+        this%bytes(this%lastOne + 1) = b
+        this%lastOne = this%lastOne + 1 
+        
+   end subroutine   
+   
+   subroutine addTriple(this, bytes)
+        class(byteList), intent(inout)         :: this
+        integer(kind = 1), dimension(3)        :: bytes 
+        integer(kind = 1)                      :: index 
+        
+        if ((this%lastOne + 3) > this%theSize) call this%doubleMe()  
+        !call debugLog(trim(numToText(bytes(1))) // " | " // trim(numToText(bytes(2))) // " | " // trim(numToText(bytes(3))))
+        call debugLog(numToHex(bytes(1)) // " | " // numToHex(bytes(2)) // " | " // numToHex(bytes(3)))
+        
+        do index = 1, 3, 1
+           this%bytes(index + this%lastOne) = bytes(index) 
+        end do    
+        
+        this%lastOne = this%lastOne + 3 
+        
+   end subroutine
+    
+   subroutine initMe(this)
+        class(byteList), intent(inout)         :: this
+        integer(kind = 2)                      :: stat 
+        integer(kind = 2), parameter           :: defSize = 256
+        integer(kind = 1), dimension(3)        :: bytes
+        
+        if (allocated(this%bytes) .EQV. .TRUE.) deallocate(this%bytes, stat = stat)
+        allocate(this%bytes(defSize), stat = stat)
+        
+        this%theSize = defSize
+        this%lastOne = 0
+        
+        call debugLog("/// Write the Output bytes! \\\")
+        
+        !
+        !  Check if Y3812
+        !
+        bytes = (/ z'5a', z'01', z'20' /)
+        call this%addTriple(bytes)
+
+        !
+        ! Turn off speech synthesis
+        !
+        bytes = (/ z'5a', z'08', z'00' /)
+        call this%addTriple(bytes)
+
+        !
+        ! Turn off usage of built-in percussion
+        !
+        bytes = (/ z'5a', z'BD', z'00' /)
+        call this%addTriple(bytes)
+         
+        
+   end subroutine
+      
+   subroutine getPosition(this, insertIndex, deltaTime, word, insert)
+       class(dataPointerChannel), intent(inout)         :: this
+       integer(kind = 8), intent(inout)                 :: insertIndex
+       logical, intent(inout)                           :: insert          ! False = Add, True = Instert
+       integer(kind = 8), intent(in)                    :: deltaTime
+       character(len = 15), intent(inout)               :: word 
+       integer(kind = 8)                                :: tempIndex
+       
+       insertIndex = 1
+       insert      = .FALSE.
+       
+       if (this%lastOne > 0) then
+          do tempIndex = 1, this%size, 1
+             if (tempIndex   > this%lastOne) then
+                 insertIndex = tempIndex
+                 exit
+             end if
+              
+             if (deltaTime <= this%timedData(tempIndex)%startDelta) then
+                insertIndex = tempIndex
+                insert      = .TRUE.  
+                exit
+             end if     
+          end do    
+       end if    
+           
+       if (insert .EQV. .TRUE.) then           
+           do tempIndex = this%lastOne+1, insertIndex + 1, -1
+              this%timedData(tempIndex)%p            => this%timedData(tempIndex-1)%p 
+              this%timedData(tempIndex)%startDelta   =  this%timedData(tempIndex-1)%startDelta
+              this%timedData(tempIndex)%framesBefore =  0
+              this%timedData(tempIndex)%noteOn       =  this%timedData(tempIndex-1)%noteOn    
+           end do 
+       end if   
+       
+       if (insert .EQV. .TRUE.) then
+           word = "Inserted"
+       else
+           word = "Added"
+       end if
+       
+   end subroutine
+   
    subroutine addNoteP(this, note)
        class(dataPointerChannel), intent(inout)         :: this
        type(deltaAndBytes), intent(in), target          :: note
-       type(dataPointer), dimension(:), allocatable     :: tempData
+       !type(dataPointer), dimension(:), allocatable     :: tempData
 
-       integer(kind = 2)                                :: stat
+       integer(kind = 2)                                :: stat, byteIndex
        integer(kind = 8)                                :: insertIndex, tempIndex
-       logical                                          :: insert = .FALSE.     ! False = Add, True = Inster
-             
-       if (this%lastOne == 1) then
-           insertIndex = 1
-       else 
-           do tempIndex = this%tempStartIndex, 1
-              if (tempIndex   > this%lastOne) then
-                  insertIndex = this%lastOne
-                  exit
-              end if
-              
-              if (note%startDelta < this%timedData(tempIndex)%startDelta) then
-                  insertIndex = tempIndex - 1
-                  insert      = .TRUE.  
-                  exit
-              end if    
-           end do
-       end if 
+       logical                                          :: insert = .FALSE.     ! False = Add, True = Instert
+       character(len = 15)                              :: word      
        
-       if (insert .EQV. .TRUE.) then
-           if (allocated(tempData) .EQV. .TRUE.) deallocate(tempData, stat = stat)
-           allocate(tempData(this%size), stat = stat)
+       insertIndex = 1
+       insert      = .FALSE.
+       
+       call this%getPosition(insertIndex, note%startDelta, word, insert) 
            
-           do tempIndex = 1, this%lastOne, 1
-              tempData(tempIndex)%p            => this%timedData(tempIndex)%p
-              tempData(tempIndex)%startDelta   =  this%timedData(tempIndex)%startDelta
-              tempData(tempIndex)%framesBefore =  this%timedData(tempIndex)%framesBefore
-              tempData(tempIndex)%noteOn       =  this%timedData(tempIndex)%noteOn 
-           end do     
-           
-           do tempIndex = 1, insertIndex, 1
-              this%timedData(tempIndex)%p                => tempData(tempIndex)%p 
-              this%timedData(tempIndex)%startDelta       =  tempData(tempIndex)%startDelta
-              this%timedData(tempIndex)%framesBefore     =  tempData(tempIndex)%framesBefore
-              this%timedData(tempIndex)%noteOn           =  tempData(tempIndex)%noteOn      
-           end do   
-           
-           do tempIndex = insertIndex + 1, this%lastOne, 1
-              this%timedData(tempIndex)%p                => tempData(tempIndex)%p 
-              this%timedData(tempIndex)%startDelta       =  tempData(tempIndex)%startDelta
-              this%timedData(tempIndex)%framesBefore     =  tempData(tempIndex)%framesBefore
-              this%timedData(tempIndex)%noteOn           =  tempData(tempIndex)%noteOn      
-           end do   
-           
-           !deallocate(tempData, stat = stat) 
-       end if   
+       call debugLog(trim(word) // " Note ON bytes to position #" // trim(numToText(insertIndex)) // "!")
+       
+       this%lastOne                             =  this%lastOne + 1
        
        this%timedData(insertIndex)%startDelta   =  note%startDelta
        this%timedData(insertIndex)%framesBefore =  0
        this%timedData(insertIndex)%noteOn       =  .TRUE.
        this%timedData(insertIndex)%p            => note
        
-       this%lastOne = this%lastOne + 1
-       
-       if (insert .EQV. .FALSE.) then
-           insertIndex = insertIndex + 1
-       else
-           do tempIndex = this%tempStartIndex, 1
-              if (tempIndex   > this%lastOne) then
-                  insertIndex = this%lastOne
-                  exit
-              end if
+       call debugLog("Deltatime: " // trim(numToText(note%startDelta)))
+       call debugLog("Byte(s):" )
+       do byteIndex = 1, note%lastOne - 1, 1
+          call debugLog(numToHex(note%byteTriples(byteIndex)%register) // " | " // numToHex(note%byteTriples(byteIndex)%value))
+       end do 
               
-              if (note%endDelta < this%timedData(tempIndex)%startDelta) then
-                  insertIndex = tempIndex - 1
-                  insert      = .TRUE.  
-                  exit
-              end if    
-           end do
-           
-           !if (allocated(tempData) .EQV. .TRUE.) deallocate(tempData, stat = stat)
-           !allocate(tempData(this%size), stat = stat)
-           
-           do tempIndex = 1, this%lastOne, 1
-              tempData(tempIndex)%p            => this%timedData(tempIndex)%p
-              tempData(tempIndex)%startDelta   =  this%timedData(tempIndex)%startDelta
-              tempData(tempIndex)%framesBefore =  this%timedData(tempIndex)%framesBefore
-              tempData(tempIndex)%noteOn       =  this%timedData(tempIndex)%noteOn 
-           end do     
-           
-           do tempIndex = 1, insertIndex, 1
-              this%timedData(tempIndex)%p                => tempData(tempIndex)%p 
-              this%timedData(tempIndex)%startDelta       =  tempData(tempIndex)%startDelta
-              this%timedData(tempIndex)%framesBefore     =  tempData(tempIndex)%framesBefore
-              this%timedData(tempIndex)%noteOn           =  tempData(tempIndex)%noteOn      
-           end do   
-           
-           do tempIndex = insertIndex + 1, this%lastOne, 1
-              this%timedData(tempIndex)%p                => tempData(tempIndex)%p 
-              this%timedData(tempIndex)%startDelta       =  tempData(tempIndex)%startDelta
-              this%timedData(tempIndex)%framesBefore     =  tempData(tempIndex)%framesBefore
-              this%timedData(tempIndex)%noteOn           =  tempData(tempIndex)%noteOn      
-           end do   
-           
-           deallocate(tempData, stat = stat) 
-       end if 
+       call this%getPosition(insertIndex, note%endDelta, word, insert) 
+
+       call debugLog(trim(word) // " Note OFF bytes to position #" // trim(numToText(insertIndex)) // "!")
+
+       this%lastOne                             = this%lastOne + 1
        
-       this%timedData(insertIndex)%startDelta   =  note%startDelta
+       this%timedData(insertIndex)%startDelta   =  note%endDelta
        this%timedData(insertIndex)%framesBefore =  0
        this%timedData(insertIndex)%noteOn       =  .FALSE.
        this%timedData(insertIndex)%p            => note
-       
-       this%lastOne = this%lastOne + 1
-       
+
+       call debugLog("Deltatime: " // trim(numToText(note%endDelta)))
+       call debugLog("Byte(s):" )
+       call debugLog(numToHex(note%byteTriples(note%lastOne)%register) // " | " // numToHex(note%byteTriples(note%lastOne)%value))
+       call debugLog("-----------------------------------------------------------------------")
+
    end subroutine
     
-   subroutine buildVGM(this, midiPP, sBankP) 
+   subroutine buildVGM(this, midiPP, sBankP, tags) 
        use player
        use soundBank
-
+       
        class(vgmFile),   intent(inout)                :: this
        type(soundB),     intent(in), target           :: sBankP
        type(midiPlayer), intent(in), target           :: midiPP
        
        integer(kind = 2)                              :: stat, channelIndex
        integer(kind = 8)                              :: noteIndex
+       
+       character(len = 500), dimension(7)             :: tags
        
        midiP => midiPP
        sBank => sBankP
@@ -251,7 +525,6 @@ module VGM
           this%dataChannels(channelIndex)%currInst  = 0     
           this%dataChannels(channelIndex)%firstNote = .TRUE.     
           
-       
           if (midiP%notePointerChannels(channelIndex)%lastOne > 0) then
               allocate(this%dataChannels(channelIndex)%timedData(midiP%notePointerChannels(channelIndex)%lastOne), stat = stat)
               
@@ -265,7 +538,7 @@ module VGM
        this%pointers%size    = 0
 
        do channelIndex  = 1, 9, 1
-          this%pointers%size = this%dataChannels(channelIndex)%lastOne
+          this%pointers%size = this%pointers%size + this%dataChannels(channelIndex)%lastOne 
        end do 
        
        !
@@ -276,11 +549,53 @@ module VGM
        if (allocated(this%pointers%timedData) .EQV. .TRUE.) deallocate(this%pointers%timedData, stat = stat)
        allocate(this%pointers%timedData(this%pointers%size), stat = stat) 
        
+       call debugLog("---> Align the data into one channel")
+       
        do channelIndex = 1, 9, 1
+          call debugLog(">>> Channel #" // trim(numToText(channelIndex)) // ":")
           this%pointers%tempStartIndex = 1
           do noteIndex = 1, this%dataChannels(channelIndex)%lastOne, 1 
+             call debugLog("Addig Data Bytes Array #" // trim(numToText(noteIndex)) // " of Channel #" // trim(numToText(channelIndex)) // "!") 
              call this%pointers%addNoteP(this%dataChannels(channelIndex)%timedData(noteIndex)) 
           end do   
+       end do    
+       
+       call this%bList%initMe()
+       
+       do noteIndex = 1, this%pointers%lastOne, 1
+          if (noteIndex == 1) then
+              this%pointers%timedData(noteIndex)%framesBefore = &
+            & deltaToSamples(this%pointers%timedData(noteIndex)%startDelta, this%pointers%timedData(noteIndex)%p%tempo)
+          else                 
+              this%pointers%timedData(noteIndex)%framesBefore = &
+            & deltaToSamples((this%pointers%timedData(noteIndex)%startDelta - this%pointers%timedData(noteIndex-1)%startDelta), &
+            & this%pointers%timedData(noteIndex)%p%tempo)
+              
+          end if     
+          call debugLog("-------------" // trim(numToText(noteIndex))) 
+          call debugLog("-||" //  trim(numToText(noteIndex)) // "||-") 
+          call this%bList%addBytes(this%pointers%timedData(noteIndex), this%header%allWaitSamples)   
+       end do
+       
+       call this%bList%addOne(z'66')
+       
+       this%header%gd3Offset = this%bList%lastOne + 108
+       
+       if (allocated(this%header%gd3Bytes) .EQV. .TRUE.) deallocate(this%header%gd3Bytes, stat = stat) 
+       
+       this%header%gd3Size     = 256
+       this%header%gd3Last     = 12
+       this%header%gd3DataSize = 0
+       
+       allocate(this%header%gd3Bytes(this%header%gd3Size), stat = stat)
+       
+       !
+       !  'GD3 ' // Version Number (1.00) // 32 bit integer of size
+       !
+       this%header%gd3Bytes(1:12) = (/ z'47', z'64', z'33', z'20', z'00', z'01', z'00', z'00', z'00', z'00', z'00', z'00' /)
+       
+       do channelIndex = 1, 7, 1
+          call this%header%addGD3(tags(channelIndex)) 
        end do    
        
        call midiP%deAllocator()
@@ -354,8 +669,9 @@ module VGM
       end do    
       
       this%lastOne      = 0
-      this%startDelta   = 0
-      this%endDelta     = 0
+      this%startDelta   = noteP%startDelta
+      this%endDelta     = noteP%endDelta
+      this%tempo        = noteP%p%tempo 
       
       if (newOne .EQV. .TRUE.) then
           newI => sBank%instruments(instru)     
@@ -564,8 +880,7 @@ module VGM
    !  It's given in samples, 1 second has 44100 samples in VGMs. (44.1 in a millisecond)
    !  Wait n samples, n can range from 0 to 65535 (approx 1.49 seconds).
    
-   function deltaToSamples(this, ticks, tempo) result(res)
-       class(vgmFile), intent(in)               :: this
+   function deltaToSamples(ticks, tempo)           result(res)
        integer(kind = 8), intent(in)            :: ticks, tempo
        integer(kind = 8)                        :: microSeconds
        real(kind = 8)                           :: res       
@@ -627,10 +942,22 @@ module VGM
     
     end function   
 
-    function numToHex(number) result(txt)
-        integer(kind = 2), intent(in)          :: number
+    function numToHex(input) result(txt)
+        integer(kind = 2), intent(in)          :: input
+        integer(kind = 2)                      :: number
         character(len = 2)                     :: txt
         integer(kind = 1)                      :: index   
+        
+        !
+        !  In case of KIND 1 input numbers
+        !
+        
+        number = input
+        
+        if (number < 0) then
+            number = number * -1
+            number = 256 - number
+        end if    
         
         txt                                     = ""
         write(txt, "(Z2)") number
@@ -641,11 +968,24 @@ module VGM
     
     end function
   
-    function numToBin(number, bits) result(txt)
+    function numToBin(input, bits) result(txt)
         integer(kind = 1), intent(in)           :: bits
-        integer(kind = 2), intent(in)           :: number
+        integer(kind = 2), intent(in)           :: input
+        integer(kind = 2)                       :: number
+        
         character(len = bits)                   :: txt
         integer(kind = 1)                       :: index      
+        
+        !
+        !  In case of KIND 1 input numbers
+        !
+        
+        number = input
+        
+        if (number < 0) then
+            number = number * -1
+            number = 256 - number
+        end if    
         
         txt                                     = ""
         write(txt, "(B"// trim(numToText(bits)) // ")") number

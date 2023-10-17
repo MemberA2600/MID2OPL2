@@ -1,5 +1,5 @@
 --------------------------------------------
-Channel #1 (1198)'s Notes:
+Channel #1 (838)'s Notes:
 --------------------------------------------
 Note #1, DeltaTime: 0 - 240 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
 Note #2, DeltaTime: 240 - 480 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
@@ -839,366 +839,6 @@ Note #835, DeltaTime: 115680 - 115920 (240), NoteNum: 79, Instrument: 140, Origi
 Note #836, DeltaTime: 115920 - 116160 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
 Note #837, DeltaTime: 116160 - 116400 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
 Note #838, DeltaTime: 116640 - 116880 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #839, DeltaTime: 116880 - 117120 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #840, DeltaTime: 117120 - 117360 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #841, DeltaTime: 117360 - 117600 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #842, DeltaTime: 117600 - 117840 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #843, DeltaTime: 117840 - 118080 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #844, DeltaTime: 118080 - 118320 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #845, DeltaTime: 118560 - 118800 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #846, DeltaTime: 118800 - 119040 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #847, DeltaTime: 119040 - 119280 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #848, DeltaTime: 119280 - 119520 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #849, DeltaTime: 119520 - 119760 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #850, DeltaTime: 119760 - 120000 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #851, DeltaTime: 120000 - 120240 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #852, DeltaTime: 120480 - 120720 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #853, DeltaTime: 120720 - 120960 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #854, DeltaTime: 120960 - 121080 (120), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #855, DeltaTime: 121080 - 121200 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #856, DeltaTime: 121200 - 121440 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #857, DeltaTime: 121440 - 121680 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #858, DeltaTime: 121680 - 121920 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #859, DeltaTime: 121920 - 122160 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #860, DeltaTime: 122400 - 122640 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #861, DeltaTime: 122880 - 124800 (1920), NoteNum: 54, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #862, DeltaTime: 122640 - 122880 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #863, DeltaTime: 122880 - 123120 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #864, DeltaTime: 123120 - 123360 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #865, DeltaTime: 123360 - 123600 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #866, DeltaTime: 123600 - 123840 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #867, DeltaTime: 123840 - 124080 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #868, DeltaTime: 124320 - 124560 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #869, DeltaTime: 124560 - 124800 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #870, DeltaTime: 124800 - 125040 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #871, DeltaTime: 125040 - 125280 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #872, DeltaTime: 125280 - 125520 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #873, DeltaTime: 126720 - 128640 (1920), NoteNum: 54, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #874, DeltaTime: 125760 - 126720 (960), NoteNum: 52, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #875, DeltaTime: 125520 - 125760 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #876, DeltaTime: 125760 - 126000 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #877, DeltaTime: 126240 - 126480 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #878, DeltaTime: 126480 - 126720 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #879, DeltaTime: 126720 - 126960 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #880, DeltaTime: 126960 - 127200 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #881, DeltaTime: 127200 - 127440 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #882, DeltaTime: 127440 - 127680 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #883, DeltaTime: 127680 - 127920 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #884, DeltaTime: 128160 - 128400 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #885, DeltaTime: 128400 - 128640 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #886, DeltaTime: 128640 - 128760 (120), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #887, DeltaTime: 128760 - 128880 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #888, DeltaTime: 128880 - 129120 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #889, DeltaTime: 129120 - 129360 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #890, DeltaTime: 130560 - 132480 (1920), NoteNum: 54, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #891, DeltaTime: 129600 - 130560 (960), NoteNum: 52, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #892, DeltaTime: 129360 - 129600 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #893, DeltaTime: 129600 - 129840 (240), NoteNum: 60, Instrument: 145, Original Channel: 10, Original Member: 1
-Note #894, DeltaTime: 130080 - 130320 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #895, DeltaTime: 130320 - 130560 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #896, DeltaTime: 130560 - 130800 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #897, DeltaTime: 130800 - 131040 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #898, DeltaTime: 131040 - 131280 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #899, DeltaTime: 131280 - 131520 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #900, DeltaTime: 131520 - 131760 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #901, DeltaTime: 132000 - 132240 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #902, DeltaTime: 132240 - 132480 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #903, DeltaTime: 132480 - 132720 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #904, DeltaTime: 132720 - 132960 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #905, DeltaTime: 132960 - 133200 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #906, DeltaTime: 152640 - 153600 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #907, DeltaTime: 151680 - 152640 (960), NoteNum: 62, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #908, DeltaTime: 150720 - 151680 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #909, DeltaTime: 149760 - 150720 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #910, DeltaTime: 148800 - 149760 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #911, DeltaTime: 147840 - 148800 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #912, DeltaTime: 146880 - 147840 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #913, DeltaTime: 145920 - 146880 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #914, DeltaTime: 144960 - 145920 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #915, DeltaTime: 144000 - 144960 (960), NoteNum: 62, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #916, DeltaTime: 143040 - 144000 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #917, DeltaTime: 142080 - 143040 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #918, DeltaTime: 141120 - 142080 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #919, DeltaTime: 140160 - 141120 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #920, DeltaTime: 139200 - 140160 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #921, DeltaTime: 138240 - 139200 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #922, DeltaTime: 168000 - 168960 (960), NoteNum: 52, Instrument: 53, Original Channel: 4, Original Member: 4
-Note #923, DeltaTime: 167040 - 168000 (960), NoteNum: 57, Instrument: 53, Original Channel: 4, Original Member: 4
-Note #924, DeltaTime: 166080 - 167040 (960), NoteNum: 52, Instrument: 53, Original Channel: 4, Original Member: 4
-Note #925, DeltaTime: 165120 - 166080 (960), NoteNum: 54, Instrument: 53, Original Channel: 4, Original Member: 4
-Note #926, DeltaTime: 164160 - 165120 (960), NoteNum: 52, Instrument: 53, Original Channel: 4, Original Member: 4
-Note #927, DeltaTime: 163200 - 164160 (960), NoteNum: 57, Instrument: 53, Original Channel: 4, Original Member: 4
-Note #928, DeltaTime: 162240 - 163200 (960), NoteNum: 52, Instrument: 53, Original Channel: 4, Original Member: 4
-Note #929, DeltaTime: 161280 - 162240 (960), NoteNum: 54, Instrument: 53, Original Channel: 4, Original Member: 4
-Note #930, DeltaTime: 168000 - 168960 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #931, DeltaTime: 167040 - 168000 (960), NoteNum: 62, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #932, DeltaTime: 166080 - 167040 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #933, DeltaTime: 165120 - 166080 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #934, DeltaTime: 164160 - 165120 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #935, DeltaTime: 163200 - 164160 (960), NoteNum: 62, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #936, DeltaTime: 162240 - 163200 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #937, DeltaTime: 161280 - 162240 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
-Note #938, DeltaTime: 168000 - 168960 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #939, DeltaTime: 167040 - 168000 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #940, DeltaTime: 166080 - 167040 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #941, DeltaTime: 165120 - 166080 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #942, DeltaTime: 164160 - 165120 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #943, DeltaTime: 163200 - 164160 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #944, DeltaTime: 162240 - 163200 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #945, DeltaTime: 161280 - 162240 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #946, DeltaTime: 160320 - 161280 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #947, DeltaTime: 159360 - 160320 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #948, DeltaTime: 158400 - 159360 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #949, DeltaTime: 157440 - 158400 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #950, DeltaTime: 156480 - 157440 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #951, DeltaTime: 155520 - 156480 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #952, DeltaTime: 154560 - 155520 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #953, DeltaTime: 153600 - 154560 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #954, DeltaTime: 152640 - 153600 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #955, DeltaTime: 151680 - 152640 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #956, DeltaTime: 150720 - 151680 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #957, DeltaTime: 149760 - 150720 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #958, DeltaTime: 148800 - 149760 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #959, DeltaTime: 147840 - 148800 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #960, DeltaTime: 146880 - 147840 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #961, DeltaTime: 145920 - 146880 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #962, DeltaTime: 144960 - 145920 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #963, DeltaTime: 144000 - 144960 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #964, DeltaTime: 143040 - 144000 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #965, DeltaTime: 142080 - 143040 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #966, DeltaTime: 141120 - 142080 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #967, DeltaTime: 140160 - 141120 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #968, DeltaTime: 139200 - 140160 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #969, DeltaTime: 138240 - 139200 (960), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 2
-Note #970, DeltaTime: 138240 - 139200 (960), NoteNum: 54, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #971, DeltaTime: 136320 - 138240 (1920), NoteNum: 56, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #972, DeltaTime: 134400 - 136320 (1920), NoteNum: 54, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #973, DeltaTime: 133440 - 134400 (960), NoteNum: 52, Instrument: 86, Original Channel: 9, Original Member: 1
-Note #974, DeltaTime: 133200 - 133440 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #975, DeltaTime: 133440 - 133680 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #976, DeltaTime: 133920 - 134160 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #977, DeltaTime: 134160 - 134400 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #978, DeltaTime: 134400 - 134640 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #979, DeltaTime: 134640 - 134880 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #980, DeltaTime: 134880 - 135120 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #981, DeltaTime: 135120 - 135360 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #982, DeltaTime: 135360 - 135600 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #983, DeltaTime: 135840 - 136080 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #984, DeltaTime: 136080 - 136320 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #985, DeltaTime: 136320 - 136440 (120), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #986, DeltaTime: 136440 - 136560 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #987, DeltaTime: 136560 - 136800 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #988, DeltaTime: 136800 - 137040 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #989, DeltaTime: 137040 - 137280 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #990, DeltaTime: 137280 - 137520 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #991, DeltaTime: 137760 - 138000 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #992, DeltaTime: 168960 - 170880 (1920), NoteNum: 66, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #993, DeltaTime: 168000 - 168960 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #994, DeltaTime: 167040 - 168000 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #995, DeltaTime: 166080 - 167040 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #996, DeltaTime: 165120 - 166080 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #997, DeltaTime: 164160 - 165120 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #998, DeltaTime: 163200 - 164160 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #999, DeltaTime: 162240 - 163200 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1000, DeltaTime: 161280 - 162240 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1001, DeltaTime: 160320 - 161280 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1002, DeltaTime: 159360 - 160320 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1003, DeltaTime: 158400 - 159360 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1004, DeltaTime: 157440 - 158400 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1005, DeltaTime: 156480 - 157440 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1006, DeltaTime: 155520 - 156480 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1007, DeltaTime: 154560 - 155520 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1008, DeltaTime: 153600 - 154560 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1009, DeltaTime: 152640 - 153600 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1010, DeltaTime: 151680 - 152640 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1011, DeltaTime: 150720 - 151680 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1012, DeltaTime: 149760 - 150720 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1013, DeltaTime: 148800 - 149760 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1014, DeltaTime: 147840 - 148800 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1015, DeltaTime: 146880 - 147840 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1016, DeltaTime: 145920 - 146880 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1017, DeltaTime: 144960 - 145920 (960), NoteNum: 71, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1018, DeltaTime: 144000 - 144960 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1019, DeltaTime: 143040 - 144000 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1020, DeltaTime: 142080 - 143040 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1021, DeltaTime: 141120 - 142080 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1022, DeltaTime: 140160 - 141120 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1023, DeltaTime: 139200 - 140160 (960), NoteNum: 68, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1024, DeltaTime: 138240 - 139200 (960), NoteNum: 69, Instrument: 53, Original Channel: 4, Original Member: 1
-Note #1025, DeltaTime: 138000 - 138240 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1026, DeltaTime: 138240 - 138360 (120), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1027, DeltaTime: 138360 - 138480 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1028, DeltaTime: 138480 - 138600 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1029, DeltaTime: 138600 - 138720 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1030, DeltaTime: 138720 - 138960 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1031, DeltaTime: 138960 - 139200 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1032, DeltaTime: 139200 - 139440 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1033, DeltaTime: 139440 - 139560 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1034, DeltaTime: 139560 - 139680 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1035, DeltaTime: 139680 - 139920 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1036, DeltaTime: 139920 - 140160 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1037, DeltaTime: 140160 - 140400 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1038, DeltaTime: 140400 - 140520 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1039, DeltaTime: 140520 - 140640 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1040, DeltaTime: 140640 - 140880 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1041, DeltaTime: 140880 - 141120 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1042, DeltaTime: 141120 - 141360 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1043, DeltaTime: 141360 - 141480 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1044, DeltaTime: 141480 - 141600 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1045, DeltaTime: 141600 - 141840 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1046, DeltaTime: 141840 - 142080 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1047, DeltaTime: 142080 - 142320 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1048, DeltaTime: 142320 - 142440 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1049, DeltaTime: 142440 - 142560 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1050, DeltaTime: 142560 - 142800 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1051, DeltaTime: 142800 - 142920 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1052, DeltaTime: 142920 - 143040 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1053, DeltaTime: 143040 - 143280 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1054, DeltaTime: 143280 - 143400 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1055, DeltaTime: 143400 - 143520 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1056, DeltaTime: 143520 - 143760 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1057, DeltaTime: 143760 - 143880 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1058, DeltaTime: 143880 - 144000 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1059, DeltaTime: 144000 - 144240 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1060, DeltaTime: 144240 - 144360 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1061, DeltaTime: 144360 - 144480 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1062, DeltaTime: 144480 - 144720 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1063, DeltaTime: 144720 - 144840 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1064, DeltaTime: 144840 - 144960 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1065, DeltaTime: 144960 - 145200 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1066, DeltaTime: 145200 - 145320 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1067, DeltaTime: 145320 - 145440 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1068, DeltaTime: 145440 - 145680 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1069, DeltaTime: 145680 - 145800 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1070, DeltaTime: 145800 - 145920 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1071, DeltaTime: 145920 - 146040 (120), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1072, DeltaTime: 146040 - 146160 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1073, DeltaTime: 146160 - 146280 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1074, DeltaTime: 146280 - 146400 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1075, DeltaTime: 146400 - 146640 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1076, DeltaTime: 146640 - 146880 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1077, DeltaTime: 146880 - 147120 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1078, DeltaTime: 147120 - 147240 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1079, DeltaTime: 147240 - 147360 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1080, DeltaTime: 147360 - 147600 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1081, DeltaTime: 147600 - 147840 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1082, DeltaTime: 147840 - 148080 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1083, DeltaTime: 148080 - 148200 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1084, DeltaTime: 148200 - 148320 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1085, DeltaTime: 148320 - 148560 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1086, DeltaTime: 148560 - 148800 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1087, DeltaTime: 148800 - 149040 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1088, DeltaTime: 149040 - 149160 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1089, DeltaTime: 149160 - 149280 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1090, DeltaTime: 149280 - 149520 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1091, DeltaTime: 149520 - 149760 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1092, DeltaTime: 149760 - 150000 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1093, DeltaTime: 150000 - 150120 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1094, DeltaTime: 150120 - 150240 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1095, DeltaTime: 150240 - 150480 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1096, DeltaTime: 150480 - 150600 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1097, DeltaTime: 150600 - 150720 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1098, DeltaTime: 150720 - 150960 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1099, DeltaTime: 150960 - 151080 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1100, DeltaTime: 151080 - 151200 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1101, DeltaTime: 151200 - 151440 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1102, DeltaTime: 151440 - 151560 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1103, DeltaTime: 151560 - 151680 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1104, DeltaTime: 151680 - 151920 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1105, DeltaTime: 151920 - 152040 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1106, DeltaTime: 152040 - 152160 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1107, DeltaTime: 152160 - 152400 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1108, DeltaTime: 152400 - 152520 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1109, DeltaTime: 152520 - 152640 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1110, DeltaTime: 152640 - 152880 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1111, DeltaTime: 152880 - 153000 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1112, DeltaTime: 153000 - 153120 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1113, DeltaTime: 153120 - 153360 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1114, DeltaTime: 153360 - 153480 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1115, DeltaTime: 153480 - 153600 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1116, DeltaTime: 153600 - 153840 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1117, DeltaTime: 153840 - 153960 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1118, DeltaTime: 153960 - 154080 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1119, DeltaTime: 154080 - 154320 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1120, DeltaTime: 154320 - 154440 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1121, DeltaTime: 154440 - 154560 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1122, DeltaTime: 154560 - 154800 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1123, DeltaTime: 154800 - 155040 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1124, DeltaTime: 155040 - 155280 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1125, DeltaTime: 155280 - 155520 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1126, DeltaTime: 155520 - 155760 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1127, DeltaTime: 155760 - 155880 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1128, DeltaTime: 155880 - 156000 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1129, DeltaTime: 156000 - 156240 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1130, DeltaTime: 156240 - 156360 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1131, DeltaTime: 156360 - 156480 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1132, DeltaTime: 156480 - 156720 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1133, DeltaTime: 156720 - 156960 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1134, DeltaTime: 156960 - 157200 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1135, DeltaTime: 157200 - 157440 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1136, DeltaTime: 157440 - 157680 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1137, DeltaTime: 157680 - 157800 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1138, DeltaTime: 157800 - 157920 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1139, DeltaTime: 157920 - 158160 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1140, DeltaTime: 158160 - 158280 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1141, DeltaTime: 158280 - 158400 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1142, DeltaTime: 158400 - 158640 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1143, DeltaTime: 158640 - 158880 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1144, DeltaTime: 158880 - 159120 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1145, DeltaTime: 159120 - 159240 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1146, DeltaTime: 159240 - 159360 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1147, DeltaTime: 159360 - 159600 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1148, DeltaTime: 159600 - 159720 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1149, DeltaTime: 159720 - 159840 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1150, DeltaTime: 159840 - 160080 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1151, DeltaTime: 160080 - 160200 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1152, DeltaTime: 160200 - 160320 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1153, DeltaTime: 160320 - 160560 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1154, DeltaTime: 160560 - 160800 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1155, DeltaTime: 160800 - 161040 (240), NoteNum: 72, Instrument: 147, Original Channel: 10, Original Member: 1
-Note #1156, DeltaTime: 161040 - 161280 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1157, DeltaTime: 161280 - 161520 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1158, DeltaTime: 161520 - 161640 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1159, DeltaTime: 161640 - 161760 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1160, DeltaTime: 161760 - 162000 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1161, DeltaTime: 162000 - 162120 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1162, DeltaTime: 162120 - 162240 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1163, DeltaTime: 162240 - 162480 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1164, DeltaTime: 162480 - 162720 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1165, DeltaTime: 162720 - 162960 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1166, DeltaTime: 162960 - 163200 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1167, DeltaTime: 163200 - 163440 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1168, DeltaTime: 163440 - 163560 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1169, DeltaTime: 163560 - 163680 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1170, DeltaTime: 163680 - 163920 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1171, DeltaTime: 163920 - 164040 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1172, DeltaTime: 164040 - 164160 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1173, DeltaTime: 164160 - 164400 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1174, DeltaTime: 164400 - 164640 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1175, DeltaTime: 164640 - 164880 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1176, DeltaTime: 164880 - 165120 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1177, DeltaTime: 165120 - 165360 (240), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
-Note #1178, DeltaTime: 165360 - 165480 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1179, DeltaTime: 165480 - 165600 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1180, DeltaTime: 165600 - 165840 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1181, DeltaTime: 165840 - 165960 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1182, DeltaTime: 165960 - 166080 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1183, DeltaTime: 166080 - 166320 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1184, DeltaTime: 166320 - 166560 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1185, DeltaTime: 166560 - 166800 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1186, DeltaTime: 166800 - 166920 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1187, DeltaTime: 166920 - 167040 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1188, DeltaTime: 167040 - 167280 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1189, DeltaTime: 167280 - 167400 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1190, DeltaTime: 167400 - 167520 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1191, DeltaTime: 167520 - 167760 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1192, DeltaTime: 167760 - 167880 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1193, DeltaTime: 167880 - 168000 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1194, DeltaTime: 168000 - 168240 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1195, DeltaTime: 168240 - 168480 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1196, DeltaTime: 168480 - 168720 (240), NoteNum: 79, Instrument: 140, Original Channel: 10, Original Member: 1
-Note #1197, DeltaTime: 168720 - 168960 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 1
-Note #1198, DeltaTime: 168960 - 170880 (1920), NoteNum: 60, Instrument: 143, Original Channel: 10, Original Member: 1
 --------------------------------------------
 Channel #2 (381)'s Notes:
 --------------------------------------------
@@ -1518,71 +1158,71 @@ Note #313, DeltaTime: 135840 - 136080 (240), NoteNum: 38, Instrument: 129, Origi
 Note #314, DeltaTime: 136320 - 136440 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
 Note #315, DeltaTime: 137280 - 137520 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
 Note #316, DeltaTime: 137760 - 138000 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #317, DeltaTime: 138240 - 138360 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #318, DeltaTime: 138720 - 138960 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #319, DeltaTime: 139200 - 139440 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #320, DeltaTime: 139680 - 139920 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #321, DeltaTime: 140160 - 140400 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #322, DeltaTime: 140640 - 140880 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #323, DeltaTime: 141120 - 141360 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #324, DeltaTime: 141600 - 141840 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #325, DeltaTime: 142080 - 142320 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #326, DeltaTime: 142560 - 142800 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #327, DeltaTime: 143040 - 143280 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #328, DeltaTime: 143520 - 143760 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #329, DeltaTime: 144000 - 144240 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #330, DeltaTime: 144480 - 144720 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #331, DeltaTime: 144960 - 145200 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #332, DeltaTime: 145440 - 145680 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #333, DeltaTime: 145920 - 146040 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #334, DeltaTime: 146400 - 146640 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #335, DeltaTime: 146880 - 147120 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #336, DeltaTime: 147360 - 147600 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #337, DeltaTime: 147840 - 148080 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #338, DeltaTime: 148320 - 148560 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #339, DeltaTime: 148800 - 149040 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #340, DeltaTime: 149280 - 149520 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #341, DeltaTime: 149760 - 150000 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #342, DeltaTime: 150240 - 150480 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #343, DeltaTime: 150720 - 150960 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #344, DeltaTime: 151200 - 151440 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #345, DeltaTime: 151680 - 151920 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #346, DeltaTime: 152160 - 152400 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #347, DeltaTime: 152640 - 152880 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #348, DeltaTime: 153120 - 153360 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #349, DeltaTime: 153600 - 153840 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #350, DeltaTime: 154080 - 154320 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #351, DeltaTime: 154560 - 154800 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #352, DeltaTime: 155040 - 155280 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #353, DeltaTime: 155520 - 155760 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #354, DeltaTime: 156000 - 156240 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #355, DeltaTime: 156480 - 156720 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #356, DeltaTime: 156960 - 157200 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #357, DeltaTime: 157440 - 157680 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #358, DeltaTime: 157920 - 158160 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #359, DeltaTime: 158400 - 158640 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #360, DeltaTime: 158880 - 159120 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #361, DeltaTime: 159360 - 159600 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #362, DeltaTime: 159840 - 160080 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #363, DeltaTime: 160320 - 160560 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #364, DeltaTime: 160800 - 161040 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #365, DeltaTime: 161280 - 161520 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #366, DeltaTime: 161760 - 162000 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #367, DeltaTime: 162240 - 162480 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #368, DeltaTime: 162720 - 162960 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #369, DeltaTime: 163200 - 163440 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #370, DeltaTime: 163680 - 163920 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #371, DeltaTime: 164160 - 164400 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #372, DeltaTime: 164640 - 164880 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #373, DeltaTime: 165120 - 165360 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #374, DeltaTime: 165600 - 165840 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #375, DeltaTime: 166080 - 166320 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #376, DeltaTime: 166560 - 166800 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #377, DeltaTime: 167040 - 167280 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #378, DeltaTime: 167520 - 167760 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #379, DeltaTime: 168000 - 168240 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
-Note #380, DeltaTime: 168480 - 168720 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
-Note #381, DeltaTime: 168960 - 170880 (1920), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #317, DeltaTime: 152640 - 153600 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #318, DeltaTime: 151680 - 152640 (960), NoteNum: 62, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #319, DeltaTime: 150720 - 151680 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #320, DeltaTime: 149760 - 150720 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #321, DeltaTime: 148800 - 149760 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #322, DeltaTime: 147840 - 148800 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #323, DeltaTime: 146880 - 147840 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #324, DeltaTime: 145920 - 146880 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #325, DeltaTime: 144960 - 145920 (960), NoteNum: 64, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #326, DeltaTime: 144000 - 144960 (960), NoteNum: 62, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #327, DeltaTime: 143040 - 144000 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #328, DeltaTime: 142080 - 143040 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #329, DeltaTime: 141120 - 142080 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #330, DeltaTime: 140160 - 141120 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #331, DeltaTime: 139200 - 140160 (960), NoteNum: 59, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #332, DeltaTime: 138240 - 139200 (960), NoteNum: 61, Instrument: 53, Original Channel: 4, Original Member: 3
+Note #333, DeltaTime: 138240 - 138360 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #334, DeltaTime: 138720 - 138960 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #335, DeltaTime: 139200 - 139440 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #336, DeltaTime: 139680 - 139920 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #337, DeltaTime: 140160 - 140400 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #338, DeltaTime: 140640 - 140880 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #339, DeltaTime: 141120 - 141360 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #340, DeltaTime: 141600 - 141840 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #341, DeltaTime: 142080 - 142320 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #342, DeltaTime: 142560 - 142800 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #343, DeltaTime: 143040 - 143280 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #344, DeltaTime: 143520 - 143760 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #345, DeltaTime: 144000 - 144240 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #346, DeltaTime: 144480 - 144720 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #347, DeltaTime: 144960 - 145200 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #348, DeltaTime: 145440 - 145680 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #349, DeltaTime: 145920 - 146040 (120), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #350, DeltaTime: 146400 - 146640 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #351, DeltaTime: 146880 - 147120 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #352, DeltaTime: 147360 - 147600 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #353, DeltaTime: 147840 - 148080 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #354, DeltaTime: 148320 - 148560 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #355, DeltaTime: 148800 - 149040 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #356, DeltaTime: 149280 - 149520 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #357, DeltaTime: 149760 - 150000 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #358, DeltaTime: 150240 - 150480 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #359, DeltaTime: 150720 - 150960 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #360, DeltaTime: 151200 - 151440 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #361, DeltaTime: 151680 - 151920 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #362, DeltaTime: 152160 - 152400 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #363, DeltaTime: 152640 - 152880 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #364, DeltaTime: 153120 - 153360 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #365, DeltaTime: 153600 - 153840 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #366, DeltaTime: 154080 - 154320 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #367, DeltaTime: 154560 - 154800 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #368, DeltaTime: 155040 - 155280 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #369, DeltaTime: 155520 - 155760 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #370, DeltaTime: 156000 - 156240 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #371, DeltaTime: 156480 - 156720 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #372, DeltaTime: 156960 - 157200 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #373, DeltaTime: 157440 - 157680 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #374, DeltaTime: 157920 - 158160 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #375, DeltaTime: 158400 - 158640 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #376, DeltaTime: 158880 - 159120 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #377, DeltaTime: 159360 - 159600 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #378, DeltaTime: 159840 - 160080 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #379, DeltaTime: 160320 - 160560 (240), NoteNum: 38, Instrument: 129, Original Channel: 10, Original Member: 2
+Note #380, DeltaTime: 160800 - 161040 (240), NoteNum: 32, Instrument: 132, Original Channel: 10, Original Member: 2
+Note #381, DeltaTime: 168000 - 168960 (960), NoteNum: 52, Instrument: 53, Original Channel: 4, Original Member: 4
 --------------------------------------------
 Channel #3 (181)'s Notes:
 --------------------------------------------
@@ -6244,6 +5884,98 @@ Note #361, NoteNum: 40, Instrument: 31 (168480 - 168720)
 Note #362, NoteNum: 40, Instrument: 31 (168720 - 168960)
 Note #363, NoteNum: 42, Instrument: 31 (168960 - 170880)
 ------------------------------------------------
+MidiChannel #4| Member #1's Note(s):
+------------------------------------------------
+Note #70, NoteNum: 69, Instrument: 53 (138240 - 139200)
+Note #71, NoteNum: 68, Instrument: 53 (139200 - 140160)
+Note #72, NoteNum: 69, Instrument: 53 (140160 - 141120)
+Note #73, NoteNum: 68, Instrument: 53 (141120 - 142080)
+Note #74, NoteNum: 69, Instrument: 53 (142080 - 143040)
+Note #75, NoteNum: 68, Instrument: 53 (143040 - 144000)
+Note #76, NoteNum: 69, Instrument: 53 (144000 - 144960)
+Note #77, NoteNum: 71, Instrument: 53 (144960 - 145920)
+Note #78, NoteNum: 69, Instrument: 53 (145920 - 146880)
+Note #79, NoteNum: 68, Instrument: 53 (146880 - 147840)
+Note #80, NoteNum: 69, Instrument: 53 (147840 - 148800)
+Note #81, NoteNum: 68, Instrument: 53 (148800 - 149760)
+Note #82, NoteNum: 69, Instrument: 53 (149760 - 150720)
+Note #83, NoteNum: 68, Instrument: 53 (150720 - 151680)
+Note #84, NoteNum: 69, Instrument: 53 (151680 - 152640)
+Note #85, NoteNum: 68, Instrument: 53 (152640 - 153600)
+Note #86, NoteNum: 69, Instrument: 53 (153600 - 154560)
+Note #87, NoteNum: 68, Instrument: 53 (154560 - 155520)
+Note #88, NoteNum: 69, Instrument: 53 (155520 - 156480)
+Note #89, NoteNum: 68, Instrument: 53 (156480 - 157440)
+Note #90, NoteNum: 69, Instrument: 53 (157440 - 158400)
+Note #91, NoteNum: 68, Instrument: 53 (158400 - 159360)
+Note #92, NoteNum: 69, Instrument: 53 (159360 - 160320)
+Note #93, NoteNum: 68, Instrument: 53 (160320 - 161280)
+Note #94, NoteNum: 69, Instrument: 53 (161280 - 162240)
+Note #95, NoteNum: 68, Instrument: 53 (162240 - 163200)
+Note #96, NoteNum: 69, Instrument: 53 (163200 - 164160)
+Note #97, NoteNum: 68, Instrument: 53 (164160 - 165120)
+Note #98, NoteNum: 69, Instrument: 53 (165120 - 166080)
+Note #99, NoteNum: 68, Instrument: 53 (166080 - 167040)
+Note #100, NoteNum: 69, Instrument: 53 (167040 - 168000)
+Note #101, NoteNum: 68, Instrument: 53 (168000 - 168960)
+Note #102, NoteNum: 66, Instrument: 53 (168960 - 170880)
+------------------------------------------------
+MidiChannel #4| Member #2's Note(s):
+------------------------------------------------
+Note #70, NoteNum: 66, Instrument: 53 (138240 - 139200)
+Note #71, NoteNum: 64, Instrument: 53 (139200 - 140160)
+Note #72, NoteNum: 64, Instrument: 53 (140160 - 141120)
+Note #73, NoteNum: 64, Instrument: 53 (141120 - 142080)
+Note #74, NoteNum: 66, Instrument: 53 (142080 - 143040)
+Note #75, NoteNum: 64, Instrument: 53 (143040 - 144000)
+Note #76, NoteNum: 66, Instrument: 53 (144000 - 144960)
+Note #77, NoteNum: 68, Instrument: 53 (144960 - 145920)
+Note #78, NoteNum: 66, Instrument: 53 (145920 - 146880)
+Note #79, NoteNum: 64, Instrument: 53 (146880 - 147840)
+Note #80, NoteNum: 64, Instrument: 53 (147840 - 148800)
+Note #81, NoteNum: 64, Instrument: 53 (148800 - 149760)
+Note #82, NoteNum: 66, Instrument: 53 (149760 - 150720)
+Note #83, NoteNum: 64, Instrument: 53 (150720 - 151680)
+Note #84, NoteNum: 66, Instrument: 53 (151680 - 152640)
+Note #85, NoteNum: 64, Instrument: 53 (152640 - 153600)
+Note #86, NoteNum: 66, Instrument: 53 (153600 - 154560)
+Note #87, NoteNum: 64, Instrument: 53 (154560 - 155520)
+Note #88, NoteNum: 66, Instrument: 53 (155520 - 156480)
+Note #89, NoteNum: 64, Instrument: 53 (156480 - 157440)
+Note #90, NoteNum: 66, Instrument: 53 (157440 - 158400)
+Note #91, NoteNum: 64, Instrument: 53 (158400 - 159360)
+Note #92, NoteNum: 66, Instrument: 53 (159360 - 160320)
+Note #93, NoteNum: 64, Instrument: 53 (160320 - 161280)
+Note #94, NoteNum: 66, Instrument: 53 (161280 - 162240)
+Note #95, NoteNum: 64, Instrument: 53 (162240 - 163200)
+Note #96, NoteNum: 66, Instrument: 53 (163200 - 164160)
+Note #97, NoteNum: 64, Instrument: 53 (164160 - 165120)
+Note #98, NoteNum: 66, Instrument: 53 (165120 - 166080)
+Note #99, NoteNum: 64, Instrument: 53 (166080 - 167040)
+Note #100, NoteNum: 66, Instrument: 53 (167040 - 168000)
+Note #101, NoteNum: 64, Instrument: 53 (168000 - 168960)
+------------------------------------------------
+MidiChannel #4| Member #3's Note(s):
+------------------------------------------------
+Note #78, NoteNum: 61, Instrument: 53 (161280 - 162240)
+Note #79, NoteNum: 59, Instrument: 53 (162240 - 163200)
+Note #80, NoteNum: 62, Instrument: 53 (163200 - 164160)
+Note #81, NoteNum: 59, Instrument: 53 (164160 - 165120)
+Note #82, NoteNum: 61, Instrument: 53 (165120 - 166080)
+Note #83, NoteNum: 59, Instrument: 53 (166080 - 167040)
+Note #84, NoteNum: 62, Instrument: 53 (167040 - 168000)
+Note #85, NoteNum: 59, Instrument: 53 (168000 - 168960)
+------------------------------------------------
+MidiChannel #4| Member #4's Note(s):
+------------------------------------------------
+Note #29, NoteNum: 54, Instrument: 53 (161280 - 162240)
+Note #30, NoteNum: 52, Instrument: 53 (162240 - 163200)
+Note #31, NoteNum: 57, Instrument: 53 (163200 - 164160)
+Note #32, NoteNum: 52, Instrument: 53 (164160 - 165120)
+Note #33, NoteNum: 54, Instrument: 53 (165120 - 166080)
+Note #34, NoteNum: 52, Instrument: 53 (166080 - 167040)
+Note #35, NoteNum: 57, Instrument: 53 (167040 - 168000)
+------------------------------------------------
 MidiChannel #5| Member #2's Note(s):
 ------------------------------------------------
 Note #1, NoteNum: 69, Instrument: 49 (30720 - 30840)
@@ -6980,3 +6712,292 @@ Note #546, NoteNum: 68, Instrument: 97 (168240 - 168480)
 Note #547, NoteNum: 64, Instrument: 97 (168480 - 168720)
 Note #548, NoteNum: 68, Instrument: 97 (168720 - 168960)
 Note #549, NoteNum: 66, Instrument: 97 (168960 - 170880)
+------------------------------------------------
+MidiChannel #9| Member #1's Note(s):
+------------------------------------------------
+Note #28, NoteNum: 54, Instrument: 86 (122880 - 124800)
+Note #29, NoteNum: 52, Instrument: 86 (125760 - 126720)
+Note #30, NoteNum: 54, Instrument: 86 (126720 - 128640)
+Note #31, NoteNum: 52, Instrument: 86 (129600 - 130560)
+Note #32, NoteNum: 54, Instrument: 86 (130560 - 132480)
+Note #33, NoteNum: 52, Instrument: 86 (133440 - 134400)
+Note #34, NoteNum: 54, Instrument: 86 (134400 - 136320)
+Note #35, NoteNum: 56, Instrument: 86 (136320 - 138240)
+Note #36, NoteNum: 54, Instrument: 86 (138240 - 139200)
+------------------------------------------------
+MidiChannel #10| Member #1's Note(s):
+------------------------------------------------
+Note #585, NoteNum: 38, Instrument: 129 (116880 - 117120)
+Note #586, NoteNum: 79, Instrument: 140 (117120 - 117360)
+Note #587, NoteNum: 38, Instrument: 129 (117360 - 117600)
+Note #588, NoteNum: 79, Instrument: 140 (117600 - 117840)
+Note #589, NoteNum: 38, Instrument: 129 (117840 - 118080)
+Note #590, NoteNum: 79, Instrument: 140 (118080 - 118320)
+Note #591, NoteNum: 79, Instrument: 140 (118560 - 118800)
+Note #592, NoteNum: 38, Instrument: 129 (118800 - 119040)
+Note #593, NoteNum: 60, Instrument: 143 (119040 - 119280)
+Note #594, NoteNum: 38, Instrument: 129 (119280 - 119520)
+Note #595, NoteNum: 79, Instrument: 140 (119520 - 119760)
+Note #596, NoteNum: 38, Instrument: 129 (119760 - 120000)
+Note #597, NoteNum: 79, Instrument: 140 (120000 - 120240)
+Note #598, NoteNum: 79, Instrument: 140 (120480 - 120720)
+Note #599, NoteNum: 38, Instrument: 129 (120720 - 120960)
+Note #600, NoteNum: 79, Instrument: 140 (120960 - 121080)
+Note #601, NoteNum: 38, Instrument: 129 (121080 - 121200)
+Note #602, NoteNum: 38, Instrument: 129 (121200 - 121440)
+Note #603, NoteNum: 79, Instrument: 140 (121440 - 121680)
+Note #604, NoteNum: 38, Instrument: 129 (121680 - 121920)
+Note #605, NoteNum: 79, Instrument: 140 (121920 - 122160)
+Note #606, NoteNum: 79, Instrument: 140 (122400 - 122640)
+Note #607, NoteNum: 38, Instrument: 129 (122640 - 122880)
+Note #608, NoteNum: 60, Instrument: 143 (122880 - 123120)
+Note #609, NoteNum: 38, Instrument: 129 (123120 - 123360)
+Note #610, NoteNum: 60, Instrument: 145 (123360 - 123600)
+Note #611, NoteNum: 38, Instrument: 129 (123600 - 123840)
+Note #612, NoteNum: 60, Instrument: 145 (123840 - 124080)
+Note #613, NoteNum: 60, Instrument: 145 (124320 - 124560)
+Note #614, NoteNum: 38, Instrument: 129 (124560 - 124800)
+Note #615, NoteNum: 60, Instrument: 145 (124800 - 125040)
+Note #616, NoteNum: 38, Instrument: 129 (125040 - 125280)
+Note #617, NoteNum: 60, Instrument: 145 (125280 - 125520)
+Note #618, NoteNum: 38, Instrument: 129 (125520 - 125760)
+Note #619, NoteNum: 60, Instrument: 145 (125760 - 126000)
+Note #620, NoteNum: 72, Instrument: 147 (126240 - 126480)
+Note #621, NoteNum: 38, Instrument: 129 (126480 - 126720)
+Note #622, NoteNum: 60, Instrument: 143 (126720 - 126960)
+Note #623, NoteNum: 38, Instrument: 129 (126960 - 127200)
+Note #624, NoteNum: 60, Instrument: 145 (127200 - 127440)
+Note #625, NoteNum: 38, Instrument: 129 (127440 - 127680)
+Note #626, NoteNum: 60, Instrument: 145 (127680 - 127920)
+Note #627, NoteNum: 60, Instrument: 145 (128160 - 128400)
+Note #628, NoteNum: 38, Instrument: 129 (128400 - 128640)
+Note #629, NoteNum: 60, Instrument: 145 (128640 - 128760)
+Note #630, NoteNum: 38, Instrument: 129 (128760 - 128880)
+Note #631, NoteNum: 38, Instrument: 129 (128880 - 129120)
+Note #632, NoteNum: 60, Instrument: 145 (129120 - 129360)
+Note #633, NoteNum: 38, Instrument: 129 (129360 - 129600)
+Note #634, NoteNum: 60, Instrument: 145 (129600 - 129840)
+Note #635, NoteNum: 72, Instrument: 147 (130080 - 130320)
+Note #636, NoteNum: 72, Instrument: 147 (130320 - 130560)
+Note #637, NoteNum: 60, Instrument: 143 (130560 - 130800)
+Note #638, NoteNum: 38, Instrument: 129 (130800 - 131040)
+Note #639, NoteNum: 79, Instrument: 140 (131040 - 131280)
+Note #640, NoteNum: 38, Instrument: 129 (131280 - 131520)
+Note #641, NoteNum: 79, Instrument: 140 (131520 - 131760)
+Note #642, NoteNum: 79, Instrument: 140 (132000 - 132240)
+Note #643, NoteNum: 38, Instrument: 129 (132240 - 132480)
+Note #644, NoteNum: 79, Instrument: 140 (132480 - 132720)
+Note #645, NoteNum: 38, Instrument: 129 (132720 - 132960)
+Note #646, NoteNum: 79, Instrument: 140 (132960 - 133200)
+Note #647, NoteNum: 38, Instrument: 129 (133200 - 133440)
+Note #648, NoteNum: 79, Instrument: 140 (133440 - 133680)
+Note #649, NoteNum: 79, Instrument: 140 (133920 - 134160)
+Note #650, NoteNum: 38, Instrument: 129 (134160 - 134400)
+Note #651, NoteNum: 60, Instrument: 143 (134400 - 134640)
+Note #652, NoteNum: 38, Instrument: 129 (134640 - 134880)
+Note #653, NoteNum: 79, Instrument: 140 (134880 - 135120)
+Note #654, NoteNum: 38, Instrument: 129 (135120 - 135360)
+Note #655, NoteNum: 79, Instrument: 140 (135360 - 135600)
+Note #656, NoteNum: 79, Instrument: 140 (135840 - 136080)
+Note #657, NoteNum: 38, Instrument: 129 (136080 - 136320)
+Note #658, NoteNum: 79, Instrument: 140 (136320 - 136440)
+Note #659, NoteNum: 38, Instrument: 129 (136440 - 136560)
+Note #660, NoteNum: 38, Instrument: 129 (136560 - 136800)
+Note #661, NoteNum: 79, Instrument: 140 (136800 - 137040)
+Note #662, NoteNum: 38, Instrument: 129 (137040 - 137280)
+Note #663, NoteNum: 79, Instrument: 140 (137280 - 137520)
+Note #664, NoteNum: 79, Instrument: 140 (137760 - 138000)
+Note #665, NoteNum: 38, Instrument: 129 (138000 - 138240)
+Note #666, NoteNum: 60, Instrument: 143 (138240 - 138360)
+Note #667, NoteNum: 38, Instrument: 129 (138360 - 138480)
+Note #668, NoteNum: 38, Instrument: 129 (138480 - 138600)
+Note #669, NoteNum: 38, Instrument: 129 (138600 - 138720)
+Note #670, NoteNum: 79, Instrument: 140 (138720 - 138960)
+Note #671, NoteNum: 38, Instrument: 129 (138960 - 139200)
+Note #672, NoteNum: 79, Instrument: 140 (139200 - 139440)
+Note #673, NoteNum: 38, Instrument: 129 (139440 - 139560)
+Note #674, NoteNum: 38, Instrument: 129 (139560 - 139680)
+Note #675, NoteNum: 79, Instrument: 140 (139680 - 139920)
+Note #676, NoteNum: 38, Instrument: 129 (139920 - 140160)
+Note #677, NoteNum: 79, Instrument: 140 (140160 - 140400)
+Note #678, NoteNum: 38, Instrument: 129 (140400 - 140520)
+Note #679, NoteNum: 38, Instrument: 129 (140520 - 140640)
+Note #680, NoteNum: 79, Instrument: 140 (140640 - 140880)
+Note #681, NoteNum: 38, Instrument: 129 (140880 - 141120)
+Note #682, NoteNum: 79, Instrument: 140 (141120 - 141360)
+Note #683, NoteNum: 38, Instrument: 129 (141360 - 141480)
+Note #684, NoteNum: 38, Instrument: 129 (141480 - 141600)
+Note #685, NoteNum: 79, Instrument: 140 (141600 - 141840)
+Note #686, NoteNum: 38, Instrument: 129 (141840 - 142080)
+Note #687, NoteNum: 60, Instrument: 143 (142080 - 142320)
+Note #688, NoteNum: 38, Instrument: 129 (142320 - 142440)
+Note #689, NoteNum: 38, Instrument: 129 (142440 - 142560)
+Note #690, NoteNum: 79, Instrument: 140 (142560 - 142800)
+Note #691, NoteNum: 38, Instrument: 129 (142800 - 142920)
+Note #692, NoteNum: 38, Instrument: 129 (142920 - 143040)
+Note #693, NoteNum: 79, Instrument: 140 (143040 - 143280)
+Note #694, NoteNum: 38, Instrument: 129 (143280 - 143400)
+Note #695, NoteNum: 38, Instrument: 129 (143400 - 143520)
+Note #696, NoteNum: 79, Instrument: 140 (143520 - 143760)
+Note #697, NoteNum: 38, Instrument: 129 (143760 - 143880)
+Note #698, NoteNum: 38, Instrument: 129 (143880 - 144000)
+Note #699, NoteNum: 60, Instrument: 143 (144000 - 144240)
+Note #700, NoteNum: 38, Instrument: 129 (144240 - 144360)
+Note #701, NoteNum: 38, Instrument: 129 (144360 - 144480)
+Note #702, NoteNum: 79, Instrument: 140 (144480 - 144720)
+Note #703, NoteNum: 38, Instrument: 129 (144720 - 144840)
+Note #704, NoteNum: 38, Instrument: 129 (144840 - 144960)
+Note #705, NoteNum: 79, Instrument: 140 (144960 - 145200)
+Note #706, NoteNum: 38, Instrument: 129 (145200 - 145320)
+Note #707, NoteNum: 38, Instrument: 129 (145320 - 145440)
+Note #708, NoteNum: 79, Instrument: 140 (145440 - 145680)
+Note #709, NoteNum: 38, Instrument: 129 (145680 - 145800)
+Note #710, NoteNum: 38, Instrument: 129 (145800 - 145920)
+Note #711, NoteNum: 60, Instrument: 143 (145920 - 146040)
+Note #712, NoteNum: 38, Instrument: 129 (146040 - 146160)
+Note #713, NoteNum: 38, Instrument: 129 (146160 - 146280)
+Note #714, NoteNum: 38, Instrument: 129 (146280 - 146400)
+Note #715, NoteNum: 79, Instrument: 140 (146400 - 146640)
+Note #716, NoteNum: 38, Instrument: 129 (146640 - 146880)
+Note #717, NoteNum: 79, Instrument: 140 (146880 - 147120)
+Note #718, NoteNum: 38, Instrument: 129 (147120 - 147240)
+Note #719, NoteNum: 38, Instrument: 129 (147240 - 147360)
+Note #720, NoteNum: 79, Instrument: 140 (147360 - 147600)
+Note #721, NoteNum: 38, Instrument: 129 (147600 - 147840)
+Note #722, NoteNum: 79, Instrument: 140 (147840 - 148080)
+Note #723, NoteNum: 38, Instrument: 129 (148080 - 148200)
+Note #724, NoteNum: 38, Instrument: 129 (148200 - 148320)
+Note #725, NoteNum: 79, Instrument: 140 (148320 - 148560)
+Note #726, NoteNum: 38, Instrument: 129 (148560 - 148800)
+Note #727, NoteNum: 79, Instrument: 140 (148800 - 149040)
+Note #728, NoteNum: 38, Instrument: 129 (149040 - 149160)
+Note #729, NoteNum: 38, Instrument: 129 (149160 - 149280)
+Note #730, NoteNum: 79, Instrument: 140 (149280 - 149520)
+Note #731, NoteNum: 38, Instrument: 129 (149520 - 149760)
+Note #732, NoteNum: 60, Instrument: 143 (149760 - 150000)
+Note #733, NoteNum: 38, Instrument: 129 (150000 - 150120)
+Note #734, NoteNum: 38, Instrument: 129 (150120 - 150240)
+Note #735, NoteNum: 79, Instrument: 140 (150240 - 150480)
+Note #736, NoteNum: 38, Instrument: 129 (150480 - 150600)
+Note #737, NoteNum: 38, Instrument: 129 (150600 - 150720)
+Note #738, NoteNum: 79, Instrument: 140 (150720 - 150960)
+Note #739, NoteNum: 38, Instrument: 129 (150960 - 151080)
+Note #740, NoteNum: 38, Instrument: 129 (151080 - 151200)
+Note #741, NoteNum: 79, Instrument: 140 (151200 - 151440)
+Note #742, NoteNum: 38, Instrument: 129 (151440 - 151560)
+Note #743, NoteNum: 38, Instrument: 129 (151560 - 151680)
+Note #744, NoteNum: 60, Instrument: 143 (151680 - 151920)
+Note #745, NoteNum: 38, Instrument: 129 (151920 - 152040)
+Note #746, NoteNum: 38, Instrument: 129 (152040 - 152160)
+Note #747, NoteNum: 79, Instrument: 140 (152160 - 152400)
+Note #748, NoteNum: 38, Instrument: 129 (152400 - 152520)
+Note #749, NoteNum: 38, Instrument: 129 (152520 - 152640)
+Note #750, NoteNum: 79, Instrument: 140 (152640 - 152880)
+Note #751, NoteNum: 38, Instrument: 129 (152880 - 153000)
+Note #752, NoteNum: 38, Instrument: 129 (153000 - 153120)
+Note #753, NoteNum: 79, Instrument: 140 (153120 - 153360)
+Note #754, NoteNum: 38, Instrument: 129 (153360 - 153480)
+Note #755, NoteNum: 38, Instrument: 129 (153480 - 153600)
+Note #756, NoteNum: 60, Instrument: 143 (153600 - 153840)
+Note #757, NoteNum: 38, Instrument: 129 (153840 - 153960)
+Note #758, NoteNum: 38, Instrument: 129 (153960 - 154080)
+Note #759, NoteNum: 72, Instrument: 147 (154080 - 154320)
+Note #760, NoteNum: 38, Instrument: 129 (154320 - 154440)
+Note #761, NoteNum: 38, Instrument: 129 (154440 - 154560)
+Note #762, NoteNum: 72, Instrument: 147 (154560 - 154800)
+Note #763, NoteNum: 38, Instrument: 129 (154800 - 155040)
+Note #764, NoteNum: 72, Instrument: 147 (155040 - 155280)
+Note #765, NoteNum: 38, Instrument: 129 (155280 - 155520)
+Note #766, NoteNum: 72, Instrument: 147 (155520 - 155760)
+Note #767, NoteNum: 38, Instrument: 129 (155760 - 155880)
+Note #768, NoteNum: 38, Instrument: 129 (155880 - 156000)
+Note #769, NoteNum: 72, Instrument: 147 (156000 - 156240)
+Note #770, NoteNum: 38, Instrument: 129 (156240 - 156360)
+Note #771, NoteNum: 38, Instrument: 129 (156360 - 156480)
+Note #772, NoteNum: 72, Instrument: 147 (156480 - 156720)
+Note #773, NoteNum: 38, Instrument: 129 (156720 - 156960)
+Note #774, NoteNum: 72, Instrument: 147 (156960 - 157200)
+Note #775, NoteNum: 38, Instrument: 129 (157200 - 157440)
+Note #776, NoteNum: 60, Instrument: 143 (157440 - 157680)
+Note #777, NoteNum: 38, Instrument: 129 (157680 - 157800)
+Note #778, NoteNum: 38, Instrument: 129 (157800 - 157920)
+Note #779, NoteNum: 72, Instrument: 147 (157920 - 158160)
+Note #780, NoteNum: 38, Instrument: 129 (158160 - 158280)
+Note #781, NoteNum: 38, Instrument: 129 (158280 - 158400)
+Note #782, NoteNum: 72, Instrument: 147 (158400 - 158640)
+Note #783, NoteNum: 38, Instrument: 129 (158640 - 158880)
+Note #784, NoteNum: 72, Instrument: 147 (158880 - 159120)
+Note #785, NoteNum: 38, Instrument: 129 (159120 - 159240)
+Note #786, NoteNum: 38, Instrument: 129 (159240 - 159360)
+Note #787, NoteNum: 72, Instrument: 147 (159360 - 159600)
+Note #788, NoteNum: 38, Instrument: 129 (159600 - 159720)
+Note #789, NoteNum: 38, Instrument: 129 (159720 - 159840)
+Note #790, NoteNum: 72, Instrument: 147 (159840 - 160080)
+Note #791, NoteNum: 38, Instrument: 129 (160080 - 160200)
+Note #792, NoteNum: 38, Instrument: 129 (160200 - 160320)
+Note #793, NoteNum: 72, Instrument: 147 (160320 - 160560)
+Note #794, NoteNum: 38, Instrument: 129 (160560 - 160800)
+Note #795, NoteNum: 72, Instrument: 147 (160800 - 161040)
+Note #796, NoteNum: 38, Instrument: 129 (161040 - 161280)
+Note #797, NoteNum: 60, Instrument: 143 (161280 - 161520)
+Note #798, NoteNum: 38, Instrument: 129 (161520 - 161640)
+Note #799, NoteNum: 38, Instrument: 129 (161640 - 161760)
+Note #800, NoteNum: 79, Instrument: 140 (161760 - 162000)
+Note #801, NoteNum: 38, Instrument: 129 (162000 - 162120)
+Note #802, NoteNum: 38, Instrument: 129 (162120 - 162240)
+Note #803, NoteNum: 79, Instrument: 140 (162240 - 162480)
+Note #804, NoteNum: 38, Instrument: 129 (162480 - 162720)
+Note #805, NoteNum: 79, Instrument: 140 (162720 - 162960)
+Note #806, NoteNum: 38, Instrument: 129 (162960 - 163200)
+Note #807, NoteNum: 79, Instrument: 140 (163200 - 163440)
+Note #808, NoteNum: 38, Instrument: 129 (163440 - 163560)
+Note #809, NoteNum: 38, Instrument: 129 (163560 - 163680)
+Note #810, NoteNum: 79, Instrument: 140 (163680 - 163920)
+Note #811, NoteNum: 38, Instrument: 129 (163920 - 164040)
+Note #812, NoteNum: 38, Instrument: 129 (164040 - 164160)
+Note #813, NoteNum: 79, Instrument: 140 (164160 - 164400)
+Note #814, NoteNum: 38, Instrument: 129 (164400 - 164640)
+Note #815, NoteNum: 79, Instrument: 140 (164640 - 164880)
+Note #816, NoteNum: 38, Instrument: 129 (164880 - 165120)
+Note #817, NoteNum: 60, Instrument: 143 (165120 - 165360)
+Note #818, NoteNum: 38, Instrument: 129 (165360 - 165480)
+Note #819, NoteNum: 38, Instrument: 129 (165480 - 165600)
+Note #820, NoteNum: 79, Instrument: 140 (165600 - 165840)
+Note #821, NoteNum: 38, Instrument: 129 (165840 - 165960)
+Note #822, NoteNum: 38, Instrument: 129 (165960 - 166080)
+Note #823, NoteNum: 79, Instrument: 140 (166080 - 166320)
+Note #824, NoteNum: 38, Instrument: 129 (166320 - 166560)
+Note #825, NoteNum: 79, Instrument: 140 (166560 - 166800)
+Note #826, NoteNum: 38, Instrument: 129 (166800 - 166920)
+Note #827, NoteNum: 38, Instrument: 129 (166920 - 167040)
+Note #828, NoteNum: 79, Instrument: 140 (167040 - 167280)
+Note #829, NoteNum: 38, Instrument: 129 (167280 - 167400)
+Note #830, NoteNum: 38, Instrument: 129 (167400 - 167520)
+Note #831, NoteNum: 79, Instrument: 140 (167520 - 167760)
+Note #832, NoteNum: 38, Instrument: 129 (167760 - 167880)
+Note #833, NoteNum: 38, Instrument: 129 (167880 - 168000)
+Note #834, NoteNum: 79, Instrument: 140 (168000 - 168240)
+Note #835, NoteNum: 38, Instrument: 129 (168240 - 168480)
+Note #836, NoteNum: 79, Instrument: 140 (168480 - 168720)
+Note #837, NoteNum: 38, Instrument: 129 (168720 - 168960)
+Note #838, NoteNum: 60, Instrument: 143 (168960 - 170880)
+------------------------------------------------
+MidiChannel #10| Member #2's Note(s):
+------------------------------------------------
+Note #365, NoteNum: 38, Instrument: 129 (161280 - 161520)
+Note #366, NoteNum: 32, Instrument: 132 (161760 - 162000)
+Note #367, NoteNum: 38, Instrument: 129 (162240 - 162480)
+Note #368, NoteNum: 32, Instrument: 132 (162720 - 162960)
+Note #369, NoteNum: 38, Instrument: 129 (163200 - 163440)
+Note #370, NoteNum: 32, Instrument: 132 (163680 - 163920)
+Note #371, NoteNum: 38, Instrument: 129 (164160 - 164400)
+Note #372, NoteNum: 32, Instrument: 132 (164640 - 164880)
+Note #373, NoteNum: 38, Instrument: 129 (165120 - 165360)
+Note #374, NoteNum: 32, Instrument: 132 (165600 - 165840)
+Note #375, NoteNum: 38, Instrument: 129 (166080 - 166320)
+Note #376, NoteNum: 32, Instrument: 132 (166560 - 166800)
+Note #377, NoteNum: 38, Instrument: 129 (167040 - 167280)
+Note #378, NoteNum: 32, Instrument: 132 (167520 - 167760)
+Note #379, NoteNum: 38, Instrument: 129 (168000 - 168240)
+Note #380, NoteNum: 32, Instrument: 132 (168480 - 168720)
+Note #381, NoteNum: 32, Instrument: 132 (168960 - 170880)
