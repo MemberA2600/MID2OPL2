@@ -5,9 +5,9 @@ module VGM
     implicit none
     
     private
-    public                                         :: vgmFile, buildVGM
-    logical                                        :: first = .TRUE.
-    logical, parameter                             :: debug = .TRUE. 
+    public                                         :: vgmFile, buildVGM, done
+    logical                                        :: first = .TRUE., done
+    logical, parameter                             :: debug = .FALSE., saveRaw = .TRUE. 
     
     type(midiPlayer), pointer                      :: midiP
     type(soundB)    , pointer                      :: sBank   
@@ -133,13 +133,19 @@ module VGM
     
    contains     
     
-   subroutine addGD3(this, tag_)
+   subroutine addGD3(this, tag_, double)
       class(vgmHeader), intent(inout)                 :: this
       character(len = 500)                            :: tag  
       character(len = 500), intent(in)                :: tag_        
-      integer(kind = 2)                               :: index, num, subIndex, lenOfText
+      integer(kind = 2)                               :: index, num, subIndex, lenOfText, stat, letterIndex
       character(len = 4)                              :: asHex
-    
+      character(len = 2), dimension(:), allocatable   :: hexas
+      character(:), allocatable                       :: string 
+      logical, intent(in)                             :: double
+      logical                                         :: again
+      
+      again = double
+      
       tag = tag_
       
       lenOfText = 0
@@ -150,6 +156,8 @@ module VGM
          end if 
       end do     
             
+      if (allocated(hexas) .EQV. .TRUE.) deallocate(hexas, stat = stat)
+      
       if (lenOfText > 0) then
           do while(tag(1:1) == " ") 
              tag(1:lenOfText-1) = tag(2:lenOfText) 
@@ -160,6 +168,9 @@ module VGM
           
           call debugLog("Converting tag: " // tag(1:lenOfText) // " Len: " // trim(numToText(lenOfText)))
       
+          allocate(hexas((lenOfText * 2) + 2), stat = stat)
+          letterIndex = 1
+          
           do index = 1, lenOfText, 1
              num   = ichar(tag(index:index), 2) 
              write(asHex, "(Z4)") num
@@ -168,11 +179,40 @@ module VGM
                 if (asHex(subIndex : subIndex) == " ") asHex(subIndex : subIndex) = "0" 
              end do    
          
-             call debugLog("Letter: " // tag(index:index) // " " // trim(numToText(num)) // " " // asHex) 
+             hexas(letterIndex)   = asHex(3:4)
+             hexas(letterIndex+1) = asHex(1:2)
+             
+             letterIndex          = letterIndex + 2 
+             ! call debugLog("Letter: " // tag(index:index) // " " // trim(numToText(num)) // " " // asHex) 
          
           end do
+      else
+          allocate(hexas(2), stat = stat)
+          letterIndex = 1
+      end if  
       
-      end if      
+      hexas(letterIndex)   = "00"
+      hexas(letterIndex+1) = "00"
+      
+      letterIndex = letterIndex + 1
+      
+911   &
+      if (this%gd3Size < this%gd3Last + letterIndex) call this%doubleGD3()
+      
+      do index = 1, letterIndex, 1
+         string = string // hexas(index) // " "
+         this%gd3Last = this%gd3Last + 1
+         read(hexas(index), "(Z2)") this%gd3Bytes(this%gd3Last)
+      end do     
+      
+      call debugLog("As bytes: " // string)
+      
+      if (again .EQV. .TRUE.) then
+          again = .FALSE.
+          goto 911            
+      end if
+      string = ""
+      
    end subroutine
     
    subroutine doubleGD3(this)
@@ -257,9 +297,7 @@ module VGM
         character(len= 2)                      :: hexByte
         integer(kind = 8)                      :: buffer 
         character(len = 4)                     :: hex4 
-        
-        waits = 0
-        
+               
         if (bytes%FramesBefore > 0) then
             buffer = bytes%FramesBefore
 
@@ -273,6 +311,8 @@ module VGM
                buffer = buffer - 65535
                waits  = waits + 65535
             end do  
+
+            waits  = waits + buffer
             
             if (buffer > 0 ) then
                 if (buffer < 16) then
@@ -282,17 +322,16 @@ module VGM
                     read(hexByte, "(Z2)") single
                     call this%addOne(single)
                     call debugLog("Wait " // trim(numToText(buffer)) // " samples!")   
+                    
                 else
                     select case(buffer)
                     case(735)
                          call this%addOne(z'62')   
                          call debugLog("Wait 735 samples!") 
-                         waits  = waits + 735
 
                     case(882)
                          call this%addOne(z'63')
                          call debugLog("Wait 882 samples!") 
-                         waits  = waits + 882
 
                     case default    
                         threeBytes(1) = z'61'
@@ -310,7 +349,6 @@ module VGM
 
                         call this%addTriple(threeBytes) 
                         call debugLog("Wait " // trim(numToText(buffer)) // " samples!") 
-                        waits  = waits + buffer
 
                     end select    
                 end if    
@@ -494,7 +532,7 @@ module VGM
 
    end subroutine
     
-   subroutine buildVGM(this, midiPP, sBankP, tags) 
+   subroutine buildVGM(this, midiPP, sBankP, tags, path) 
        use player
        use soundBank
        
@@ -503,14 +541,21 @@ module VGM
        type(midiPlayer), intent(in), target           :: midiPP
        
        integer(kind = 2)                              :: stat, channelIndex
-       integer(kind = 8)                              :: noteIndex
+       integer(kind = 8)                              :: noteIndex, offset
+       logical                                        :: double = .FALSE.
        
+       character(len = 8)                             :: lenAsHex  
        character(len = 500), dimension(7)             :: tags
+       
+       integer(kind = 1), dimension(:), allocatable   :: outBytes
+       character(len = 500)                           :: path  
+       real(kind = 8)                                 :: fraction, frames  
        
        midiP => midiPP
        sBank => sBankP
        
        first = .TRUE.
+       done = .FALSE.
        
        if (allocated(this%chipData%byteTriples) .EQV. .TRUE.) deallocate(this%chipData%byteTriples, stat = stat)
        this%chipData%lastOne      = 0
@@ -562,16 +607,24 @@ module VGM
        
        call this%bList%initMe()
        
+       fraction = 0
+       
        do noteIndex = 1, this%pointers%lastOne, 1
           if (noteIndex == 1) then
-              this%pointers%timedData(noteIndex)%framesBefore = &
+              frames = &
             & deltaToSamples(this%pointers%timedData(noteIndex)%startDelta, this%pointers%timedData(noteIndex)%p%tempo)
           else                 
-              this%pointers%timedData(noteIndex)%framesBefore = &
+              frames = &
             & deltaToSamples((this%pointers%timedData(noteIndex)%startDelta - this%pointers%timedData(noteIndex-1)%startDelta), &
             & this%pointers%timedData(noteIndex)%p%tempo)
               
           end if     
+          
+          frames = frames + fraction
+          this%pointers%timedData(noteIndex)%framesBefore = frames
+          
+          fraction = frames - this%pointers%timedData(noteIndex)%framesBefore
+          
           call debugLog("-------------" // trim(numToText(noteIndex))) 
           call debugLog("-||" //  trim(numToText(noteIndex)) // "||-") 
           call this%bList%addBytes(this%pointers%timedData(noteIndex), this%header%allWaitSamples)   
@@ -579,7 +632,7 @@ module VGM
        
        call this%bList%addOne(z'66')
        
-       this%header%gd3Offset = this%bList%lastOne + 108
+       this%header%gd3Offset = this%bList%lastOne + 128 - 20
        
        if (allocated(this%header%gd3Bytes) .EQV. .TRUE.) deallocate(this%header%gd3Bytes, stat = stat) 
        
@@ -595,9 +648,69 @@ module VGM
        this%header%gd3Bytes(1:12) = (/ z'47', z'64', z'33', z'20', z'00', z'01', z'00', z'00', z'00', z'00', z'00', z'00' /)
        
        do channelIndex = 1, 7, 1
-          call this%header%addGD3(tags(channelIndex)) 
+          double = .TRUE. 
+          if (channelIndex > 4) double = .FALSE.  
+          call this%header%addGD3(tags(channelIndex), double) 
        end do    
        
+       write(lenAsHex, "(Z8)") (this%header%gd3Last - 12)
+       
+       do channelIndex = 1, 8, 1
+          if (lenAsHex(channelIndex : channelIndex) == " ") lenAsHex(channelIndex : channelIndex) = "0" 
+       end do    
+       
+       do channelIndex = 1, 4, 1
+          read(lenAsHex((2 * channelIndex) - 1 : (2 * channelIndex)), "(Z2)") this%header%gd3Bytes(8 + (5-channelIndex))  
+       end do    
+       
+
+       this%header%eofOffset = this%bList%lastOne + this%header%gd3Last + 128 - 4
+
+       call this%header%changeHeader(20, this%header%gd3Offset)
+       call this%header%changeHeader(24, this%header%allWaitSamples)
+       call this%header%changeHeader(4 , this%header%eofOffset)
+       
+       !write(lenAsHex, "(Z8)") this%header%allWaitSamples
+
+       !open(76, file = "fos.txt", action = "write")
+       !write(76, "(I0)") this%header%gd3Last
+       !close(76)
+       
+       !do channelIndex = 1, 8, 1
+       !   if (lenAsHex(channelIndex : channelIndex) == " ") lenAsHex(channelIndex : channelIndex) = "0" 
+       !end do           
+       
+       !do channelIndex = 1, 4, 1
+       !   read(lenAsHex((2 * channelIndex) - 1 : (2 * channelIndex)), "(Z2)") this%header%headerBytes(24 + (5-channelIndex))  
+       !end do    
+       
+       if (allocated(outBytes) .EQV. .TRUE.) deallocate(outBytes, stat = stat)       
+       allocate(outBytes(this%bList%lastOne + this%header%gd3Last + 128), stat = stat)
+       
+       outBytes = 0
+       
+       do noteIndex = 1, 128, 1
+          outBytes(noteIndex) = this%header%headerBytes(noteIndex)
+       end do    
+       offset = 128
+       
+       do noteIndex = 1, this%bList%lastOne, 1
+          outBytes(noteIndex + offset) = this%bList%bytes(noteIndex)
+       end do
+           
+       offset = 128 + this%bList%lastOne
+       
+       do noteIndex = 1, this%header%gd3Last, 1
+          outBytes(noteIndex + offset) = this%header%gd3Bytes(noteIndex)
+       end do 
+
+       done = .TRUE.
+       
+       open (53, file = path, access="stream", action="write", iostat=stat)     
+       write (53, iostat=stat) outBytes
+       CLOSE(53)
+       
+       deallocate(outBytes, stat = stat) 
        call midiP%deAllocator()
        
    end subroutine
@@ -882,9 +995,8 @@ module VGM
    
    function deltaToSamples(ticks, tempo)           result(res)
        integer(kind = 8), intent(in)            :: ticks, tempo
-       integer(kind = 8)                        :: microSeconds
        real(kind = 8)                           :: res       
-       real(kind = 8)                           :: milliSeconds
+       real(kind = 8)                           :: microSeconds, milliSeconds
        real(kind = 4), parameter                :: sampleRate = 44.1 
        
        microSeconds = midiP%deltaTimeToMS(ticks, tempo)
@@ -892,7 +1004,7 @@ module VGM
     !
     !  The fraction part must be handled seperately at the caller position!
     !
-       res = milliSeconds / sampleRate
+       res = milliSeconds * sampleRate
        
    end function
  

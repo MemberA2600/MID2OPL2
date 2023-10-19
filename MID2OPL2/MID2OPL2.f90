@@ -483,7 +483,8 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
      character(len=2)                   :: month, day
      character                          :: dummy
      character(len=500)                 :: temp
-     
+     character(len = textLen)           :: fileName, fullName
+
      retlog = DLGGET(dlg, IDC_TRACKNAME  , tags(1))
      retlog = DLGGET(dlg, IDC_GAMENAME   , tags(2))
      retlog = DLGGET(dlg, IDC_SYSTEMNAME , tags(3))
@@ -498,9 +499,13 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
      retlog = DLGGET(dlg, IDC_CONVERTEDBY, tags(6))
      retlog = DLGGET(dlg, IDC_NOTES      , tags(7))
      
+     retlog = DLGGET(dlg, IDC_FILENAME   , fileName)
+
+     fullName = trim(outPath) // "\" // trim(fileName) // ".vgm"
+     
      call midiP%initPlayer(midiF, sBank, ignorePercussion)
-     call myVGM%buildVGM(midiP, sBank, tags)  
-    
+     call myVGM%buildVGM(midiP, sBank, tags, fullName)  
+
     END SUBROUTINE 
 
     SUBROUTINE MID2OPL2ChangeBank(dlg, id, callbacktype)
