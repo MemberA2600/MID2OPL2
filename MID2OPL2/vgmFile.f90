@@ -7,7 +7,7 @@ module VGM
     private
     public                                         :: vgmFile, buildVGM, done
     logical                                        :: first = .TRUE., done
-    logical, parameter                             :: debug = .FALSE., saveRaw = .TRUE. 
+    logical, parameter                             :: debug = .TRUE., saveRaw = .TRUE. 
     
     type(midiPlayer), pointer                      :: midiP
     type(soundB)    , pointer                      :: sBank   
@@ -23,7 +23,6 @@ module VGM
         integer(kind = 8)                          :: eofOffset = 0, gd3Offset = 0, allWaitSamples = 0, dataOffset = z'4c' 
         integer(kind = 1)                          :: volume = 0 
         integer(kind = 8)                          :: gd3Size, gd3Last
-        integer(kind = 4)                          :: gd3DataSize 
         
         !
         ! Based on Monkey Island intro VGM.
@@ -101,7 +100,7 @@ module VGM
         integer(kind = 8)                              :: lastOne  = 0, size = 0, tempStartIndex = 1        
         
         contains
-        procedure                                      :: addNoteP     => addNoteP 
+        procedure                                      :: AddByteP     => AddByteP 
         procedure                                      :: getPosition  => getPosition 
         
     end type     
@@ -449,24 +448,22 @@ module VGM
        character(len = 15), intent(inout)               :: word 
        integer(kind = 8)                                :: tempIndex
        
-       insertIndex = 1
-       insert      = .FALSE.
+       insertIndex = this%lastOne+1 
        
        if (this%lastOne > 0) then
-          do tempIndex = 1, this%size, 1
-             if (tempIndex   > this%lastOne) then
-                 insertIndex = tempIndex
-                 exit
-             end if
-              
-             if (deltaTime <= this%timedData(tempIndex)%startDelta) then
-                insertIndex = tempIndex
-                insert      = .TRUE.  
+           insertIndex = 1
+           do tempIndex = this%lastOne, 1, -1
+             if (deltaTime < this%timedData(tempIndex)%startDelta) then
+                cycle
+             else
+                insertIndex = tempIndex + 1
                 exit
              end if     
-          end do    
+           end do 
        end if    
-           
+       
+       insert = (insertIndex <= this%lastOne)
+       
        if (insert .EQV. .TRUE.) then           
            do tempIndex = this%lastOne+1, insertIndex + 1, -1
               this%timedData(tempIndex)%p            => this%timedData(tempIndex-1)%p 
@@ -484,7 +481,7 @@ module VGM
        
    end subroutine
    
-   subroutine addNoteP(this, note)
+   subroutine AddByteP(this, note)
        class(dataPointerChannel), intent(inout)         :: this
        type(deltaAndBytes), intent(in), target          :: note
        !type(dataPointer), dimension(:), allocatable     :: tempData
@@ -601,7 +598,7 @@ module VGM
           this%pointers%tempStartIndex = 1
           do noteIndex = 1, this%dataChannels(channelIndex)%lastOne, 1 
              call debugLog("Addig Data Bytes Array #" // trim(numToText(noteIndex)) // " of Channel #" // trim(numToText(channelIndex)) // "!") 
-             call this%pointers%addNoteP(this%dataChannels(channelIndex)%timedData(noteIndex)) 
+             call this%pointers%AddByteP(this%dataChannels(channelIndex)%timedData(noteIndex)) 
           end do   
        end do    
        
@@ -625,8 +622,7 @@ module VGM
           
           fraction = frames - this%pointers%timedData(noteIndex)%framesBefore
           
-          call debugLog("-------------" // trim(numToText(noteIndex))) 
-          call debugLog("-||" //  trim(numToText(noteIndex)) // "||-") 
+          call debugLog("---||" //  trim(numToText(noteIndex)) // "||---") 
           call this%bList%addBytes(this%pointers%timedData(noteIndex), this%header%allWaitSamples)   
        end do
        
@@ -638,7 +634,6 @@ module VGM
        
        this%header%gd3Size     = 256
        this%header%gd3Last     = 12
-       this%header%gd3DataSize = 0
        
        allocate(this%header%gd3Bytes(this%header%gd3Size), stat = stat)
        
@@ -663,8 +658,7 @@ module VGM
           read(lenAsHex((2 * channelIndex) - 1 : (2 * channelIndex)), "(Z2)") this%header%gd3Bytes(8 + (5-channelIndex))  
        end do    
        
-
-       this%header%eofOffset = this%bList%lastOne + this%header%gd3Last + 128 - 4
+       this%header%eofOffset = this%bList%lastOne + this%header%gd3Last + 123
 
        call this%header%changeHeader(20, this%header%gd3Offset)
        call this%header%changeHeader(24, this%header%allWaitSamples)
@@ -673,7 +667,7 @@ module VGM
        !write(lenAsHex, "(Z8)") this%header%allWaitSamples
 
        !open(76, file = "fos.txt", action = "write")
-       !write(76, "(I0)") this%header%gd3Last
+       !write(76, "(I0)") this%header%eofOffset
        !close(76)
        
        !do channelIndex = 1, 8, 1
@@ -925,7 +919,7 @@ module VGM
           
       write(bits10, "(B10)") noteP%p%fNumber 
       do bitIndex = 1, 10, 1
-          if (bits10(bitIndex:bitIndex) == " ") bits10 = "0"
+          if (bits10(bitIndex:bitIndex) == " ") bits10(bitIndex:bitIndex) = "0"
       end do  
          
       ! low byte    
@@ -945,12 +939,12 @@ module VGM
          
       write(tempByte(4:6), "(B3)") noteP%p%octave
       do bitIndex = 1, 8, 1
-          if (tempByte(bitIndex:bitIndex) == " ") tempByte = "0"
+          if (tempByte(bitIndex:bitIndex) == " ") tempByte(bitIndex:bitIndex) = "0"
       end do  
           
       tempByte(3:3) = "1"
       read(tempByte, "(B8)") this%byteTriples(this%lastOne)%value
-          
+                
       call debugLog("Set New Frequency High Byte / Octave / None ON on Channel #" // trim(numToText(channelIndex)) // ":")
       call debugLog("-Register: " // numToHex(this%byteTriples(this%lastOne)%register))
       call debugLog("-Value: "    // numToHex(this%byteTriples(this%lastOne)%value))
@@ -983,7 +977,7 @@ module VGM
    
       do index = 1, 22, 1
          if (channel == channels(index) .AND. slot == slots(index)) then
-             address = base + index
+             address = base + index - 1
              exit
          end if 
       end do

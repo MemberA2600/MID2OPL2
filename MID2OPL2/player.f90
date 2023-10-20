@@ -18,7 +18,7 @@ module player
                                                                  &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
     
     
-    logical, parameter                          :: debug                = .FALSE. , printTable = .TRUE.
+    logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
     logical                                     :: dbgLogFirst          = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
@@ -473,6 +473,7 @@ module player
       chanMemb     = (/ 0 , 0 /)
       channelIndex = rankedOnes(startIndex)  
       saveIndex    = saveIndex - 1
+      if (saveIndex < 1) saveIndex = 1   
       
       call debugLog(trim(numToText(saveIndex)))  
       do memberIndex   = 1, maxNumberOfMembers, 1
@@ -517,9 +518,13 @@ module player
            else
                chanMemb(1)  = chanMemb(1) + 1
            end if 
-           
-       end if    
+         end if     
        
+       !  
+       ! Remove after testing
+       !  
+       !goto 789 
+         
        if (saveIndex > 9) then
        
            call debugLog("Place what remained!")
@@ -1166,13 +1171,13 @@ module player
         !
         note   = pNote%note + pNote%instrumentP%noteOffset 
         instru = pNote%instrument
-
-        if (debug .eqv. .TRUE.) call debugLog("Note with offset: " // trim(numToText(note)) // ", Instrument: " // trim(numToText(instru))) 
         
         pNote%fNumber = this%comboTable(note)%instruTable(instru)%fnum
         pNote%freq    = this%comboTable(note)%freq
         pNote%octave  = this%comboTable(note)%instruTable(instru)%octave         
-                   
+
+        if (debug .eqv. .TRUE.) call debugLog("Note with offset: " // trim(numToText(note)) // ", Instrument: " // trim(numToText(instru)) // ", Freq: " // trim(realToText(pNote%freq))) 
+
     end subroutine
     
     
