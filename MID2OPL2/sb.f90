@@ -290,7 +290,7 @@ module soundbank
            end if
         
            ! Should we add +12?
-           this%instruments(counter)%noteOffset = twoCompilantsWordStringToNumber(instData(19:20)) 
+           this%instruments(counter)%noteOffset = twoCompilantsWordStringToNumber(instData(19:20))
            if (debug .EQV. .TRUE. ) call writeLine("Note Offset: " // trim(numToText(this%instruments(counter)%noteOffset)) // " (" // tempWord // ")")
 
         end do    

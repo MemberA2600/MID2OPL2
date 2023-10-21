@@ -18,7 +18,7 @@ module player
                                                                  &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
     
     
-    logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
+    logical, parameter                          :: debug                = .FALSE. , printTable = .TRUE.
     logical                                     :: dbgLogFirst          = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
@@ -1048,6 +1048,7 @@ module player
         type(freqCombo2), dimension(:), allocatable   :: calculator
         integer(kind = 2)                             :: stat, noteIndex, multiIndex, instruIndex, fnum, oct, calcIndex, lowIndex
         real(kind = 4)                                :: multi
+        real(kind = 8)                                :: multiAs8  
         real(kind = 8)                                :: lowestDiff 
         character(len = 25)                           :: val1, val2, val3  
         
@@ -1091,7 +1092,7 @@ module player
         !   the two slots of the channel. We are gonna use the second one only for calculation. 
         !             
               multiIndex = fetchDataFromInstrumentByte(&
-                           &this%comboTable(noteIndex)%instruTable(instruIndex)%instrumentP, 2, 1, 0, 4)
+                           &this%comboTable(noteIndex)%instruTable(instruIndex)%instrumentP, 2, 1, 0, 3)
               multi      = multiNums(multiIndex + 1)  
 
               this%comboTable(noteIndex)%instruTable(instruIndex)%multi = multi
@@ -1143,8 +1144,17 @@ module player
                   call debugLog("The lowest difference is " // trim(val1) // " on " // trim(val2) // " - " // &
                                                               &trim(val3) // " as index " // trim(numToText(lowIndex)) // "!")
                   
-                  call debugLog("Selected fnum is " // trim(numToText(calculator(lowIndex)%fnum)) // " and octave " //&
-                      & trim(numToText(calculator(lowIndex)%octave)) // "!")
+                  call debugLog("Freq: " // trim(realToText(calculator(lowIndex)%freq)))
+                  
+                  multiAs8 = calculator(lowIndex)%multi
+                  
+                  call debugLog("Calculated as (" // trim(realToText(freqBases(calculator(lowIndex)%octave + 1))) // " + (" // &
+                               & trim(realToText(freqSteps(calculator(lowIndex)%octave + 1))) // " * " // trim(numToText(calculator(lowIndex)%fnum)) // ") * "&
+                               & // trim(realToText(multiAs8)) // " = " // trim(realToText(calculator(lowIndex)%value)))
+                  
+                  call debugLog("Selected fnum is " // trim(numToText(calculator(lowIndex)%fnum)) // &
+                      &" and octave " // trim(numToText(calculator(lowIndex)%octave)) // "!")
+                  
               end if
               
               this%comboTable(noteIndex)%instruTable(instruIndex)%fnum   = calculator(lowIndex)%fnum
