@@ -18,7 +18,7 @@ module player
                                                                  &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
     
     
-    logical, parameter                          :: debug                = .FALSE. , printTable = .TRUE.
+    logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
     logical                                     :: dbgLogFirst          = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
@@ -107,9 +107,16 @@ module player
         
     end type
     
+    type tempoList
+         integer, dimension(:), allocatable         :: tempos
+         integer, dimension(:), allocatable         :: startDeltas
+         integer(kind = 8)                          :: lastOne
+        
+    end type    
+    
     type midiPlayer
         logical                                     :: success = .FALSE., divisionMode = .FALSE., dbgLogFirst
-        integer                                     :: TPQN, fps, ptf, tempo = 120 
+        integer                                     :: TPQN, fps, ptf 
         integer(kind = 8)                           :: maxTime, maxNumberOfNotes
         type(playerChannel), &
         &     dimension(16, maxNumberOfMembers)     :: channels
@@ -118,7 +125,8 @@ module player
         integer(kind = 1), dimension(16)            :: channelMemberNums = 1
         type(noteFreqPair), dimension(128)          :: noteFreqTable
         logical                                     :: loadedTable       = .FALSE.
-       
+        type(tempoList)                             :: tempos
+        
         !
         ! 128 midi notes = 128 freq values
         !
@@ -156,15 +164,28 @@ module player
          class(midiPlayer)  , intent(inout)        :: this       
          type(playerNote)   , intent(inout)        :: note
          type(playerChannel), intent(inout)        :: channel
+         character(len = 32)                       :: iName
+         integer(kind = 1)                         :: charIndex, lenOfName
          
-         channel%currInst = note%note + 129 - 35
-         note%instrument  = channel%currInst
+         if (note%note /= 0) channel%currInst =  note%note + 129 - 35
+         note%instrument  =  channel%currInst
+         note%instrumentP => sBank%instruments(note%instrument)
+
+         iName = sBank%instruments(note%instrument)%name
+      
+          do charIndex = 1, len(iName), 1
+             if (iName(charIndex:charIndex) /= " " .AND. &
+                &iachar(iName(charIndex:charIndex)) /= 0) then
+                 lenOfName = charIndex
+             end if
+          end do     
          
          if (debug .EQV. .TRUE.) call debugLog("Fix Channel 10's " // &
                                 &trim(numToText(note%note)) // ", instrument is set to " // trim(numToText(channel%currInst)) // &
-                                & "(" // trim(sBank%instruments(note%instrument)%name) // ")") 
+                                & " (" // trim(iName(1:lenOfName)) // ")") 
          note%note        = fixNoteNum(channel%currInst)
          if (debug .EQV. .TRUE.) call debugLog("The new note is " // trim(numToText(note%note))) 
+         
          
     end subroutine
     
@@ -228,7 +249,7 @@ module player
         class(midiPlayer), intent(inout)        :: this
         type(midiFile), intent(in), target      :: midiFP
         type(soundB),   intent(in), target      :: sBankP
-        integer(kind = 8)                       :: index, longestDelta, subIndex, memberIndex
+        integer(kind = 8)                       :: index, longestDelta, subIndex, memberIndex, maxTempo
         integer(kind = 1)                       :: stat
         logical                                 :: ignore
         
@@ -249,12 +270,13 @@ module player
         if (this%loadedTable      .EQV. .FALSE.) call this%loadTable()
         if (this%loadedComboTable .EQV. .FALSE.) call this%loadComboTable()
         
-        this%tempo                              = this%initTempo("M")
+        maxTempo = this%initTempo()
+        
         if (debug .EQV. .TRUE.) then
             !call debugLog("Full Delta:  " // trim(numToText(this%midiF%deltaFull)), this%dbgLogFirst)  
             
             if (midiF%divisionMode .EQV. .FALSE.) then
-                call debugLog("Max Tempo:   " // trim(numToText(this%tempo)))    
+                call debugLog("Max Tempo:   " // trim(numToText(maxtempo)))    
                 call debugLog("TPQN:        " // trim(numToText(midiF%TPQN)))    
             else
                 call debugLog("FPS:         " // trim(numToText(midiF%fps)))    
@@ -274,15 +296,14 @@ module player
             call debugLog("Delta Max:  " // trim(numToText(longestDelta)))  
         end if     
         
-        this%maxTime                            = this%deltaTimeToMS(longestDelta, this%tempo)
-        this%tempo                              = this%initTempo("F") 
+        this%maxTime = this%deltaTimeToMS(longestDelta, maxTempo)
         
         this%maxTime = longestDelta
                
         if (debug .EQV. .TRUE.) then
             call debugLog("Max Time:   " // trim(numToText(this%maxTime)))  
             if (midiF%divisionMode .EQV. .FALSE.) then
-                call debugLog("First Tempo:" // trim(numToText(this%tempo)))    
+                call debugLog("First Tempo:" // trim(numToText(maxTempo)))    
             end if
         end if   
         
@@ -315,7 +336,7 @@ module player
               
               if (debug .EQV. .TRUE.) then
                  call debugLog("Allocate notes array " // trim(numToText(index)) // "," // trim(numToText(memberIndex)) // " as " // & 
-                               &trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))    
+                               &trim(numToText(this%maxNumberOfNotes)) // " || Stat: " // trim(numToText(stat)))    
               end if
               
               this%channels(index, memberIndex)%lastNote       = 0
@@ -513,7 +534,7 @@ module player
       if ( chanMemb(2) <= maxNumberOfMembers .AND. &
          & chanMemb(1) <= lastIndex) then
            if (chanMemb(1) == lastIndex) then
-               chanMemb(1)  = 0
+               chanMemb(1)  = 1
                chanMemb(2)  = chanMemb(2) + 1
            else
                chanMemb(1)  = chanMemb(1) + 1
@@ -820,7 +841,7 @@ module player
        character(len = 4)                             :: mode
        integer(kind = 8), dimension(9), intent(inout) :: startIndexes
     
-       integer(kind = 8)                              :: insertIndex, saveIndex
+       integer(kind = 8)                              :: insertIndex, saveIndex,otherLast
        logical                                        :: finished               
        
        integer(kind = 8), intent(inout)               :: insertHere, saveHere
@@ -834,7 +855,8 @@ module player
        
        do saveIndex = 1, 9, 1
           finished = .FALSE. 
-                        
+          otherLast    = this%notePointerChannels(saveIndex)%lastOne              
+          
           do insertIndex = startIndexes(saveIndex), this%notePointerChannels(saveIndex)%lastOne, 1
                           
              ! If the given channel is full, don't try to do anything. 
@@ -850,9 +872,10 @@ module player
                  end if  
                              
                  cycle
-              end if
+             end if
                        
-              if (insertIndex < this%maxNumberOfNotes .AND. insertIndex < lastNote) then    
+              !if (insertIndex < this%maxNumberOfNotes .AND. insertIndex < lastNote) then    
+              if (insertIndex < this%maxNumberOfNotes .AND. insertIndex < otherLast) then 
                   if (this%notePointerChannels(saveIndex)%notePointers(insertIndex+1)%startDelta > note%endDelta) then
                          startIndexes(saveIndex) = -1 
                          finished                = .TRUE.
@@ -869,13 +892,14 @@ module player
                       f1 = .TRUE.
                   end if   
                          
-                  if (insertIndex  < this%maxNumberOfNotes .AND. insertIndex  < lastNote) then  
+                  if (insertIndex  < this%maxNumberOfNotes .AND. insertIndex  < otherLast) then  
+                      
                       if (this%notePointerChannels(saveIndex)%notePointers(insertIndex + 1)%p%instrument == note%instrument) then
                             f2 = .TRUE.
                       end if    
                   end if       
                   
-                  if (insertIndex  == lastNote) then 
+                  if (insertIndex  == otherLast) then 
                       f2                      = .TRUE.
                       startIndexes(saveIndex) = -1 
                       finished                = .TRUE.
@@ -1179,6 +1203,7 @@ module player
         !
         !   Sound bank has a changer offset, we will see if we really needed it.
         !
+        
         note   = pNote%note + pNote%instrumentP%noteOffset 
         instru = pNote%instrument
         
@@ -1232,9 +1257,9 @@ module player
     subroutine fillChannel(this, channelNum)
         class(midiPlayer), intent(inout)        :: this 
         integer(kind = 1)                       :: channelNum, midiChannelNum, memberIndex, subIndex
-        integer(kind = 8)                       :: index, channel, lastNote, nextNote, tempLastNote
+        integer(kind = 8)                       :: index, channel, lastNote, nextNote, tempLastNote, deltaIndex
         type(instrument), pointer               :: iProgram 
-        logical                                 :: LR
+        logical                                 :: LR, channel10NoteWasZero
         integer(kind = 8)                       :: deltaBuffer
         integer(kind = 2)                       :: note, currInst
         character(len = 16)                     :: word
@@ -1249,14 +1274,6 @@ module player
                call debugLog("Source Channel: " // trim(numToText(channelNum))) 
            end if     
            select case(midiF%tracks(channelNum)%messages(index)%messageType)
-           case("MT")
-               select case(midiF%tracks(channelNum)%messages(index)%metaM%typeAsHex)
-               case("51")
-                    if (debug .EQV. .TRUE.) then
-                        call debugLog("MT Tempo")  
-                    end if 
-                    this%tempo = midiF%tracks(channelNum)%messages(index)%metaM%valueAsNum
-               end select
            case("MD")
                channel  = midiF%tracks(channelNum)%messages(index)%midiD%channelNum
                lastNote = this%channels(channel, memberIndex)%lastNote
@@ -1279,7 +1296,7 @@ module player
                     tempLastNote = this%channels(channel, subIndex)%lastNote     
                     read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") note
                     
-                    if (channel == 10) note = fixNoteNum(note + 129 - 35)
+                    if (channel == 10 .AND. note /= 0) note = fixNoteNum(note + 129 - 35)
                     
                     if (note /= this%channels(channel, subIndex)%playerNotes(tempLastNote)%note) cycle
                     if (        this%channels(channel, subIndex)%currInst /= &
@@ -1364,13 +1381,33 @@ module player
                  this%channels(channel, memberIndex)%hasAnyNotes = .TRUE.
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%closed = .FALSE.
                  this%channels(channel, memberIndex)%lastNote  = nextNote
-                 this%channels(channel, memberIndex)%playerNotes(nextNote)%tempo  = this%tempo
                  
-                 if (channel == 10) call this%fixChannel10(this%channels(channel, memberIndex)%playerNotes(nextNote),&
+                 do deltaIndex = 1, this%tempos%lastOne, 1
+                    if (this%channels(channel, subIndex)%playerNotes(nextNote)%startDelta >= this%tempos%startDeltas(deltaIndex)) then
+                        this%channels(channel, memberIndex)%playerNotes(nextNote)%tempo    = this%tempos%tempos(deltaIndex)
+                        exit
+                    end if 
+                 end do     
+                 
+                 call debugLog("Tempo: " // trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%tempo)))
+                 
+                 channel10NoteWasZero = .FALSE.
+                 
+                 if (channel == 10) then 
+                     if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note == 0) channel10NoteWasZero = .TRUE.
+                     
+                     call this%fixChannel10(this%channels(channel, memberIndex)%playerNotes(nextNote),&
                      & this%channels(channel, memberIndex))
 
+                 end if     
+                     
                  call this%getFNumAndOctave(this%channels(channel, memberIndex)%playerNotes(nextNote))
                                   
+                 if (channel10NoteWasZero .EQV. .TRUE.) then
+                     this%channels(channel, memberIndex)%playerNotes(nextNote)%note = 0
+                     this%channels(channel, memberIndex)%playerNotes(nextNote)%fNumber = 0
+                 end if     
+                 
                  if (debug .EQV. .TRUE.) then
                      call debugLog("ON:  " // trim(numToText(channel)) // " " // &
                                          &trim(numToText(memberIndex)) // " " // trim(numToText(deltaBuffer)) //   " Note: "          // &
@@ -1409,15 +1446,14 @@ module player
         
     end subroutine
     
-    function initTempo(this, mode) result(tempo)
+    function initTempo(this) result(tempo)
         class(midiPlayer), intent(inout)        :: this 
         real(kind = 8)                          :: tempo
-        integer(kind = 2)                       :: index, subIndex
-        character                               :: mode 
-        logical                                 :: endIt
+        integer(kind = 2)                       :: index, subIndex, stat
+        integer(kind = 8)                       :: deltaSum, size, insertIndex, copyIndex
         
-        tempo = 0
-        endIt = .FALSE.
+        tempo    = 0
+        size     = 0
         
         do index = 1, midiF%numberOfTracks, 1
             do subIndex = 1, midiF%tracks(index)%lastMessage, 1
@@ -1426,15 +1462,75 @@ module player
                         
                         if (midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum > tempo) then
                             tempo = midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum
-                            if (mode == 'F') endIt = .TRUE.
                         end if    
-                    
+                        size = size + 1
+                        
                     end if                    
                 end if    
-                if (endIt .EQV. .TRUE.) exit
             end do   
-            if (endIt .EQV. .TRUE.) exit
         end do    
+        
+        if (allocated(this%tempos%tempos)      .EQV. .TRUE.) deallocate(this%tempos%tempos     , stat = stat)
+        if (allocated(this%tempos%startDeltas) .EQV. .TRUE.) deallocate(this%tempos%startDeltas, stat = stat)
+        
+        if (size < 2) then
+            
+            if (size == 0) tempo = 120
+            
+            allocate(this%tempos%tempos(1)     , stat = stat)
+            allocate(this%tempos%startDeltas(1), stat = stat)
+            
+            this%tempos%tempos(1)      = tempo
+            this%tempos%lastOne        = 1
+            this%tempos%startDeltas(1) = 0
+            
+            call debugLog("Tempo for the whole song: " // trim(numToText(this%tempos%tempos(1))))
+
+        else            
+            allocate(this%tempos%tempos(size)     , stat = stat)
+            allocate(this%tempos%startDeltas(size), stat = stat)
+            this%tempos%lastOne     = 0
+            this%tempos%tempos      = 0
+            this%tempos%startDeltas = 0
+            
+            do index = 1, midiF%numberOfTracks, 1
+                deltaSum = 0
+                do subIndex = 1, midiF%tracks(index)%lastMessage, 1
+                   deltaSum = deltaSum + midiF%tracks(index)%messages(subIndex)%deltaTime 
+                   if (midiF%tracks(index)%messages(subIndex)%messageType == 'MT') then     
+                       if (midiF%tracks(index)%messages(subIndex)%metaM%typeAsHex == '51') then
+                           if (this%tempos%lastOne == 0) then
+                               this%tempos%tempos(1)      = midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum
+                               this%tempos%startDeltas(1) = deltaSum
+                           else
+                               do insertIndex = 1, this%tempos%lastOne+1, 1
+                                  if (insertIndex > this%tempos%lastOne) then
+                                       this%tempos%tempos(this%tempos%lastOne      + 1) = midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum
+                                       this%tempos%startDeltas(this%tempos%lastOne + 1) = deltaSum
+                                       exit
+                                  end if 
+                                  if (this%tempos%startDeltas(insertIndex) > deltaSum) then
+                                       do copyIndex = this%tempos%lastOne + 1, insertIndex, 1    
+                                          this%tempos%startDeltas(copyIndex) = this%tempos%startDeltas(copyIndex - 1)   
+                                          this%tempos%tempos(copyIndex)      = this%tempos%tempos(copyIndex - 1)                                              
+                                          
+                                       end do 
+                                       this%tempos%startDeltas(insertIndex) = midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum 
+                                       this%tempos%tempos(insertIndex)      = deltaSum  
+                                       
+                                       exit
+                                  end if
+                               end do
+                           end if
+                           
+                           this%tempos%lastOne = this%tempos%lastOne + 1
+                           call debugLog("Tempo from delta " // trim(numToText(this%tempos%startDeltas(this%tempos%lastOne))) // ": " //&
+                                                               &trim(numToText(this%tempos%tempos(this%tempos%lastOne))))
+                       end if
+                   end if
+                end do    
+            end do
+        end if
         
     end function        
     !

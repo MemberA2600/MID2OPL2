@@ -301,7 +301,8 @@ module midi
          write(byteIndexAsText, "(I0)") byteIndex            
          write(deltaTimeAsText, "(I0)") this%messages(this%lastMessage)%deltaTime 
          open(12, file = "midiDump.txt", action="write", position="append")
-         write(12, "(A)") "-> Data Starter ByteIndex: " // trim(byteIndexAsText) // " || DeltaTime Before: " // trim(deltaTimeAsText)
+         write(12, "(A)") "-> Data Starter ByteIndex: " // trim(byteIndexAsText) // " || TypeByte: " // hexarray(byteIndex) &
+               &// " || DeltaTime Before: " // trim(deltaTimeAsText)
          close(12) 
        end if    
        
@@ -329,37 +330,23 @@ module midi
            channelNum = this%messages(this%lastMessage)%midiD%channelNum
                       
        end select
-       
-     !trueDeltaTimeAsText   = ""
+       !call dumpTest("PACAL!! " // hexArray(byteIndex))
+
+       this%midiF%deltaSums(channelNum) = this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime 
      
-     this%midiF%deltaSums(channelNum) = this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime 
-     !do index = 1, 16, 1
-          !this%midiF%deltaSums(index) = this%midiF%deltaSums(index) + this%messages(this%lastMessage)%deltaTime 
-          
-          !if (index == channelNum) then
-              !this%messages(this%lastMessage)%trueDeltaTime =  this%midiF%deltaSums(index) 
-              
-              !this%midiF%deltaSums(index)  = 0
-              !write(trueDeltaTimeAsText, "(I0)") this%messages(this%lastMessage)%trueDeltaTime 
-          !end if 
-     !end do      
-       
-     !open(12, file = "midiDump.txt", action="write", position="append")
-     !write(12, "(A)") "-> True DeltaTime: " // trim(trueDeltaTimeAsText)
-     !close(12) 
-     
-     if (debug .EQV. .TRUE.) then
-         open(12, file = "midiDump.txt", action="write", status="old", position="append")
-         call this%writeDump()
-         close(12) 
-     end if    
+       if (debug .EQV. .TRUE.) then
+           open(12, file = "midiDump.txt", action="write", status="old", position="append")
+           call this%writeDump()
+           close(12) 
+       end if    
        
    end subroutine 
      
    subroutine WriteDump(this)
        class(track), intent(in)            :: this
-       character(len = 512)                :: tempText, valAsNumText, channelAsText       
-       integer(kind = 8)                   :: index, endIndex, valAsNum
+       character(len = 512)                :: valAsNumText, channelAsText, tempText       
+       integer(kind = 8)                   :: index, endIndex, valAsNum, textLen, subIndex
+       
        
        select case(this%messages(this%lastMessage)%messageType)
        case("MT") 
@@ -380,11 +367,14 @@ module midi
             do index = 1, this%messages(this%lastMessage)%sysM%lenght, 1
                endIndex                         = index * 2  
                tempText(endIndex - 1: endIndex) = this%messages(this%lastMessage)%sysM%valueAsHex(index)
+               
+               if (tempText(endIndex - 1 : endIndex - 1) == " ") tempText(endIndex - 1 : endIndex - 1) = "0" 
+               if (tempText(endIndex     : endIndex    ) == " ") tempText(endIndex     : endIndex    ) = "0"                
+               
             end do    
-            
-            read(tempText     , "(Z512)") valAsNum 
+                        
+            read(tempText     , "(Z0)") valAsNum 
             write(valAsNumText, "(I0)"  ) valAsNum
-            
             write(12, "(A)") "Value: " // trim(tempText) // " (" // trim(valAsNumText) // ")"
             
        case("MD")
@@ -403,6 +393,11 @@ module midi
             do index = 1, this%messages(this%lastMessage)%midiD%lenght, 1
                endIndex                         = index * 8  
                tempText(endIndex - 7: endIndex) = this%messages(this%lastMessage)%midiD%valueAsBin(index)
+               
+               do subIndex = endIndex -7, endIndex, 1
+                  if (tempText(subIndex:subIndex) == " ") tempText(subIndex:subIndex) = "0" 
+               end do    
+               
             end do    
             
             read(tempText     , "(B512)") valAsNum 
@@ -411,7 +406,7 @@ module midi
             write(12, "(A)") "Value: " // trim(tempText) // " (" // trim(valAsNumText) // ")" // " Usage: " // this%messages(this%lastMessage)%midiD%usage
           
        end select    
-       
+              
    end subroutine 
    
    function getSysTypeFromHex(hex) result(text)
@@ -729,6 +724,7 @@ module midi
        case ("1011")
            ! Controller Message
            byteIndex                                        = byteIndex + 1
+2134       &           
            this%messages(this%lastMessage)%midiD%typeAsBin  = binArray(byteIndex)
            this%messages(this%lastMessage)%midiD%lenght     = 1 
            this%messages(this%lastMessage)%midiD%channelNum = channelNum
@@ -738,7 +734,7 @@ module midi
          &.OR. this%messages(this%lastMessage)%midiD%typeAsBin  == "01100011" .OR. this%messages(this%lastMessage)%midiD%typeAsBin  == "01100101") then
               this%messages(this%lastMessage)%midiD%usage = "M" 
                
-         end if
+           end if
            
          if   (this%messages(this%lastMessage)%midiD%typeAsBin  == "01000000" .OR. &
               &this%messages(this%lastMessage)%midiD%typeAsBin  == "01000001" .OR. &
@@ -795,7 +791,10 @@ module midi
            gotIt     = .TRUE.
            
            this%messages(this%lastMessage)%midiD%usage      = "B"      
-           
+       case default
+           ! Must be a controller message, but without '10110000' byte
+           goto 2134     
+       
        end select     
        
        if (gotIt .EQV. .FALSE.) then
@@ -847,7 +846,7 @@ module midi
            if (this%messages(this%lastMessage)%midiD%usage /= "B") then
                do index = byteIndex, byteIndex + this%messages(this%lastMessage)%midiD%lenght - 1, 1
                   if (this%messages(this%lastMessage)%midiD%usage == "M") then 
-                      this%messages(this%lastMessage)%midiD%valueAsBin(saveIndex) = "0" // flipTheBits(binArray(index)(2:8), 7)
+                      this%messages(this%lastMessage)%midiD%valueAsBin(saveIndex) = "0" // mirrorBits(binArray(index)(2:8), 7)
                   else
                       this%messages(this%lastMessage)%midiD%valueAsBin(saveIndex) = binArray(index) 
                   end if     
@@ -856,9 +855,9 @@ module midi
                end do    
            
            else 
-               this%messages(this%lastMessage)%midiD%valueAsBin(1) = binArray(index) 
+               this%messages(this%lastMessage)%midiD%valueAsBin(1) = binArray(byteIndex) 
                byteIndex = byteIndex + 1
-               this%messages(this%lastMessage)%midiD%valueAsBin(2) = "0" // flipTheBits(binArray(index)(2:8), 7)
+               this%messages(this%lastMessage)%midiD%valueAsBin(2) = "0" // mirrorBits(binArray(byteIndex)(2:8), 7)
                byteIndex = byteIndex + 1
            
            end if    
@@ -916,7 +915,7 @@ module midi
        this%messages(this%lastMessage)%sysM%lenght = 0
        
        byteIndex = byteIndex - 1
-       
+              
        do 
            ! Should stand on "F0' or "F7"
            if (byteIndex + 2 > arrSize)                                                   exit          
@@ -952,7 +951,7 @@ module midi
            this%messages(this%lastMessage)%sysM%lenght = this%messages(this%lastMessage)%sysM%lenght + tempLen
            
        end do
-       
+              
        if (debug .EQV. .TRUE.) then
            open(12, file = "midiDump.txt", action="write", position="append")
            write(sizeAsText, "(I0)") this%messages(this%lastMessage)%sysM%lenght
@@ -964,11 +963,12 @@ module midi
               else
                   advance = "NO "               
               end if 
+              
               write(12, "(A, 1x)", advance = advance) this%messages(this%lastMessage)%sysM%valueAsHex(index)
            end do    
            close(12)           
-       end if
-       
+      end if
+
    end subroutine
        
    function getMetaTypeFromHex(hex) result(text)
@@ -994,6 +994,8 @@ module midi
        text = "Cue Point"       
    case("20")
        text = "Channel Prefix" 
+   case("21")
+       text = "Midi Port"
    case("2F")
        text = "End of Track"    
    case("51")
@@ -1005,7 +1007,7 @@ module midi
    case("59")
        text = "Key Signature"       
    case("7F")
-       text = "Sequencer Specific"     
+       text = "Sequencer Specific"    
    case("FF")
        text = "Reset"
    case default
@@ -1069,7 +1071,8 @@ module midi
        
        if (this%messages(this%lastMessage)%metaM%typeAsHex == "00" .OR. this%messages(this%lastMessage)%metaM%typeAsHex == "20" .OR. &
           &this%messages(this%lastMessage)%metaM%typeAsHex == "51" .OR. this%messages(this%lastMessage)%metaM%typeAsHex == "54" .OR. &
-          &this%messages(this%lastMessage)%metaM%typeAsHex == "58" .OR. this%messages(this%lastMessage)%metaM%typeAsHex == "59" ) then
+          &this%messages(this%lastMessage)%metaM%typeAsHex == "58" .OR. this%messages(this%lastMessage)%metaM%typeAsHex == "59" .OR. &
+          &this%messages(this%lastMessage)%metaM%typeAsHex == "21") then
        
            lenght = 0
            select case(this%messages(this%lastMessage)%metaM%typeAsHex)
@@ -1077,6 +1080,8 @@ module midi
                lenght = 2
            case("20")
                lenght = 1
+           case("21")
+               lenght = 1               
            case("51")
                lenght = 3
            case("54")
@@ -1273,6 +1278,18 @@ module midi
      end if    
    
    end subroutine
+   
+   function mirrorBits(input, L) result(output)
+       integer            :: index, L, outI
+       character(len = L) :: input, output
+       
+       do index = 1, L, 1
+          outI              = L + 1 - index
+          output(outI:outI) = input(index:index)         
+       end do    
+   
+   end function
+   
    
    function flipTheBits(input, L) result(output)
        integer            :: index, L
