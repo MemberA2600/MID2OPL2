@@ -18,7 +18,7 @@ module player
                                                                  &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
     
     
-    logical, parameter                          :: debug                = .TRUE. , printTable = .TRUE.
+    logical, parameter                          :: debug                = .FALSE. , printTable = .TRUE.
     logical                                     :: dbgLogFirst          = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
@@ -32,7 +32,6 @@ module player
                                                 
     type playerNotePointer
         type(playerNote), pointer               :: p
-        !logical                                :: used = .FALSE. 
         integer(kind = 8)                       :: startDelta, endDelta        
         integer(kind = 2)                       :: originalChannel, originalMember
         
@@ -118,11 +117,12 @@ module player
         logical                                     :: success = .FALSE., divisionMode = .FALSE., dbgLogFirst
         integer                                     :: TPQN, fps, ptf 
         integer(kind = 8)                           :: maxTime, maxNumberOfNotes
-        type(playerChannel), &
-        &     dimension(16, maxNumberOfMembers)     :: channels
+        type(playerChannel),  dimension(:,:), &
+                               &allocatable        :: channels
         type(pointerChannel), dimension(9)          :: notePointerChannels
         
-        integer(kind = 1), dimension(16)            :: channelMemberNums = 1
+        integer(kind = 1), dimension(:), &
+                                       &allocatable :: channelMemberNums 
         type(noteFreqPair), dimension(128)          :: noteFreqTable
         logical                                     :: loadedTable       = .FALSE.
         type(tempoList)                             :: tempos
@@ -264,6 +264,12 @@ module player
         this%fps                                = midiF%fps
         this%ptf                                = midiF%ptf 
         this%divisionMode                       = midiF%divisionMode
+               
+        if (allocated(this%channels)           .EQV. .TRUE.) deallocate(this%channels, stat = stat)
+        if (allocated(this%channelMemberNums ) .EQV. .TRUE.) deallocate(this%channelMemberNums , stat = stat)
+
+        allocate(this%channels(midiF%numberOfTracks, maxNumberOfMembers ), stat = stat)
+        allocate(this%channelMemberNums(midiF%numberOfTracks            ), stat = stat)
         
         this%channelMemberNums = 1
         
@@ -328,7 +334,7 @@ module player
                  &// trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))  
         end if
         
-        do index = 1, 16, 1
+        do index = 1, midiF%numberOfTracks, 1
            do memberIndex = 1, maxNumberOfMembers, 1 
               if (allocated(this%channels(index, memberIndex)%playerNotes) .EQV. .TRUE.) &
                  &deallocate(this%channels(index, memberIndex)%playerNotes, stat = stat)
@@ -377,9 +383,10 @@ module player
                                                 & largestRankChannel, noteIndex, subIndex, startIndex, &
                                                 & iIndex, insertIndex, insertHere
       real(kind = 8)                           :: largestRank, lastLargest
-      type(ranking), dimension(16)             :: rankings, orderedRankings  
+      type(ranking), dimension(:), allocatable :: rankings, orderedRankings  
       type(instrumentOccurenceTable)           :: ioT
-      integer(kind = 1), dimension(16)         :: rankedOnes  
+      integer(kind = 1), dimension(:), &
+                                 & allocatable :: rankedOnes  
       integer(kind = 2)                        :: stat, byteIndex
       real(kind = 8)                           :: monotony
       integer(kind = 2), dimension(2)          :: chanMemb
@@ -394,13 +401,21 @@ module player
       saveIndex     = 0
       lastIndex     = 0
       
-      rankedOnes    = -1
-      rankedOnes(1) = 10
-      
       if (allocated(iot%ioTable)   .EQV. .TRUE.) deallocate(iot%ioTable,   stat = stat)
       if (allocated(iot%tempTable) .EQV. .TRUE.) deallocate(iot%tempTable, stat = stat)     
       
-      do channelIndex = 1, 16, 1
+      if (allocated(rankings) .EQV. .TRUE.)        deallocate(rankings,          stat = stat)
+      if (allocated(orderedRankings) .EQV. .TRUE.) deallocate(orderedRankings,   stat = stat)
+      if (allocated(rankedOnes) .EQV. .TRUE.)      deallocate(rankedOnes,        stat = stat)
+
+      allocate(rankings(midiF%numberOfTracks)       , stat = stat)  
+      allocate(orderedRankings(midiF%numberOfTracks), stat = stat)  
+      allocate(rankedOnes(midiF%numberOfTracks)     , stat = stat)  
+      
+      rankedOnes    = -1
+      rankedOnes(1) = 10
+      
+      do channelIndex = 1, midiF%numberOfTracks, 1
          if (channelIndex == 10) cycle    
              
          if (this%channels(channelIndex,1)%hasAnyNotes .EQV. .TRUE.) then
@@ -689,7 +704,7 @@ module player
        
        veryfirst = .TRUE.
        
-       do channelNum = 1, 16, 1
+       do channelNum = 1, midiF%numberOfTracks, 1
            do memberNum = 1, maxNumberOfMembers, 1 
                first = .TRUE.
                if (this%channels(channelNum, memberNum)%hasAnyNotes .EQV. .FALSE.) cycle
@@ -1296,8 +1311,12 @@ module player
                     tempLastNote = this%channels(channel, subIndex)%lastNote     
                     read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") note
                     
-                    if (channel == 10 .AND. note /= 0) note = fixNoteNum(note + 129 - 35)
-                    
+                    if (channel == 10) then
+                        if (note < 35 .OR. note > 87 ) note = 0
+                        if (note /= 0) note = fixNoteNum(note + 129 - 35)
+                    end if
+                        
+                        
                     if (note /= this%channels(channel, subIndex)%playerNotes(tempLastNote)%note) cycle
                     if (        this%channels(channel, subIndex)%currInst /= &
                       &         this%channels(channel, subIndex)%playerNotes(tempLastNote)%instrument) cycle
@@ -1383,8 +1402,8 @@ module player
                  this%channels(channel, memberIndex)%lastNote  = nextNote
                  
                  do deltaIndex = 1, this%tempos%lastOne, 1
-                    if (this%channels(channel, subIndex)%playerNotes(nextNote)%startDelta >= this%tempos%startDeltas(deltaIndex)) then
-                        this%channels(channel, memberIndex)%playerNotes(nextNote)%tempo    = this%tempos%tempos(deltaIndex)
+                    if (this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta >= this%tempos%startDeltas(deltaIndex)) then
+                        this%channels(channel, memberIndex)%playerNotes(nextNote)%tempo       = this%tempos%tempos(deltaIndex)
                         exit
                     end if 
                  end do     
@@ -1394,6 +1413,10 @@ module player
                  channel10NoteWasZero = .FALSE.
                  
                  if (channel == 10) then 
+                     if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note < 35 .OR. &
+                        &this%channels(channel, memberIndex)%playerNotes(nextNote)%note > 87 ) &
+                        &this%channels(channel, memberIndex)%playerNotes(nextNote)%note = 0
+
                      if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note == 0) channel10NoteWasZero = .TRUE.
                      
                      call this%fixChannel10(this%channels(channel, memberIndex)%playerNotes(nextNote),&
@@ -1439,6 +1462,16 @@ module player
                      call debugLog("Instrument:  " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)) // &
                                   &" " // trim(numToText(currInst)))  
                  end if
+                 
+               case default
+                 if (debug .EQV. .TRUE.) then
+                     call debugLog("Not included: " // midiF%tracks(channelNum)%messages(index)%midiD%typeAsBin // &
+                         &" (" // trim(midiF%tracks(channelNum)%messages(index)%midiD%typeAsText) // "): ")
+                     do subIndex = 1, midiF%tracks(channelNum)%messages(index)%midiD%lenght ,1 
+                        call debugLog(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(subIndex))
+                     end do    
+                 end if      
+               
                end select
            end select 
            

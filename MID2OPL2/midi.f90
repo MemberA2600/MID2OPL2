@@ -6,9 +6,10 @@ module midi
     
     private
     public                                              :: midiFile, LoadFile, midiData, message
-
+    logical                                             :: first                
+    
                                                          ! Turn these off at the end!
-    logical, parameter                                  :: debug    = .FALSE., streamMode = .FALSE.
+    logical, parameter                                  :: debug    = .FALSE., streamMode = .FALSE., debugBytes = .FALSE.
     logical, parameter                                  :: VLQdebug = .FALSE.
     
     type chunk
@@ -65,7 +66,7 @@ module midi
     end type
     
     type message   
-        integer(kind = 8)                              :: deltaTime !, trueDeltaTime
+        integer(kind = 8)                              :: deltaTime
         character(len = 2)                             :: messageType
         type(metaMessage)                              :: metaM
         type(sysMessage)                               :: sysM
@@ -78,7 +79,9 @@ module midi
         integer(kind = 8)                              :: lastMessage = 0, arraySize
         type(message), dimension(:), allocatable       :: messages
         type(midiFile), pointer                        :: midiF 
-        
+        character(len = 8)                             :: lastThing 
+        integer                                        :: lastChannelNum  
+
         contains 
         procedure                                      :: buildTrack        => BuildTrack
         procedure                                      :: addMessage        => AddMessage
@@ -98,7 +101,7 @@ module midi
         character(len=8), dimension(:), allocatable     :: binaries
         type(chunkList)                                 :: chunks
         type(track)     , dimension(:), allocatable     :: tracks
-        integer(kind=8), dimension(16)                  :: deltaSums
+        integer(kind=8) , dimension(:), allocatable     :: deltaSums
         type(track)                                     :: midiStream
         
         contains
@@ -276,10 +279,14 @@ module midi
        character(len = 2), dimension(*)       :: hexArray
        character(len = 8), dimension(*)       :: binArray  
        integer                                :: stat
-       integer(kind = 8)                      :: index, channelNum, tempIndex
+       integer(kind = 8)                      :: index, channelNum, tempIndex, subIndex
        integer(kind = 8), intent(inout)       :: byteIndex
        integer(kind = 8)                      :: arrSize
-       character(len=255)                     :: byteIndexAsText, lenghtAsText, deltaTimeAsText !, trueDeltaTimeAsText  
+       character(len=255)                     :: byteIndexAsText, lenghtAsText, deltaTimeAsText
+       character(len=1024)                    :: tempText  
+       character(len = 3)                     :: binText
+       integer(kind = 2)                      :: val, origLen  
+       character(len = 8)                     :: origType  
        
        if (debug .EQV. .TRUE.) then
           open(12, file = "midiDump.txt", action="write", position="append")
@@ -294,7 +301,6 @@ module midi
        
        this%messages(this%lastMessage)%deltaTime = 0
        
-
        call calculateVLQ(this%messages(this%lastMessage)%deltaTime, binArray, byteIndex)
              
        if (debug .EQV. .TRUE.) then
@@ -302,11 +308,13 @@ module midi
          write(deltaTimeAsText, "(I0)") this%messages(this%lastMessage)%deltaTime 
          open(12, file = "midiDump.txt", action="write", position="append")
          write(12, "(A)") "-> Data Starter ByteIndex: " // trim(byteIndexAsText) // " || TypeByte: " // hexarray(byteIndex) &
-               &// " || DeltaTime Before: " // trim(deltaTimeAsText)
+               &// " || DeltaTime Before: " // trim(deltaTimeAsText) 
          close(12) 
        end if    
+              
+       tempText  = ""
+       tempIndex = 1
        
-       !call dumpTest(hexArray(byteIndex))
        select case(hexarray(byteIndex))
        ! Meta Message
        case("FF")    
@@ -314,26 +322,97 @@ module midi
            byteIndex = byteIndex + 1
            channelNum = 1
            call this%processAsMeta(byteIndex, hexArray, binArray, arrSize)
+           
+           if (debugBytes .EQV. .TRUE.) then
+               write(tempText, "(A, 1X, A, 1x, A)") trim(numToText(this%trackNum)), trim(this%messages(this%lastMessage)%metaM%typeAsText), trim(this%messages(this%lastMessage)%metaM%valueAsText)
+               call byteLog(trim(tempText))
+           end if    
+           
        ! System Exclusive Message
        case("F0")
            this%messages(this%lastMessage)%messageType = "SE"
            channelNum = 1
            byteIndex = byteIndex + 1
            call this%processAsSysMes(byteIndex, hexArray, binArray, arrSize)
+           
+           if (debugBytes .EQV. .TRUE.) then
+               write(tempText, "(A, 1X, A, 1x, A)") trim(numToText(this%trackNum)), "System Exclusive", trim(this%messages(this%lastMessage)%sysM%typeAsText)
+               
+               origLen = len_trim(tempText)
+               
+               do index = 1, this%messages(this%lastMessage)%sysM%lenght, 1
+                  tempIndex = origLen + (3 * index) - 2
+                  tempText(tempIndex+1:tempIndex+2) = this%messages(this%lastMessage)%sysM%valueAsHex(index)
+               end do    
+               
+               call byteLog(trim(tempText))
+               tempText = "Value: "
+               tempIndex =  8
+                
+               do index = 1, this%messages(this%lastMessage)%sysM%lenght, 1
+                  binText = "" 
+                   
+                  read(this%messages(this%lastMessage)%sysM%valueAsHex(index), "(Z2)") val
+                  write(binText, "(I3)") val  
+
+                  do subIndex = 1, 3, 1
+                     if (binText(subIndex:subIndex) == " ") binText(subIndex:subIndex) = "0" 
+                  end do    
+                  
+                  tempText(tempIndex:tempIndex + 3) = binText
+                  tempIndex = tempIndex + 4
+                  
+               end do    
+           end if  
 
        ! Midi Message    
        case default    
            this%messages(this%lastMessage)%messageType = "MD"
-           !byteIndex = byteIndex + 1
+           origType = binArray(byteIndex)
            
            call this%processAsMidiData(byteIndex, hexArray, binArray, arrSize)   
            channelNum = this%messages(this%lastMessage)%midiD%channelNum
-                      
+           
+           if (debugBytes .EQV. .TRUE.) then
+               write(tempText, "(A, 1X, A, 1x, A)") trim(numToText(this%trackNum)), trim(this%messages(this%lastMessage)%midiD%typeAsText), trim(origType)
+               
+               origLen = len_trim(tempText)
+               
+               do index = 1, this%messages(this%lastMessage)%midiD%lenght, 1
+                  tempIndex = origLen + (9 * index) - 8 
+                  tempText(tempIndex:tempIndex+1) = this%messages(this%lastMessage)%midiD%valueAsBin(index)
+               end do    
+               
+               call byteLog(trim(tempText))
+               
+               tempText  = "Value: "               
+               tempIndex = 8
+
+               do index = 1, this%messages(this%lastMessage)%midiD%lenght, 1
+                  binText = "" 
+                   
+                  read(this%messages(this%lastMessage)%midiD%valueAsBin(index), "(B8)") val
+                  write(binText, "(I3)") val  
+
+                  do subIndex = 1, 3, 1
+                     if (binText(subIndex:subIndex) == " ") binText(subIndex:subIndex) = "0" 
+                  end do    
+                  
+                  tempText(tempIndex:tempIndex + 3) = binText
+                  tempIndex = tempIndex + 4
+                  
+               end do  
+               call byteLog("DeltaTime: " // numToText(this%midiF%deltaSums(channelNum)))
+
+           end if  
+           
        end select
-       !call dumpTest("PACAL!! " // hexArray(byteIndex))
 
        this%midiF%deltaSums(channelNum) = this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime 
-     
+       !this%midiF%deltaSums(this%trackNum) = this%midiF%deltaSums(this%trackNum) + this%messages(this%lastMessage)%deltaTime 
+
+       call byteLog("----------------------------------------------------")
+       
        if (debug .EQV. .TRUE.) then
            open(12, file = "midiDump.txt", action="write", status="old", position="append")
            call this%writeDump()
@@ -346,7 +425,6 @@ module midi
        class(track), intent(in)            :: this
        character(len = 512)                :: valAsNumText, channelAsText, tempText       
        integer(kind = 8)                   :: index, endIndex, valAsNum, textLen, subIndex
-       
        
        select case(this%messages(this%lastMessage)%messageType)
        case("MT") 
@@ -682,12 +760,14 @@ module midi
        character(len = 2)                            :: tempHex
        integer(kind = 2)                             :: tempNum
        logical                                       :: gotIt
+       character(len = 8)                            :: typeBin
+       
             
        this%messages(this%lastMessage)%midiD%typeAsBin  = binArray(byteIndex)
        this%messages(this%lastMessage)%midiD%lenght = 0        
 
        this%messages(this%lastMessage)%midiD%channelNum = -1
-       
+            
        read(binArray(byteIndex)(5:8), "(B4)") channelNum
        channelNum = channelNum + 1
        write(channelNumAsText, "(I2)")        channelNum
@@ -697,37 +777,55 @@ module midi
        this%messages(this%lastMessage)%midiD%usage             = "L"
        gotIt                                                   = .FALSE.       
        this%messages(this%lastMessage)%midiD%onOff             = "ON "
-
-       !write(tempText, "(I0)") this%messages(this%lastMessage)%deltaTime
-       !call dumpTest(binArray(byteIndex) // " || " // tempText)
+       typeBin                                                 = binArray(byteIndex)(1:4) 
        
-       select case(binArray(byteIndex)(1:4))
+       if (typeBin(1:1) /= "1") then
+           ! The selector byte must be the same as it was.
+           channelNum = this%lastChannelNum
+           write(channelNumAsText, "(I2)") channelNum
+           typeBin = this%lastThing
+       
+           byteIndex = byteIndex - 1
+       end if
+       
+       select case(typeBin)
        case ("1000")
+           this%lastThing = typeBin
+
            this%messages(this%lastMessage)%midiD%lenght     = 2
            this%messages(this%lastMessage)%midiD%typeAsText = "Note Off (Channel " // channelNumAsText // ")"
            this%messages(this%lastMessage)%midiD%channelNum = channelNum
-           this%messages(this%lastMessage)%midiD%typeAsBin  = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000" 
+           this%lastChannelNum                              = channelNum
+           this%messages(this%lastMessage)%midiD%typeAsBin  = this%lastThing(1:4) // "0000" 
            gotIt = .TRUE.
        case ("1001")
+           this%lastThing = typeBin
+
            this%messages(this%lastMessage)%midiD%lenght     = 2     
            this%messages(this%lastMessage)%midiD%typeAsText = "Note On (Channel " // channelNumAsText // ")"
            this%messages(this%lastMessage)%midiD%channelNum = channelNum
-           this%messages(this%lastMessage)%midiD%typeAsBin  = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000" 
+           this%lastChannelNum                              = channelNum
+           this%messages(this%lastMessage)%midiD%typeAsBin  = this%lastThing(1:4) // "0000" 
            gotIt = .TRUE.
 
        case ("1010")
+           this%lastThing = typeBin
+
            this%messages(this%lastMessage)%midiD%lenght     = 2  
            this%messages(this%lastMessage)%midiD%typeAsText = "Polyphonic Key Pressure (Channel " // channelNumAsText // ")"
            this%messages(this%lastMessage)%midiD%channelNum = channelNum
-           this%messages(this%lastMessage)%midiD%typeAsBin  = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000"            
+           this%lastChannelNum                              = channelNum
+           this%messages(this%lastMessage)%midiD%typeAsBin  = this%lastThing(1:4) // "0000"            
            gotIt = .TRUE.
        case ("1011")
            ! Controller Message
            byteIndex                                        = byteIndex + 1
-2134       &           
+           this%lastThing = typeBin
+
+           this%messages(this%lastMessage)%midiD%channelNum = channelNum
+           this%lastChannelNum                              = channelNum
            this%messages(this%lastMessage)%midiD%typeAsBin  = binArray(byteIndex)
            this%messages(this%lastMessage)%midiD%lenght     = 1 
-           this%messages(this%lastMessage)%midiD%channelNum = channelNum
            this%messages(this%lastMessage)%midiD%typeAsText = getTypeOfContrMes(hexArray(byteIndex)) // " (" // channelNumAsText // ")"         
            
            if (this%messages(this%lastMessage)%midiD%typeAsBin(1:4) == "0000" .OR. this%messages(this%lastMessage)%midiD%typeAsBin(1:4) == "0001" &
@@ -763,42 +861,47 @@ module midi
               case default
                   this%messages(this%lastMessage)%midiD%usage = "0"
                   this%messages(this%lastMessage)%midiD%onOff = "OFF"                  
-     
               end select    
           
           end if
           
        case ("1100")
+           this%lastThing = typeBin
+
            this%messages(this%lastMessage)%midiD%lenght     = 1    
            this%messages(this%lastMessage)%midiD%typeAsText = "Program Change (Channel " // channelNumAsText // ")"
            this%messages(this%lastMessage)%midiD%channelNum = channelNum
-           this%messages(this%lastMessage)%midiD%typeAsBin  = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000"            
+           this%lastChannelNum                              = channelNum        
+           this%messages(this%lastMessage)%midiD%typeAsBin  = this%lastThing(1:4) // "0000"            
            gotIt = .TRUE.
 
        case ("1101")
+           this%lastThing = typeBin
+
            this%messages(this%lastMessage)%midiD%lenght     = 1  
            this%messages(this%lastMessage)%midiD%typeAsText = "Channel Pressure (Channel " // channelNumAsText // ")"
            this%messages(this%lastMessage)%midiD%channelNum = channelNum 
-           this%messages(this%lastMessage)%midiD%typeAsBin  = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000"            
+           this%lastChannelNum                              = channelNum  
+           this%messages(this%lastMessage)%midiD%typeAsBin  = this%lastThing(1:4) // "0000"            
            gotIt = .TRUE.
 
        
        case ("1110")
+           this%lastThing = typeBin
+
            this%messages(this%lastMessage)%midiD%lenght     = 2           
            this%messages(this%lastMessage)%midiD%typeAsText = "Pitch Wheel Change (Channel " // channelNumAsText // ")"   
            this%messages(this%lastMessage)%midiD%channelNum = channelNum 
-           this%messages(this%lastMessage)%midiD%typeAsBin  = this%messages(this%lastMessage)%midiD%typeAsBin(1:4) // "0000"            
+           this%lastChannelNum                              = channelNum  
+           this%messages(this%lastMessage)%midiD%typeAsBin  = this%lastThing(1:4) // "0000"            
            gotIt     = .TRUE.
            
            this%messages(this%lastMessage)%midiD%usage      = "B"      
-       case default
-           ! Must be a controller message, but without '10110000' byte
-           goto 2134     
-       
+           
        end select     
        
        if (gotIt .EQV. .FALSE.) then
-          select case(binArray(byteIndex)) 
+          select case(typeBin) 
           case("11110010")
               this%messages(this%lastMessage)%midiD%lenght     = 2           
               this%messages(this%lastMessage)%midiD%typeAsText = "Song Position Pointer"   
@@ -839,17 +942,13 @@ module midi
        byteIndex = byteIndex + 1
        saveIndex = 1
        allocate(this%messages(this%lastMessage)%midiD%valueAsBin(this%messages(this%lastMessage)%midiD%lenght), stat = stat) 
-       
-       !call dumpTest(trim(this%messages(this%lastMessage)%midiD%typeAsBin) // " " // trim(this%messages(this%lastMessage)%midiD%typeAsText))
-       
-       if (this%messages(this%lastMessage)%midiD%lenght /= 0) then  
+              
+       if (this%messages(this%lastMessage)%midiD%lenght /= 0) then             
            if (this%messages(this%lastMessage)%midiD%usage /= "B") then
                do index = byteIndex, byteIndex + this%messages(this%lastMessage)%midiD%lenght - 1, 1
-                  if (this%messages(this%lastMessage)%midiD%usage == "M") then 
-                      this%messages(this%lastMessage)%midiD%valueAsBin(saveIndex) = "0" // mirrorBits(binArray(index)(2:8), 7)
-                  else
-                      this%messages(this%lastMessage)%midiD%valueAsBin(saveIndex) = binArray(index) 
-                  end if     
+                  this%messages(this%lastMessage)%midiD%valueAsBin(saveIndex) = binArray(index)   
+                  !call dumpTest(binArray(index) // " " // trim(numToText(saveIndex)) // " " // trim(numToText(index)) // " " // trim(numToText(arrSize)))
+
                   saveIndex = saveIndex + 1 
                   byteIndex = byteIndex + 1
                end do    
@@ -857,7 +956,7 @@ module midi
            else 
                this%messages(this%lastMessage)%midiD%valueAsBin(1) = binArray(byteIndex) 
                byteIndex = byteIndex + 1
-               this%messages(this%lastMessage)%midiD%valueAsBin(2) = "0" // mirrorBits(binArray(byteIndex)(2:8), 7)
+               this%messages(this%lastMessage)%midiD%valueAsBin(2) = "0" // binArray(byteIndex) // binArray(byteIndex-1)(2:8)
                byteIndex = byteIndex + 1
            
            end if    
@@ -874,16 +973,34 @@ module midi
               else
                   advance = "NO "               
               end if 
-              
+            
               read(this%messages(this%lastMessage)%midiD%valueAsBin(index), "(B8)") tempNum
               write(tempHex, "(Z2)") tempNum
-              
+
               if (tempHex(1:1) == " ") tempHex(1:1) = "0"
               
               write(12, "(A, 1x)", advance = advance) tempHex
            end do    
+           
+           write(12, "(A)") "Real Delta: " // trim(numToText(this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime ))
            close(12)           
+           
        end if
+       
+       !
+       !  If velocity = 0, midi on should be midi off!
+       !
+       
+       if (this%messages(this%lastMessage)%midiD%typeAsBin(1:4)    == "1001" ) then
+           if (this%messages(this%lastMessage)%midiD%valueAsBin(2) == "00000000"   ) then
+               this%messages(this%lastMessage)%midiD%typeAsBin(1:4)  = "1000"
+               this%messages(this%lastMessage)%midiD%typeAsText      = "Note Off (Channel " // channelNumAsText // ")"
+           end if 
+       end if    
+           
+       !open(15, file = "szar.txt", action="write", position="append")
+       !write(15, "(I8, 1x, I8)") this%messages(this%lastMessage)%deltaTime, this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime
+       !close(15)
        
    end subroutine    
        
@@ -1238,19 +1355,27 @@ module midi
           tempArray(3)      = this%hexas(3)
           tempArray(4)      = this%hexas(4)          
           
-          midiF%numberOfTracks = getInt32FromBytes(tempArray)          
+          midiF%numberOfTracks = getInt32FromBytes(tempArray)     
+          if (midiF%numberOfTracks < 16) midiF%numberOfTracks = 16
+          if (midiF%chunks%last - 1 > midiF%numberOfTracks) midiF%numberOfTracks = midiF%chunks%last - 1 
           
-          allocate(midiF%tracks(midiF%numberOfTracks), stat = stat)
+          allocate(midiF%tracks(midiF%numberOfTracks)   , stat = stat)
+          allocate(midiF%deltaSums(midiF%numberOfTracks), stat = stat)
+          
+          midiF%deltaSums = 0
+         
           call setMidiTiming(midiF, this%binaries(5) // this%binaries(6))
       else
           if (streamMode .EQV. .FALSE.) then  
-              trackNum = trackNum + 1
+              trackNum = trackNum + 1 
+
+              call byteLog("--- Track " // trim(numToText(trackNum)) // " ---")
+              
               midiF%tracks(trackNum)%trackNum = trackNum
               midiF%tracks(trackNum)%midiF    => midiF
               arrSize                         = size(this%hexas)
           
               call midiF%tracks(trackNum)%BuildTrack(this%hexas, this%binaries, arrSize)
-              
           end if    
       end if    
       
@@ -1258,6 +1383,25 @@ module midi
    
    end subroutine
      
+   subroutine byteLog(txt)
+        character(len = *)      :: txt
+        
+        if (debugBytes .EQV. .TRUE.) then
+            if (first .EQV. .TRUE.) then
+                open(17, file = "bytes.txt", action = "write")
+                write(17, "(A)") ""
+                close(17)
+            
+                first = .FALSE.
+            end if
+        
+            open(17, file = "bytes.txt", action = "write", access = "append" )
+            write(17, "(A)") txt
+            close(17)
+        end if
+        
+   end subroutine
+   
    subroutine setMidiTiming(midiF, timingData)
      class(midiFile), intent(inout)     :: midiF
      character(len=16)                  :: timingData
@@ -1491,6 +1635,8 @@ module midi
      read(11, iostat=stat) this%bytes
      CLOSE(11)
 
+     first = .TRUE.
+     
      !
      !  Get pure hexString and binString data
      !
@@ -1531,13 +1677,8 @@ module midi
      !
      !  Create Header / Track Messages for each chunk!
      !
-     open(13, file = "C:\leszarom.txt", action = "write")
-     write(13, "(I0)") this%chunks%last
-     close(13)
      
-     trackNum = 0
-     this%deltaSums = 0
-     
+     trackNum        = 0
      do currentIndex = 1, this%chunks%last, 1  
         call this%chunks%listOfChunks(currentIndex)%processChunk(this, trackNum)
      end do
@@ -1582,8 +1723,38 @@ module midi
             end if
          end do 
          deallocate(this%tracks, stat = stat)
+         deallocate(this%deltaSums, stat = stat)
+
    end if
      
    end subroutine
+   
+    function numToText(number) result(txt)
+        integer(kind = 8), intent(in)           :: number
+        character(len = 20)                     :: txt
+           
+        txt                                     = ""
+        write(txt, "(I20)") number
+        
+        do while(txt(1:1) == " ")
+           txt(1:19)  = txt(2:20)
+           txt(20:20) = " "
+        end do    
+    
+    end function
+
+    function realToText(number) result(txt)
+        real(kind = 8), intent(in)              :: number
+        character(len = 20)                     :: txt
+           
+        txt                                     = ""
+        write(txt, "(f0.2)") number
+        
+        do while(txt(1:1) == " ")
+           txt(1:19)  = txt(2:20)
+           txt(20:20) = " "
+        end do    
+    
+    end function
    
 end module
