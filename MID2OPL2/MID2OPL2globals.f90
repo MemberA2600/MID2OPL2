@@ -37,6 +37,8 @@ type(midiPlayer)       :: midiP
 type(soundB)           :: sBank
 type(vgmFile)          :: myVGM
 integer                :: selectedSB = 0
-logical                :: ignorePercussion = .FALSE.
+integer(kind = 1)      :: maxNumberOfMembers = 9
+integer(kind = 1)      :: maxPercussItems = 3
+integer(kind = 1)      :: octaveChange = 0
 
 end module

@@ -1,7 +1,6 @@
 module player   
     use midi
     use soundbank
-
     
     implicit none
     
@@ -18,17 +17,16 @@ module player
                                                                  &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
     
     
-    logical, parameter                          :: debug                = .FALSE. , printTable = .TRUE.
-    logical                                     :: dbgLogFirst          = .FALSE.
+    logical, parameter                          :: debug                = .FALSE. 
+    logical                                     :: dbgLogFirst          = .FALSE., printTable = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
+    character(255)                              :: logPath
     
-    !
-    ! These should be controllable in the future
-    !
-    integer(kind = 1), parameter                :: maxNumberOfMembers   = 9
-    integer(kind = 1), parameter                :: maxPercussItems      = 3
+    integer(kind = 1)                           :: maxNumberOfMembers   = 9
+    integer(kind = 1)                           :: maxPercussItems      = 3
     logical                                     :: ignorePercussion     = .FALSE.
+    integer(kind = 1)                           :: octaveChange         = 0
                                                 
     type playerNotePointer
         type(playerNote), pointer               :: p
@@ -118,7 +116,7 @@ module player
         integer                                     :: TPQN, fps, ptf 
         integer(kind = 8)                           :: maxTime, maxNumberOfNotes
         type(playerChannel),  dimension(:,:), &
-                               &allocatable        :: channels
+                               &allocatable         :: channels
         type(pointerChannel), dimension(9)          :: notePointerChannels
         
         integer(kind = 1), dimension(:), &
@@ -156,7 +154,27 @@ module player
     
     subroutine deAllocator(this)
          class(midiPlayer), intent(inout)          :: this    
-    
+         integer(kind = 8)                         :: index
+         integer(kind = 2)                         :: channelIndex, memberIndex, stat
+
+         do channelIndex = 1, size(this%channels, 1), 1
+             do memberIndex = 1, size(this%channels, 2), 1
+                deallocate(this%channels(channelIndex, memberIndex)%playerNotes, stat = stat) 
+             end do    
+         end do
+         
+         deallocate(this%channels, stat = stat) 
+         
+         do channelIndex = 1, 9, 1
+            deallocate(this%notePointerChannels(channelIndex)%notePointers, stat = stat) 
+            this%notePointerChannels(channelIndex)%lastOne = 0
+         end do
+         
+         deallocate(this%channelMemberNums, stat = stat)
+         
+         deallocate(this%tempos%tempos    , stat = stat)
+         deallocate(this%tempos%startDeltas, stat = stat)
+         this%tempos%lastOne = 0
          
     end subroutine     
     
@@ -242,7 +260,7 @@ module player
     
     end subroutine
     
-    subroutine initPlayer(this, midiFP, sBankP, ignore)
+    subroutine initPlayer(this, midiFP, sBankP, param1, param2, param3, param4, param5)
         use midi
         use soundbank
     
@@ -251,10 +269,20 @@ module player
         type(soundB),   intent(in), target      :: sBankP
         integer(kind = 8)                       :: index, longestDelta, subIndex, memberIndex, maxTempo
         integer(kind = 1)                       :: stat
-        logical                                 :: ignore
-        
-        ignorePercussion                        = ignore
+        integer(kind = 1)                       :: param1, param2, param5
+        logical                                 :: param3
+        character(len = *)                      :: param4 
+
         dbgLogFirst                             = .TRUE.
+        
+        maxNumberOfMembers                      = param1
+        maxPercussItems                         = param2
+        printTable                              = param3
+        logPath                                 = param4 // ".txt"
+        octaveChange                            = param5
+        
+        ignorePercussion                           = .FALSE.
+        if (maxPercussItems == 0) ignorePercussion = .TRUE.
         
         midiF                                   => midiFP       
         sBank                                   => sBankP
@@ -680,7 +708,7 @@ module player
        type(playerNote), pointer                        :: note 
        logical                                          :: foundIt, first, veryfirst
        
-       open(94, file = "channelsData.txt", action = "write")
+       open(94, file = logPath // ".txt", action = "write")
        
        do channelNum = 1, 9, 1
           if (this%notePointerChannels(channelNum)%lastOne == 0) cycle 
@@ -1218,8 +1246,8 @@ module player
         !
         !   Sound bank has a changer offset, we will see if we really needed it.
         !
-        
-        note   = pNote%note + pNote%instrumentP%noteOffset 
+       
+        note   = pNote%note + pNote%instrumentP%noteOffset + (octaveChange * 12) + 1
         instru = pNote%instrument
         
         pNote%fNumber = this%comboTable(note)%instruTable(instru)%fnum

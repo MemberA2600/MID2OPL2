@@ -50,6 +50,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     external MID2OPL2EnterFileName
     external MID2OPL2StartConversion
     external MID2OPL2ChangeBank
+    external MID2OPL2ChangeSettings
     
     ! Variables
     type (T_MSG)                                        :: mesg
@@ -85,12 +86,19 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     lret = DlgSetSub(gdlg, IDC_BUTTON_CONVERT, MID2OPL2Convert)
     lret = DlgSetSub(gdlg, IDC_FILENAME, MID2OPL2EnterFileName)
     lret = DlgSetSub(gdlg, IDC_BUTTON_CONVERT, MID2OPL2StartConversion) 
-    lret = DlgSetSub(gdlg, IDC_SBList, MID2OPL2ChangeBank)
-    
+    lret = DlgSetSub(gdlg, IDC_SBList, MID2OPL2ChangeBank, DLG_CLICKED)
+    lret = DlgSetSub(gdlg, IDC_SBList, MID2OPL2ChangeBank, DLG_SELCHANGE)
+    lret = DlgSetSub(gdlg, IDC_POLY, MID2OPL2ChangeSettings)
+    lret = DlgSetSub(gdlg, IDC_PERCUSS, MID2OPL2ChangeSettings)
+    lret = DlgSetSub(gdlg, IDC_OCTAVE, MID2OPL2ChangeSettings)
+
     retlog = DLGSET(gdlg, IDC_LOAD, "Ready to work!")
     retlog = DLGSET(gdlg, IDC_OUTPUT, "You must construct additional pylons!")
     retlog = DLGSET(gdlg, IDC_SYSTEMNAME, "PC XT/AT")
     retlog = DLGSET(gdlg, IDC_OKBOX, "!!!")
+    retlog = DLGSET(gdlg, IDC_POLY, "9")
+    retlog = DLGSET(gdlg, IDC_PERCUSS, "3")
+    retlog = DLGSET(gdlg, IDC_OCTAVE, "0")
     
     call DATE_AND_TIME(date = currentDate)
     
@@ -100,6 +108,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
 
     retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .FALSE., DLG_ENABLE)
     retlog = DLGSET (gdlg, IDC_GD3Update, .FALSE.)
+    retlog = DLGSET (gdlg, IDC_Log, .TRUE.)
     
     if (allocated(listOfSB) .EQV. .TRUE.) then
         retlog = DlgSet ( gdlg, IDC_SBList, size(listOfSB), DLG_NUMITEMS)
@@ -484,6 +493,7 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
      character                          :: dummy
      character(len=500)                 :: temp
      character(len = textLen)           :: fileName, fullName
+     logical                            :: checkBox
 
      retlog = DLGGET(dlg, IDC_TRACKNAME  , tags(1))
      retlog = DLGGET(dlg, IDC_GAMENAME   , tags(2))
@@ -503,7 +513,10 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
 
      fullName = trim(outPath) // "\" // trim(fileName) // ".vgm"
      
-     call midiP%initPlayer(midiF, sBank, ignorePercussion)
+     retlog = DLGGET (gdlg, IDC_Log, checkBox)
+     
+     call midiP%initPlayer(midiF, sBank, maxNumberOfMembers, maxPercussItems, checkBox, &
+                          &trim(outPath) // "\" // trim(fileName), octaveChange)
      call myVGM%buildVGM(midiP, sBank, tags, fullName)  
 
     END SUBROUTINE 
@@ -547,5 +560,66 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
         end if 
         
         if (sBank%loaded .EQV. .FALSE.) dummy = fdialog('"Error" "Invalid SB" "The selected Sound Bank has invalid data!"') 
-667 &
+667     &
+    END SUBROUTINE 
+
+    subroutine MID2OPL2ChangeSettings(dlg, id, callbacktype)
+    !DEC$ ATTRIBUTES DEFAULT :: MID2OPL2ChangeSettings   
+        use iflogm
+        use ifcom
+        use ifauto
+        use MID2OPL2Globals
+        use functions
+
+        implicit none
+
+        include 'resource.fd'
+        type (dialog)                     :: dlg
+        integer                           :: id, callbacktype
+        integer(SINT)                     :: iret, retlog
+        integer(kind = 2)                 :: stat, tempMemb, tempPercuss, tempOctave
+        
+        character(len = 2)                :: maxMemberText, maxPercussText, octavetext 
+        character                         :: dummy
+        
+        retlog = DLGGET(dlg, IDC_POLY   , maxMemberText ) 
+        retlog = DLGGET(dlg, IDC_PERCUSS, maxPercussText) 
+        retlog = DLGGET(dlg, IDC_OCTAVE, octavetext) 
+        
+        read(maxMemberText , *, iostat = stat) tempMemb
+        
+        if (stat /= 0) tempMemb = 9
+        
+        read(octavetext, *, iostat = stat) tempOctave
+        
+        if (stat /= 0) tempOctave = 0
+        
+        read(maxPercussText, *, iostat = stat) tempPercuss
+        
+        if (stat /= 0) tempPercuss = 3
+
+        if (tempMemb      > 9)        tempMemb    = 9   
+        if (tempPercuss   > tempMemb) tempPercuss = tempMemb 
+        if (tempMemb      < 1)        tempMemb    = 1
+        if (tempPercuss   < 1)        tempPercuss = 0
+
+        if (tempOctave   >  4)        tempOctave = 4
+        if (tempOctave   < -4)        tempOctave = -4
+        
+        write(maxMemberText , "(I0)") tempMemb
+        write(maxPercussText, "(I0)") tempPercuss
+        if (octaveText /= "-") write(octavetext    , "(I0)") tempOctave
+        
+        retlog = DLGSET(dlg, IDC_POLY   , maxMemberText ) 
+        retlog = DLGSET(dlg, IDC_PERCUSS, maxPercussText) 
+        retlog = DLGSET(dlg, IDC_OCTAVE , octaveText    ) 
+        
+        retlog = DLGSET(dlg, IDC_POLY   , len_trim(maxMemberText) , DLG_POSITION) 
+        retlog = DLGSET(dlg, IDC_PERCUSS, len_trim(maxPercussText), DLG_POSITION) 
+        retlog = DLGSET(dlg, IDC_OCTAVE , len_trim(octaveText)    , DLG_POSITION) 
+             
+        maxNumberOfMembers = tempMemb
+        maxPercussItems    = tempPercuss
+        octaveChange       = tempOctave
+        
     END SUBROUTINE 

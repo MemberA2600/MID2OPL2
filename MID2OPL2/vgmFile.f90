@@ -7,7 +7,7 @@ module VGM
     private
     public                                         :: vgmFile, buildVGM, done
     logical                                        :: first = .TRUE., done
-    logical, parameter                             :: debug = .FALSE., saveRaw = .TRUE. 
+    logical, parameter                             :: debug = .FALSE., saveRaw = .FALSE. 
     
     type(midiPlayer), pointer                      :: midiP
     type(soundB)    , pointer                      :: sBank   
@@ -705,6 +705,19 @@ module VGM
        CLOSE(53)
        
        deallocate(outBytes, stat = stat) 
+       deallocate(this%bList%bytes, stat = stat)
+       this%bList%lastOne = 0
+       deallocate(this%pointers%timedData, stat = stat)
+       this%pointers%lastOne = 0  
+              
+       do channelIndex = 1, 9, 1
+          deallocate(this%dataChannels(channelIndex)%timedData, stat = stat)
+          this%dataChannels%lastOne = 0
+       end do
+       
+       deallocate(this%chipData%byteTriples, stat = stat) 
+       this%chipData%lastOne = 0  
+       
        call midiP%deAllocator()
        
    end subroutine
