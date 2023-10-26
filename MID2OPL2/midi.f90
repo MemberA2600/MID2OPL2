@@ -8,9 +8,11 @@ module midi
     public                                              :: midiFile, LoadFile, midiData, message
     logical                                             :: first                
     
-                                                         ! Turn these off at the end!
-    logical, parameter                                  :: debug    = .FALSE., streamMode = .FALSE., debugBytes = .FALSE.
+    logical, parameter                                  :: streamMode = .FALSE.
     logical, parameter                                  :: VLQdebug = .FALSE.
+    logical                                             :: debug    = .FALSE.
+
+    character(len = 255)                                :: logPath
     
     type chunk
         logical                                         :: header
@@ -289,7 +291,7 @@ module midi
        character(len = 8)                     :: origType  
        
        if (debug .EQV. .TRUE.) then
-          open(12, file = "midiDump.txt", action="write", position="append")
+          open(12, file = logPath, action="write", position="append")
           write(byteIndexAsText, "(I0)") byteIndex   
           write(12, "(A)") ""
           write(12, "(A)") "-> Very First Index / Byte: " // trim(byteIndexAsText) // " / " // trim(hexArray(byteIndex))
@@ -306,7 +308,7 @@ module midi
        if (debug .EQV. .TRUE.) then
          write(byteIndexAsText, "(I0)") byteIndex            
          write(deltaTimeAsText, "(I0)") this%messages(this%lastMessage)%deltaTime 
-         open(12, file = "midiDump.txt", action="write", position="append")
+         open(12, file = logPath, action="write", position="append")
          write(12, "(A)") "-> Data Starter ByteIndex: " // trim(byteIndexAsText) // " || TypeByte: " // hexarray(byteIndex) &
                &// " || DeltaTime Before: " // trim(deltaTimeAsText) 
          close(12) 
@@ -321,12 +323,7 @@ module midi
            this%messages(this%lastMessage)%messageType = "MT"
            byteIndex = byteIndex + 1
            channelNum = 1
-           call this%processAsMeta(byteIndex, hexArray, binArray, arrSize)
-           
-           if (debugBytes .EQV. .TRUE.) then
-               write(tempText, "(A, 1X, A, 1x, A)") trim(numToText(this%trackNum)), trim(this%messages(this%lastMessage)%metaM%typeAsText), trim(this%messages(this%lastMessage)%metaM%valueAsText)
-               call byteLog(trim(tempText))
-           end if    
+           call this%processAsMeta(byteIndex, hexArray, binArray, arrSize)  
            
        ! System Exclusive Message
        case("F0")
@@ -334,36 +331,6 @@ module midi
            channelNum = 1
            byteIndex = byteIndex + 1
            call this%processAsSysMes(byteIndex, hexArray, binArray, arrSize)
-           
-           if (debugBytes .EQV. .TRUE.) then
-               write(tempText, "(A, 1X, A, 1x, A)") trim(numToText(this%trackNum)), "System Exclusive", trim(this%messages(this%lastMessage)%sysM%typeAsText)
-               
-               origLen = len_trim(tempText)
-               
-               do index = 1, this%messages(this%lastMessage)%sysM%lenght, 1
-                  tempIndex = origLen + (3 * index) - 2
-                  tempText(tempIndex+1:tempIndex+2) = this%messages(this%lastMessage)%sysM%valueAsHex(index)
-               end do    
-               
-               call byteLog(trim(tempText))
-               tempText = "Value: "
-               tempIndex =  8
-                
-               do index = 1, this%messages(this%lastMessage)%sysM%lenght, 1
-                  binText = "" 
-                   
-                  read(this%messages(this%lastMessage)%sysM%valueAsHex(index), "(Z2)") val
-                  write(binText, "(I3)") val  
-
-                  do subIndex = 1, 3, 1
-                     if (binText(subIndex:subIndex) == " ") binText(subIndex:subIndex) = "0" 
-                  end do    
-                  
-                  tempText(tempIndex:tempIndex + 3) = binText
-                  tempIndex = tempIndex + 4
-                  
-               end do    
-           end if  
 
        ! Midi Message    
        case default    
@@ -373,48 +340,14 @@ module midi
            call this%processAsMidiData(byteIndex, hexArray, binArray, arrSize)   
            channelNum = this%messages(this%lastMessage)%midiD%channelNum
            
-           if (debugBytes .EQV. .TRUE.) then
-               write(tempText, "(A, 1X, A, 1x, A)") trim(numToText(this%trackNum)), trim(this%messages(this%lastMessage)%midiD%typeAsText), trim(origType)
-               
-               origLen = len_trim(tempText)
-               
-               do index = 1, this%messages(this%lastMessage)%midiD%lenght, 1
-                  tempIndex = origLen + (9 * index) - 8 
-                  tempText(tempIndex:tempIndex+1) = this%messages(this%lastMessage)%midiD%valueAsBin(index)
-               end do    
-               
-               call byteLog(trim(tempText))
-               
-               tempText  = "Value: "               
-               tempIndex = 8
-
-               do index = 1, this%messages(this%lastMessage)%midiD%lenght, 1
-                  binText = "" 
-                   
-                  read(this%messages(this%lastMessage)%midiD%valueAsBin(index), "(B8)") val
-                  write(binText, "(I3)") val  
-
-                  do subIndex = 1, 3, 1
-                     if (binText(subIndex:subIndex) == " ") binText(subIndex:subIndex) = "0" 
-                  end do    
-                  
-                  tempText(tempIndex:tempIndex + 3) = binText
-                  tempIndex = tempIndex + 4
-                  
-               end do  
-               call byteLog("DeltaTime: " // numToText(this%midiF%deltaSums(channelNum)))
-
-           end if  
-           
        end select
 
        this%midiF%deltaSums(channelNum) = this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime 
        !this%midiF%deltaSums(this%trackNum) = this%midiF%deltaSums(this%trackNum) + this%messages(this%lastMessage)%deltaTime 
 
-       call byteLog("----------------------------------------------------")
        
        if (debug .EQV. .TRUE.) then
-           open(12, file = "midiDump.txt", action="write", status="old", position="append")
+           open(12, file = logPath, action="write", status="old", position="append")
            call this%writeDump()
            close(12) 
        end if    
@@ -963,7 +896,7 @@ module midi
        end if
        
        if (debug .EQV. .TRUE.) then
-           open(12, file = "midiDump.txt", action="write", position="append")
+           open(12, file = logPath, action="write", position="append")
            write(sizeAsText, "(I0)") this%messages(this%lastMessage)%midiD%lenght
            write(12, "(A)") "-> Size: " // trim(sizeAsText)
 
@@ -1007,7 +940,7 @@ module midi
    subroutine dumpTest(text)
      character(len = *)                              ::  text
    
-     open( 12, file = "midiDump.txt", action="write", position="append")
+     open( 12, file = logPath, action="write", position="append")
      write(12, "(A)") "!!! Test: " // trim(text)
      close(12)   
    
@@ -1070,7 +1003,7 @@ module midi
        end do
               
        if (debug .EQV. .TRUE.) then
-           open(12, file = "midiDump.txt", action="write", position="append")
+           open(12, file = logPath, action="write", position="append")
            write(sizeAsText, "(I0)") this%messages(this%lastMessage)%sysM%lenght
            write(12, "(A)") "-> Size: " // trim(sizeAsText)
 
@@ -1171,7 +1104,7 @@ module midi
        end do   
        
        if (debug .EQV. .TRUE.) then
-           open(12, file = "midiDump.txt", action="write", position="append")
+           open(12, file = logPath, action="write", position="append")
            write(sizeAsText, "(I0)") this%messages(this%lastMessage)%metaM%lenght
            write(12, "(A)") "-> Size: " // trim(sizeAsText)
                  
@@ -1285,7 +1218,7 @@ module midi
        end if 
    
        if (debug .EQV. .TRUE.) then
-           open(12, file = "midiDump.txt", action="write", position="append")
+           open(12, file = logPath, action="write", position="append")
            write(12, "(A)") ""
            write(trackNumAsText, "(I0)") this%trackNum
            write(sizeAsText    , "(I0)") arrSize
@@ -1368,8 +1301,6 @@ module midi
       else
           if (streamMode .EQV. .FALSE.) then  
               trackNum = trackNum + 1 
-
-              call byteLog("--- Track " // trim(numToText(trackNum)) // " ---")
               
               midiF%tracks(trackNum)%trackNum = trackNum
               midiF%tracks(trackNum)%midiF    => midiF
@@ -1381,25 +1312,6 @@ module midi
       
       call this%DeAllocateChunk()
    
-   end subroutine
-     
-   subroutine byteLog(txt)
-        character(len = *)      :: txt
-        
-        if (debugBytes .EQV. .TRUE.) then
-            if (first .EQV. .TRUE.) then
-                open(17, file = "bytes.txt", action = "write")
-                write(17, "(A)") ""
-                close(17)
-            
-                first = .FALSE.
-            end if
-        
-            open(17, file = "bytes.txt", action = "write", access = "append" )
-            write(17, "(A)") txt
-            close(17)
-        end if
-        
    end subroutine
    
    subroutine setMidiTiming(midiF, timingData)
@@ -1599,16 +1511,29 @@ module midi
    ! MidiFile Routines
    !
    
-   subroutine LoadFile(this, path)
+   subroutine LoadFile(this, path, dbg)
      class(midiFile), intent(inout) :: this
      character(len = *)             :: path
      integer                        :: theSize, stat, trackNum
      integer(kind = 8)              :: index, subIndex, currentIndex
+     logical                        :: dbg
+     
+     debug = dbg
      
      if (debug .EQV. .TRUE.) then
-         inquire(file = "midiDump.txt", exist = stat)
+         logPath = path
+         do index = len_trim(logPath), 1, -1
+            if (logPath(index:index) == ".") then
+                logPath(index+1 : index + 3) = "txt"    
+                exit
+            else
+                logPath(index : index) = " "
+            end if 
+         end do    
+         
+         inquire(file = logPath, exist = stat)
          if (stat .EQV. .TRUE.) then
-             open(12, file = "midiDump.txt", action="read")
+             open(12, file = logPath, action="read")
              close(12, status = "DELETE")
          end if
      end if    

@@ -37,8 +37,9 @@
 #define IDC_STATIC7                     1037
 #define IDC_GD3Update                   1038
 #define IDC_log                         1039
-#define IDC_PERCUSS2                    1040
 #define IDC_octave                      1040
+#define IDC_log2                        1042
+#define IDC_DUMP                        1042
 #define IDM_EXIT                        30001
 #define IDM_APPLY                       30002
 

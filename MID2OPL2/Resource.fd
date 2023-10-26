@@ -8,7 +8,6 @@
       integer, parameter :: IDC_STATIC2 = 1030
       integer, parameter :: IDC_BUTTON_CONVERT = 1008
       integer, parameter :: IDC_STATIC4 = 1031
-      integer, parameter :: IDC_PERCUSS2 = 1040
       integer, parameter :: IDC_STATIC5 = 1035
       integer, parameter :: IDC_STATIC6 = 1036
       integer, parameter :: IDC_STATIC7 = 1037
@@ -17,6 +16,7 @@
       integer, parameter :: IDC_PATH_BUTTON = 1015
       integer, parameter :: IDD_MID2OPL2_DIALOG = 101
       integer, parameter :: IDC_EDIT1 = 1014
+      integer, parameter :: IDC_DUMP = 1042
       integer, parameter :: IDC_log = 1039
       integer, parameter :: IDC_BUTTON_CLOSE = 1008
       integer, parameter :: IDC_GAMENAME = 1021
@@ -25,6 +25,7 @@
       integer, parameter :: IDC_octave = 1040
       integer, parameter :: IDC_TRACKNAME = 1020
       integer, parameter :: IDC_AUTHORNAME = 1023
+      integer, parameter :: IDC_log2 = 1042
       integer, parameter :: IDC_LOAD = 1014
       integer, parameter :: IMG_PIANO = 1011
       integer, parameter :: IDC_OUTPUT = 1016

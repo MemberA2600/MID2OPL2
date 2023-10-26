@@ -108,7 +108,8 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
 
     retlog = DLGSET (gdlg, IDC_BUTTON_CONVERT, .FALSE., DLG_ENABLE)
     retlog = DLGSET (gdlg, IDC_GD3Update, .FALSE.)
-    retlog = DLGSET (gdlg, IDC_Log, .TRUE.)
+    retlog = DLGSET (gdlg, IDC_Log, .FALSE.)
+    retlog = DLGSET (gdlg, IDC_DUMP, .FALSE.)
     
     if (allocated(listOfSB) .EQV. .TRUE.) then
         retlog = DlgSet ( gdlg, IDC_SBList, size(listOfSB), DLG_NUMITEMS)
@@ -237,12 +238,13 @@ SUBROUTINE MID2OPL2MidiLOAD( dlg, id, callbacktype)
   logical                           :: checkBox 
   integer(kind = 8)                 :: index, trackIndex, boxIndex, typeIndex
   character(len = 2), dimension(2)  :: mTypes
-  ! character(len = textLen)  :: tempText
+
   
   loadText = fdialog('"OpenFile" "Open File" "*"')  
   if (loadText /= "") then
+      retlog = DLGGET (gdlg, IDC_DUMP, checkBox)
       retlog = DLGSET(gdlg, IDC_LOAD, loadText)
-      call midiF%loadFile(loadText)
+      call midiF%loadFile(loadText, checkBox)
   end if    
      
   retlog = DLGGET (gdlg, IDC_GD3Update, checkBox)
