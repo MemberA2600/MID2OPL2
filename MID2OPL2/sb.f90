@@ -5,9 +5,10 @@ module soundbank
     implicit none
         
     private 
-    public                              :: soundB, loadSBList, importBank, instrument, numOfInstruments
+    public                              :: soundB, loadSBList, importBank, instrument, numOfInstruments, getMilliSeconds
     
     logical, parameter                  :: debug            = .FALSE.
+    logical                             :: loadedATD        = .FALSE.
     integer                             :: numOfInstruments = 175
 
     type instrument
@@ -23,7 +24,14 @@ module soundbank
         integer (kind = 2)               :: feedback    ! Feedback                                  $C0 - $C8 (3-1) 
         integer (kind = 4)               :: noteOffset
         integer (kind = 2)               :: synthInstrument, percussionInstrument
+        type(adTable), pointer           :: eTable
 
+        
+        contains
+        procedure                        :: getMilliSeconds       => getMilliSeconds
+        procedure                        :: getMilliSecondsOfSlot => getMilliSecondsOfSlot
+        procedure                        :: setPointer            => setPointer
+        
     end type    
     
     type soundB
@@ -33,8 +41,8 @@ module soundbank
         type(adTable)                                       :: eTable
         
         contains
-        procedure                       :: LoadSBList => loadSBList
-        procedure                       :: ImportBank => importBank
+        procedure                                           :: LoadSBList => loadSBList
+        procedure                                           :: ImportBank => importBank
 
     
     end type
@@ -91,8 +99,19 @@ module soundbank
         
         close(14, status = "delete")
         
-        call this%eTable%initialize()
+        if (loadedATD .EQV. .FALSE.) then
+            call this%eTable%initialize()
+            loadedATD = .TRUE.
+        end if 
         
+    end subroutine
+    
+    subroutine setPointer(this, eTable)
+        class(instrument), intent(inout)                     :: this 
+        type(adTable), target                               :: eTable
+         
+        this%eTable => eTable
+
     end subroutine
     
     function isItOP2(line) result(ok)
@@ -241,7 +260,7 @@ module soundbank
            end if
            
            !
-           !  Seems like even on FM, they are both sets
+           !  Seems like even on FM, they are both set
            !
            
            this%instruments(counter)%byte1(1) = byteConvert(instData(5 ), 0, 7)
@@ -297,8 +316,13 @@ module soundbank
 
         this%loaded = .TRUE.
 
-888 &        
+888     &        
         deallocate(bytes, stat = stat)
+        
+        do index = 1, numOfInstruments, 1
+           call this%instruments(index)%setPointer(this%eTable)
+        end do    
+        
     end subroutine
     
     function byteConvert(oneByte, first, last) result(twoByte)
@@ -426,5 +450,75 @@ module soundbank
         end do     
     
     end function
+    
+    function getMilliSeconds(this, typ) result(value)
+        class(instrument), intent(inout)        :: this
+        character                               :: typ
+        real(kind = 8)                          :: value, temp1, temp2
+        character(len = 8)                      :: tempBytes
+        integer(kind = 1)                       :: index
+        logical                                 :: KSR
+
+        temp1 = 0
+        temp2 = 0
+        
+        temp1 = this%getMilliSecondsOfSlot(typ, 1)
+        
+        if (this%doubleVoice .EQV. .TRUE.) temp2 = this%getMilliSecondsOfSlot(typ, 2)
+        
+        value = temp2
+        if (temp1 > temp2) value = temp1
+        
+    end function
+    
+    function getMilliSecondsOfSlot(this, typ, slot) result(value)
+        class(instrument), intent(inout)        :: this
+        character                               :: typ
+        real(kind = 8)                          :: value
+        character(len = 8)                      :: tempByte
+        integer(kind = 1)                       :: index
+        logical                                 :: KSR
+        integer(kind = 1)                       :: slot
+        integer(kind = 2)                       :: rate
+        character(len = 4)                      :: tempNibble
+
+        !
+        ! I'm not sure about this since the original specification says you have to thake the rate,
+        ! multiply it by 4 and add the original ratio's two lower bits to it and use that 6bits to
+        ! get the offset. In this case, we would still have only 16 different values.
+        !
+        ! Knowing that this is just for estimation, I use the scale 2bits instead.
+        !
+        
+        write(tempByte, "(B8)") this%byte1(slot) 
+            
+        do index = 1, 8, 1
+           if (tempByte(index:index) == " ") tempByte(index:index) = "0"
+        end do
+            
+        KSR = .FALSE.
+        if (tempByte(4:4) == "1") KSR = .TRUE.
+        
+        if (typ == "D") then
+            write(tempByte, "(B8)") this%byte3(slot) 
+        else
+            write(tempByte, "(B8)") this%byte2(slot)
+        end if
+        
+        do index = 1, 8, 1
+           if (tempByte(index:index) == " ") tempByte(index:index) = "0"
+        end do
+        
+        if (typ == "A") then
+            tempNibble = tempByte(1:4)
+        else
+            tempNibble = tempByte(5:8)
+        end if
+
+        read(tempNibble, "(B4)") rate
+        value = this%eTable%getValue(rate, this%byte5(slot), typ, KSR)        
+        
+    end function
+
     
 end module

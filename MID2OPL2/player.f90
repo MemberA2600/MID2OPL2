@@ -148,6 +148,9 @@ module player
         procedure                                   :: printTheTable              => printTheTable
         procedure                                   :: saveNotePointer            => saveNotePointer
         procedure                                   :: deAllocator                => deAllocator
+        procedure                                   :: msToDelta                  => msToDelta
+        procedure                                   :: reSetDeltas                => reSetDeltas      
+        
     end type
         
     contains    
@@ -248,16 +251,18 @@ module player
     subroutine debugLog(txt)
         character(len = *)                      :: txt
     
-        if (dbgLogFirst .EQV. .TRUE.) then
-            dbgLogFirst = .FALSE.
-            open(89, file = "playerDBG.txt", action = "write")
-        else
-            open(89, file = "playerDBG.txt", action = "write", position = "append")
-        end if 
+        if (debug .EQV. .TRUE.) then
+            if (dbgLogFirst .EQV. .TRUE.) then
+                dbgLogFirst = .FALSE.
+                open(89, file = "playerDBG.txt", action = "write")
+            else
+                open(89, file = "playerDBG.txt", action = "write", position = "append")
+            end if 
             
-        write(89, "(A)") txt
-        close(89)
-    
+            write(89, "(A)") txt
+            close(89)
+        end if
+            
     end subroutine
     
     subroutine initPlayer(this, midiFP, sBankP, param1, param2, param3, param4, param5)
@@ -366,7 +371,7 @@ module player
            do memberIndex = 1, maxNumberOfMembers, 1 
               if (allocated(this%channels(index, memberIndex)%playerNotes) .EQV. .TRUE.) &
                  &deallocate(this%channels(index, memberIndex)%playerNotes, stat = stat)
-              allocate(this%channels(index, memberIndex)%playerNotes(this%maxNumberOfNotes), stat = stat)  
+                    allocate(this%channels(index, memberIndex)%playerNotes(this%maxNumberOfNotes), stat = stat)  
               
               if (debug .EQV. .TRUE.) then
                  call debugLog("Allocate notes array " // trim(numToText(index)) // "," // trim(numToText(memberIndex)) // " as " // & 
@@ -378,8 +383,6 @@ module player
               this%channels(index, memberIndex)%hasAnyNotes    = .FALSE.
               this%channels(index, memberIndex)%numOfNotes     = 0
               this%channels(index, memberIndex)%sumOfDuration  = 0
-
-              
               
               do subIndex = 1, this%maxNumberOfNotes, 1
                   this%channels(index, memberIndex)%playerNotes(subIndex)%instrument = 0
@@ -398,10 +401,76 @@ module player
 
         do index = 1, midiF%numberOfTracks, 1 
            call this%fillChannel(index)
-        end do
-        
+        end do        
+
+        do index = 1, midiF%numberOfTracks, 1 
+           call this%reSetDeltas(index)
+        end do     
+
         call this%reAlignNotes()
         
+    end subroutine
+    
+    subroutine reSetDeltas(this, channel)
+         class(midiPlayer), intent(inout), target   :: this
+         integer(kind = 8)                          :: channel
+         integer(kind = 8)                          :: index, deltaIndex   
+         integer(kind = 2)                          :: memberIndex, maxLen, minLen, currLen, temp
+         
+         do memberIndex = 1, maxNumberOfMembers, 1             
+            if (this%channels(channel, memberIndex)%hasAnyNotes .EQV. .TRUE.) then 
+                call debugLog("--> ReCalculating Deltas of Channel #" // trim(numToText(channel)) // " Member #" // trim(numToText(channel)) // ":")
+                call debugLog("Number of Notes: " // trim(numToText(this%channels(channel, memberIndex)%lastNote)))
+
+                do index = 1, this%channels(channel, memberIndex)%lastNote, 1 
+                   call debugLog("---->>> NoteNum: " // trim(numToText(index)) // " / " // &
+                       &trim(numToText(this%channels(channel, memberIndex)%lastNote)))
+                   
+                   if (this%divisionMode .EQV. .FALSE.) then
+                       if (this%channels(channel, memberIndex)%playerNotes(index)%tempo == 0) then
+                           do deltaIndex = 1, this%tempos%lastOne, 1
+                            if (this%channels(channel, memberIndex)%playerNotes(index)%startDelta >= this%tempos%startDeltas(deltaIndex)) then
+                                this%channels(channel, memberIndex)%playerNotes(index)%tempo       = this%tempos%tempos(deltaIndex)
+                                exit
+                            end if 
+                           end do  
+                       end if
+                   end if
+                   
+                   minLen = this%msToDelta(this%channels(channel, memberIndex)%playerNotes(index)%instrumentP, "A", "D", &
+                          & this%channels(channel, memberIndex)%playerNotes(index)%tempo) 
+                   
+                   currLen = this%channels(channel, memberIndex)%playerNotes(index)%endDelta - &
+                          & this%channels(channel, memberIndex)%playerNotes(index)%startDelta
+                       
+                   call debugLog("Original : " // trim(numToText(currLen)) // " (" // &
+                       & trim(numToText(this%channels(channel, memberIndex)%playerNotes(index)%startDelta)) // " - " // &
+                         trim(numToText(this%channels(channel, memberIndex)%playerNotes(index)%endDelta)) // ")" )
+                   
+                   if (index < this%channels(channel, memberIndex)%lastNote) then
+                       maxLen = this%channels(channel, memberIndex)%playerNotes(index+ 1)%startDelta - &
+                              & this%channels(channel, memberIndex)%playerNotes(index   )%startDelta
+
+                   else     
+                       maxLen = currLen 
+                   end if     
+                   
+                   if (currLen < minLen) currLen = minLen
+                   if (currLen > maxLen) currLen = maxLen
+                       
+                   temp = this%channels(channel, memberIndex)%playerNotes(index)%startDelta + currLen
+                   call debugLog("Max: " // trim(numToText(maxLen)) // " | Min: " // trim(numToText(minLen)))    
+                   call debugLog("New: " // trim(numToText(currLen)))
+
+                   this%channels(channel, memberIndex)%sumOfDuration = &
+                 & this%channels(channel, memberIndex)%sumOfDuration + &
+                 & (temp - this%channels(channel, memberIndex)%playerNotes(index)%endDelta)        
+
+                    this%channels(channel, memberIndex)%playerNotes(index)%endDelta = temp                       
+                       
+                end do
+            end if
+         end do    
     end subroutine
     
     subroutine reAlignNotes(this)
@@ -1003,8 +1072,6 @@ module player
           end if
         end do 
        
-       
-       
     end subroutine
     
     
@@ -1306,6 +1373,7 @@ module player
         integer(kind = 8)                       :: deltaBuffer
         integer(kind = 2)                       :: note, currInst
         character(len = 16)                     :: word
+        real(kind = 8)                          :: minLen
         
         deltaBuffer         = 0
         memberIndex         = 1
@@ -1369,7 +1437,8 @@ module player
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%freq       = 0
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%tempo      = 0
                      this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
-                 else    
+                 else       
+                        
                      this%channels(channel, memberIndex)%numOfNotes    = this%channels(channel, memberIndex)%numOfNotes    + 1
                      this%channels(channel, memberIndex)%sumOfDuration = this%channels(channel, memberIndex)%sumOfDuration + &
                                                                        & (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta -&
@@ -1696,10 +1765,32 @@ module player
         end do
     
         read(bitString(startBit : startBit+lenght), "(I2)") res
-        
-        
-        
+    
     end function
     
+    function msToDelta(this, instru, typ1, typ2, tempo) result(ticks)
+        class(midiPlayer), intent(inout)        :: this 
+        type(instrument)                        :: instru
+        character                               :: typ1, typ2
+        integer(kind = 8)                       :: ticks
+        real(kind = 8)                          :: ms
+        real(kind = 8)                          :: tempoReal
+        integer(kind = 4)                       :: tempo
+        
+        ticks = 0
+        if (typ2 /= " ") then
+            ms   = instru%getMilliSeconds(typ1) + instru%getMilliSeconds(typ2)
+        else
+            ms   = instru%getMilliSeconds(typ1)        
+        end if    
+                            
+        if (this%divisionMode .EQV. .FALSE.) then   
+            tempoReal = 60000000 / tempo 
+        
+            ticks = ms / ( tempoReal / this%tpqn)
+        else
+            ticks = ms * (this%fps * this%ptf)
+        end if    
+    end function
     
 end module

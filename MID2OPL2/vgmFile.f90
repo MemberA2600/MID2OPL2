@@ -7,7 +7,7 @@ module VGM
     private
     public                                         :: vgmFile, buildVGM, done
     logical                                        :: first = .TRUE., done
-    logical, parameter                             :: debug = .TRUE.
+    logical, parameter                             :: debug = .FALSE.
     
     type(midiPlayer), pointer                      :: midiP
     type(soundB)    , pointer                      :: sBank   

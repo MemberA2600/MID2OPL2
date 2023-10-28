@@ -110,7 +110,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     retlog = DLGSET (gdlg, IDC_GD3Update, .FALSE.)
     retlog = DLGSET (gdlg, IDC_Log, .FALSE.)
     retlog = DLGSET (gdlg, IDC_DUMP, .FALSE.)
-    
+        
     if (allocated(listOfSB) .EQV. .TRUE.) then
         retlog = DlgSet ( gdlg, IDC_SBList, size(listOfSB), DLG_NUMITEMS)
         do index = 1, size(listOfSB), 1

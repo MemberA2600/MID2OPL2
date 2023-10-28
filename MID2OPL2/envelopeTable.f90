@@ -5,7 +5,7 @@ module envelope
     private
     public                                          :: adTable, initialize, getValue 
     
-    logical, parameter                              :: debug = .FALSE.
+    logical, parameter                              :: debug  = .TRUE.
     
     type adtRecord
         integer(kind = 1)                           :: rate, RKS
@@ -15,11 +15,11 @@ module envelope
     type adTable                               
         type(adtRecord), dimension(:), allocatable  :: records
         integer                                     :: numOfRecords
-        
+        real(kind = 8)                              :: lastVal
+    
         contains
         procedure                                   :: Initialize   => initialize 
-        procedure                                   :: GetValue     => getValue
-        procedure                                   :: ChangeValues => changeValues
+        procedure                                   :: GetValue     => getValue 
         
     end type
     
@@ -29,7 +29,7 @@ module envelope
         class(adTable), intent(inout)               :: this
         integer(kind = 1)                           :: stat
         character                                   :: dummy
-        integer(kind = 2)                           :: numOfLines, index
+        integer(kind = 2)                           :: numOfLines, index, subIndex
         logical                                     :: ok
         
         inquire(file = "attack_decay.txt", exist = ok)
@@ -47,6 +47,7 @@ module envelope
         rewind(22)
         
         allocate(this%records(numOfLines), stat = stat)
+        this%numOfRecords = numOfLines
         
         do index = 1, numOfLines, 1
            read(22, *) this%records(index)%rate     , this%records(index)%RKS     , &
@@ -58,68 +59,55 @@ module envelope
         
         if (debug .EQV. .TRUE.) then
             open(43, file = "tableDebug.txt", action = "write")
-            do index = 1, numOfLines, 1
-                write(43, "(I2, 1x, I1, 1x, F8.2, 1x, F8.2, 1x, F8.2, 1x,F8.2)") &
-                                                            & this%records(index)%rate     , this%records(index)%RKS     , &
-                                                            & this%records(index)%attack(1), this%records(index)%decay(1), &
-                                                            & this%records(index)%attack(2), this%records(index)%decay(2) 
-            end do
+            do index = 0, 15, 1 
+               do subIndex = 0, 3, 1  
+                   write(43, "(F0.5)") this%getValue(index, subIndex, "A", .FALSE.) 
+                   write(43, "(F0.5)") this%getValue(index, subIndex, "D", .FALSE.) 
+                   write(43, "(F0.5)") this%getValue(index, subIndex, "A", .TRUE.) 
+                   write(43, "(F0.5)") this%getValue(index, subIndex, "D", .TRUE.) 
+               end do 
+            end do 
             close(43)
         end if    
 123     &            
     end subroutine
     
         
-    ! RM  = Bits of Attack / Decay Rate
-    ! RL  = RKS
-    ! KSR = KSR bit, changing values a little
-    ! C   = 0: Not "First Time", Attack 
-    ! C   = 1: Not "First Time", Decay 
-    ! C   = 2: "First Time"    , Attack 
-    ! C   = 3: "First Time"    , Decay 
-    !    
-    function getValue(this, RM, RL, C, KSR) result(value)
+    function getValue(this, rate, rks, typ, KSR) result(value)    
         class(adTable), intent(inout)                       :: this
-        integer(kind = 2)                                   :: offset, RM, RL, C
+        integer(kind = 2)                                   :: rate, rks, num
         real(kind = 8)                                      :: value
-        real(kind = 8), dimension(4)                        :: temps
         logical                                             :: KSR
-         
-        if (KSR .EQV. .TRUE.) call this%changeValues(RM, RL) 
+        character                                           :: typ
+
         
-        if (RM == 0) then
-           value = 0 
+        if (rate == 0) then
+           value = this%lastVal 
+           if (debug .EQV. .TRUE.) write(43, "(I0, 1x, I0, 1x, L, 1x, I0)") rate, rks, KSR , value
         else    
-           offset   = 60 - ((RM-1) * 4 + RL +1)
-           temps(1) = this%records(offset)%attack(1)
-           temps(2) = this%records(offset)%decay (1)
-           temps(3) = this%records(offset)%attack(2)
-           temps(4) = this%records(offset)%decay (2)
-           value    = temps(C)
-        end if
-        
+           do num = 1, this%numOfRecords, 1
+              if (this%records(num)%rate == rate .AND. this%records(num)%rks == rks) then  
+                   if (typ == "A") then
+                       if (KSR .EQV. .FALSE.) then
+                           value = this%records(num)%attack(1)
+                       else
+                           value = this%records(num)%attack(2)
+                       end if    
+                   else
+                       if (KSR .EQV. .FALSE.) then
+                          value = this%records(num)%decay(1)
+                       else
+                          value = this%records(num)%decay(2)
+                       end if   
+                       this%lastVal = value
+                   end if  
+                   exit
+                 end if
+            end do
+            if (debug .EQV. .TRUE.) write(43, "(I0, 1x, I0, 1x, L, 1x, I0)") rate, rks, KSR, num
+         end if
     end function
-        
-    subroutine changeValues(this, RM, RL)
-        class(adTable), intent(inout)                       :: this
-        integer(kind = 2), intent(inout)                    :: RM, RL
-        integer(kind = 2)                                   :: index
-        integer                                             :: temp
-        character(6)                                        :: bitString
-        
-        temp      = (4 * RM) + RL
-        bitString = ""
-        
-        write(bitString, "(I0)") temp
-        
-        do index = 1, 6, 1
-           if (bitString(index:index) == " " ) bitString(index:index) = "0" 
-        end do
-        
-        read(bitString(1:4), "(I0)") RM
-        read(bitString(5:6), "(I0)") RL
-        
-    end subroutine    
+           
 end module
     
     
