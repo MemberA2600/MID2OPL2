@@ -5,7 +5,7 @@ module envelope
     private
     public                                          :: adTable, initialize, getValue 
     
-    logical, parameter                              :: debug  = .TRUE.
+    logical, parameter                              :: debug  = .FALSE.
     
     type adtRecord
         integer(kind = 1)                           :: rate, RKS

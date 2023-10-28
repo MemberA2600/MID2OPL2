@@ -96,7 +96,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     retlog = DLGSET(gdlg, IDC_OUTPUT, "You must construct additional pylons!")
     retlog = DLGSET(gdlg, IDC_SYSTEMNAME, "PC XT/AT")
     retlog = DLGSET(gdlg, IDC_OKBOX, "!!!")
-    retlog = DLGSET(gdlg, IDC_POLY, "9")
+    retlog = DLGSET(gdlg, IDC_POLY, "5")
     retlog = DLGSET(gdlg, IDC_PERCUSS, "3")
     retlog = DLGSET(gdlg, IDC_OCTAVE, "0")
     

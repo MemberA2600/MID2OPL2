@@ -150,6 +150,7 @@ module player
         procedure                                   :: deAllocator                => deAllocator
         procedure                                   :: msToDelta                  => msToDelta
         procedure                                   :: reSetDeltas                => reSetDeltas      
+        procedure                                   :: removeNotClosed            => removeNotClosed
         
     end type
         
@@ -359,9 +360,7 @@ module player
         if (debug .EQV. .TRUE.) then
             call debugLog("Allocate note pointer array as 16:" // trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))  
         end if
-        
-        !if (allocated(this%percussionPointers) .EQV. .TRUE.) deallocate(this%percussionPointers, stat = stat)
-        !allocate(this%percussionPointers(5, this%maxNumberOfNotes)  , stat = stat) 
+
         if (debug .EQV. .TRUE.) then
             call debugLog("Allocate percussion pointer array as " // trim(numToText(maxNumberOfMembers)) // ":" &
                  &// trim(numToText(this%maxNumberOfNotes)) // ": " // trim(numToText(stat)))  
@@ -404,6 +403,7 @@ module player
         end do        
 
         do index = 1, midiF%numberOfTracks, 1 
+           call this%removeNotClosed(index)
            call this%reSetDeltas(index)
         end do     
 
@@ -411,21 +411,72 @@ module player
         
     end subroutine
     
+    subroutine removeNotClosed(this, channel)
+         class(midiPlayer), intent(inout), target   :: this
+         integer(kind = 8)                          :: channel
+         integer(kind = 8)                          :: index, origLastOne, secondIndex
+         integer(kind = 2)                          :: memberIndex
+                  
+         do memberIndex = 1, maxNumberOfMembers, 1             
+            if (this%channels(channel, memberIndex)%hasAnyNotes .EQV. .TRUE.) then
+                origLastOne = this%channels(channel, memberIndex)%lastNote
+
+                do index = 1, origLastOne, 1 
+                   if (index > this%channels(channel, memberIndex)%lastNote) exit 
+                    
+                   if (this%channels(channel, memberIndex)%playerNotes(index)%closed .EQV. .FALSE.) then
+                       call debugLog("Channel #" // trim(numToText(channel)) // " Member #" // trim(numToText(memberIndex)) // "'s Note #" // &
+                                    & trim(numToText(index)) // " is not closed, delete it from channel!")
+ 
+                       this%channels(channel, memberIndex)%lastNote = this%channels(channel,memberIndex)%lastNote - 1 
+                       do secondIndex = index, this%channels(channel, memberIndex)%lastNote, 1   
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%instrument = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%instrument     
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%volume     = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%volume                               
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%note       = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%note                            
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%fNumber    = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%fNumber               
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%octave     = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%octave   
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%freq     = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%freq                             
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%startDelta = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%startDelta   
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%endDelta = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%endDelta   
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%instrumentP => &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%instrumentP   
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%closed     = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%closed    
+                          this%channels(channel, memberIndex)%playerNotes(secondIndex    )%tempo     = &
+                         &this%channels(channel, memberIndex)%playerNotes(secondIndex + 1)%tempo   
+                       end do    
+        
+                   end if
+                end do
+            end if
+        end do
+    end subroutine
+         
     subroutine reSetDeltas(this, channel)
          class(midiPlayer), intent(inout), target   :: this
          integer(kind = 8)                          :: channel
-         integer(kind = 8)                          :: index, deltaIndex   
-         integer(kind = 2)                          :: memberIndex, maxLen, minLen, currLen, temp
+         integer(kind = 8)                          :: index, deltaIndex, maxLen, minLen, currLen, temp
+         integer(kind = 2)                          :: memberIndex
          
          do memberIndex = 1, maxNumberOfMembers, 1             
-            if (this%channels(channel, memberIndex)%hasAnyNotes .EQV. .TRUE.) then 
-                call debugLog("--> ReCalculating Deltas of Channel #" // trim(numToText(channel)) // " Member #" // trim(numToText(channel)) // ":")
+            if (this%channels(channel, memberIndex)%hasAnyNotes .EQV. .FALSE.) then 
+                call debugLog("--> Channel #" // trim(numToText(channel)) // " Member #" // trim(numToText(memberIndex)) // " is empty.")
+            else    
+                call debugLog("--> ReCalculating Deltas of Channel #" // trim(numToText(channel)) // " Member #" // trim(numToText(memberIndex)) // ":")
                 call debugLog("Number of Notes: " // trim(numToText(this%channels(channel, memberIndex)%lastNote)))
 
                 do index = 1, this%channels(channel, memberIndex)%lastNote, 1 
                    call debugLog("---->>> NoteNum: " // trim(numToText(index)) // " / " // &
                        &trim(numToText(this%channels(channel, memberIndex)%lastNote)))
-                   
+                                      
                    if (this%divisionMode .EQV. .FALSE.) then
                        if (this%channels(channel, memberIndex)%playerNotes(index)%tempo == 0) then
                            do deltaIndex = 1, this%tempos%lastOne, 1
@@ -450,7 +501,6 @@ module player
                    if (index < this%channels(channel, memberIndex)%lastNote) then
                        maxLen = this%channels(channel, memberIndex)%playerNotes(index+ 1)%startDelta - &
                               & this%channels(channel, memberIndex)%playerNotes(index   )%startDelta
-
                    else     
                        maxLen = currLen 
                    end if     
@@ -529,8 +579,6 @@ module player
                          &" Number of Notes: " // trim(numToText(this%channels(channelIndex,1)%numOfNotes))    // & 
                          &" Sum of Duration: " // trim(numToText(this%channels(channelIndex,1)%sumOfDuration)) // &
                          &" Value: "           // trim(realToText(rankings(saveIndex)%value)))
-                 
-                !call debugLog(trim(numToText(saveIndex)) // " " // trim(numToText(rankings(saveIndex)%channelNum)))
                 
              end if         
          end if  
@@ -551,7 +599,7 @@ module player
             &   rankings(channelIndex)%value < lastLargest) then
                 largestRank        = rankings(channelIndex)%value
                 largestRankChannel = rankings(channelIndex)%channelNum
-                !call debugLog(trim(realToText(rankings(channelIndex)%value)))                        
+                     
             end if
          end do
          
@@ -1369,7 +1417,7 @@ module player
         integer(kind = 1)                       :: channelNum, midiChannelNum, memberIndex, subIndex
         integer(kind = 8)                       :: index, channel, lastNote, nextNote, tempLastNote, deltaIndex
         type(instrument), pointer               :: iProgram 
-        logical                                 :: LR, channel10NoteWasZero
+        logical                                 :: LR, channel10NoteWasZero, foundIt
         integer(kind = 8)                       :: deltaBuffer
         integer(kind = 2)                       :: note, currInst
         character(len = 16)                     :: word
@@ -1399,60 +1447,72 @@ module player
                      call debugLog("Enter Note OFF")  
                  end if
                  
+                 foundIt = .FALSE.
+                 
                  memberIndex = 1  
 
                  do subIndex = 1, this%channelMemberNums(channel), 1 
-                    if (this%channels(channel, subIndex)%hasAnyNotes .EQV. .FALSE.) cycle 
-                     
+                    if (this%channels(channel, subIndex)%hasAnyNotes .EQV. .FALSE.) cycle    
+                    
                     tempLastNote = this%channels(channel, subIndex)%lastNote     
                     read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") note
                     
                     if (channel == 10) then
                         if (note < 35 .OR. note > 87 ) note = 0
+                        if (note == 0) then
+                           if (debug .EQV. .TRUE.) call debugLog("This one has 0 for note! :'(") 
+                        end if    
                         if (note /= 0) note = fixNoteNum(note + 129 - 35)
                     end if
-                        
-                        
+                    
+                    if (this%channels(channel, subIndex)%playerNotes(tempLastNote)%closed .EQV. .TRUE.) cycle                           
                     if (note /= this%channels(channel, subIndex)%playerNotes(tempLastNote)%note) cycle
                     if (        this%channels(channel, subIndex)%currInst /= &
                       &         this%channels(channel, subIndex)%playerNotes(tempLastNote)%instrument) cycle
                     
                     memberIndex = subIndex
                     lastNote    = tempLastNote
+                    foundIt     = .TRUE.
                     exit
                  end do
                  
-                 this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta = deltaBuffer
-                 this%channels(channel, memberIndex)%playerNotes(lastNote)%closed   = .TRUE.
-                 if (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta == &
-                    &this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta) then
-
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%instrument = 0
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%volume     = 0
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%note       = 0
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta = 0
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta   = 0       
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%fNumber    = 0
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%octave     = 0
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%freq       = 0
-                     this%channels(channel, memberIndex)%playerNotes(lastNote)%tempo      = 0
-                     this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
-                 else       
-                        
-                     this%channels(channel, memberIndex)%numOfNotes    = this%channels(channel, memberIndex)%numOfNotes    + 1
-                     this%channels(channel, memberIndex)%sumOfDuration = this%channels(channel, memberIndex)%sumOfDuration + &
-                                                                       & (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta -&
-                                                                       &  this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta)
-
-                 end if
-
-                 if (debug .EQV. .TRUE.) then
-                     call debugLog("OFF: " // trim(numToText(channel)) // " " &
-                                          &// trim(numToText(memberIndex)) // " " &
-                                          &// trim(numToText(this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta)) // " " &
-                                          &// trim(numToText(note)))  
-                 end if
+                 if (foundIt .EQV. .TRUE.) then
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta = deltaBuffer
                  
+                     this%channels(channel, memberIndex)%playerNotes(lastNote)%closed   = .TRUE.
+                     if (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta == &
+                        &this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta) then
+
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%instrument = 0
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%volume     = 0
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%note       = 0
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta = 0
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta   = 0       
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%fNumber    = 0
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%octave     = 0
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%freq       = 0
+                         this%channels(channel, memberIndex)%playerNotes(lastNote)%tempo      = 0
+                         this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
+                     else       
+                        
+                         this%channels(channel, memberIndex)%numOfNotes    = this%channels(channel, memberIndex)%numOfNotes    + 1
+                         this%channels(channel, memberIndex)%sumOfDuration = this%channels(channel, memberIndex)%sumOfDuration + &
+                                                                           & (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta -&
+                                                                           &  this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta)
+
+                     end if
+                 
+                     if (debug .EQV. .TRUE.) then
+                         call debugLog("OFF: " // trim(numToText(channel)) // " " &
+                                              &// trim(numToText(memberIndex)) // " " &
+                                              &// trim(numToText(this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta)) // " " &
+                                              &// trim(numToText(note)))  
+                     end if
+                  else   
+                     if (debug .EQV. .TRUE.) then
+                         call debugLog("!!! Not found the note to close on Midi Message #" // trim(numToText(index)) // "!!!") 
+                     end if  
+                  end if
                case("1001") 
                ! Note On
                  if (debug .EQV. .TRUE.) then  
@@ -1791,6 +1851,15 @@ module player
         else
             ticks = ms * (this%fps * this%ptf)
         end if    
+    end function
+    
+    function logToText(L) result(w)
+        logical             :: L
+        character(len=1)    :: w
+    
+        w = "N"
+        if (L .EQV. .TRUE.) w = "Y" 
+    
     end function
     
 end module

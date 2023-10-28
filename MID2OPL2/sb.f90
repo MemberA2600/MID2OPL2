@@ -26,7 +26,6 @@ module soundbank
         integer (kind = 2)               :: synthInstrument, percussionInstrument
         type(adTable), pointer           :: eTable
 
-        
         contains
         procedure                        :: getMilliSeconds       => getMilliSeconds
         procedure                        :: getMilliSecondsOfSlot => getMilliSecondsOfSlot
