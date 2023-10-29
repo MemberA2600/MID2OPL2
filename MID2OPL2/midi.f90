@@ -8,7 +8,7 @@ module midi
     public                                              :: midiFile, LoadFile, midiData, message
     logical                                             :: first                
     
-    logical, parameter                                  :: streamMode = .FALSE.
+    logical, parameter                                  :: streamMode = .FALSE.!, lastCheck = .TRUE.
     logical, parameter                                  :: VLQdebug = .FALSE.
     logical                                             :: debug    = .FALSE.
 
@@ -109,7 +109,7 @@ module midi
         contains
         procedure                                       :: loadFile    => LoadFile
         procedure                                       :: DeAllocator => deAllocator
-        
+        !procedure                                       :: lastPrint   => lastPrint        
         
    end type
    
@@ -1146,7 +1146,7 @@ module midi
            
            select case(this%messages(this%lastMessage)%metaM%typeAsHex)
            case("51")
-               this%messages(this%lastMessage)%metaM%valueAsNum = 60000000 / this%messages(this%lastMessage)%metaM%valueAsNum
+               if (this%messages(this%lastMessage)%metaM%valueAsNum /= 0) this%messages(this%lastMessage)%metaM%valueAsNum = 60000000 / this%messages(this%lastMessage)%metaM%valueAsNum
            end select
            
            select case(this%messages(this%lastMessage)%metaM%typeAsHex)
@@ -1390,10 +1390,6 @@ module midi
       if (this%theSize == this%last) call this%doubleSize()
       this%last = this%last + 1
            
-      !open(13, file = "C:\Jaj.txt", position="append", action = "write")
-      !write(13, "(I0)") this%last   
-      !close(13)
-      
       if (getASCIIFromBytes(hexArray(1:4), 4) .EQ. "MThd") then
          this%listOfChunks(this%last)%header = .TRUE.
       else
@@ -1401,10 +1397,6 @@ module midi
       end if
       
       this%listOfChunks(this%last)%theSize = getInt32FromBytes(hexArray(5:8))
-
-      !OPEN(unit=12, file="szar.txt", position="append", action = "write")
-      !WRITE(12, *) getASCIIFromBytes(hexArray(1:4), 4), currentIndex, this%listOfChunks(this%last)%theSize, hexArray(8:this%listOfChunks(this%last)%theSize + 8)
-      !CLOSE(12)
       
       call this%listOfChunks(this%last)%allocateChunk()
       
@@ -1458,7 +1450,6 @@ module midi
       do index = 1, this%theSize, 1
          tempList(index)%header    = this%listOfChunks(index)%header 
          tempList(index)%theSize   = this%listOfChunks(index)%theSize
-         !tempList(index)%trackNum  = this%listOfChunks(index)%trackNum
 
          call templist(index)%allocateChunk()   
          
@@ -1609,9 +1600,45 @@ module midi
      end do
 
      this%loaded = .TRUE.
-     
+     !if (lastCheck .EQV. .TRUE.) call this%lastPrint()
    end subroutine
    
+!   subroutine lastPrint(this)
+!     implicit none
+!   
+!     class(midiFile), intent(inout) :: this   
+!     integer                        :: channelIndex, itemIndex, subIndex 
+!     character(len = 3)             :: advance
+!     
+!     open(17, file = "last.txt")
+!     
+!     do channelIndex = 1, this%numberOfTracks, 1
+!        write(17, "(A, I0, A)") "--- Channel #", channelIndex, "---" 
+!         
+!        do itemIndex = 1, this%tracks(channelIndex)%lastMessage, 1 
+!           write(17, "(A, I0, A)") "|Item #", itemIndex, "|"
+!           select case(this%tracks(channelIndex)%messages(itemIndex)%messageType)
+!           case("MT")
+!               write(17, "(A, 1x, A)") trim(this%tracks(channelIndex)%messages(itemIndex)%metaM%typeAsText), trim(this%tracks(channelIndex)%messages(itemIndex)%metaM%valueAsText)
+!               do subIndex = 1, this%tracks(channelIndex)%messages(itemIndex)%metaM%lenght, 1
+!                  advance = "NO " 
+!                  if (mod(subIndex, 16) == 0 ) advance = "YES"
+!                  if (subIndex == this%tracks(channelIndex)%messages(itemIndex)%metaM%lenght) advance = "YES"
+!                  write(17, "(A)", advance = advance) this%tracks(channelIndex)%messages(itemIndex)%metaM%valueAsHex(subIndex)
+!               end do    
+!               
+!                              
+!               
+!           end select
+!           
+!           write(17, "(A)") "----------------------------------"
+!        end do 
+!     end do    
+!     
+!     close(17)
+!     
+!   end subroutine     
+     
    subroutine DeAllocator(this)
      class(midiFile), intent(inout) :: this
      integer(kind = 8)              :: trackIndex, messageIndex, chunkIndex, subIndex

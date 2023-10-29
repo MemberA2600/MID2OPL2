@@ -17,17 +17,19 @@ module player
                                                                  &7.0, 8.0, 9.0, 10.0, 10.0, 12.0, 12.0, 15.0, 15.0/)
     
     
-    logical, parameter                          :: debug                = .FALSE. 
+    logical, parameter                          :: debug                = .FALSE., percussionOnly = .FALSE. 
     logical                                     :: dbgLogFirst          = .FALSE., printTable = .FALSE.
     type(midiFile), pointer                     :: midiF
     type(soundB)  , pointer                     :: sBank
     character(255)                              :: logPath
+    integer(kind = 1), parameter                :: percussChannel       = 10
+
     
-    integer(kind = 1)                           :: maxNumberOfMembers   = 9
+    integer(kind = 1)                           :: maxNumberOfMembers   = 5
     integer(kind = 1)                           :: maxPercussItems      = 3
     logical                                     :: ignorePercussion     = .FALSE.
     integer(kind = 1)                           :: octaveChange         = 0
-                                                
+    
     type playerNotePointer
         type(playerNote), pointer               :: p
         integer(kind = 8)                       :: startDelta, endDelta        
@@ -142,7 +144,7 @@ module player
         procedure                                   :: LoadComboTable             => loadComboTable    
         procedure                                   :: reAlignNotes               => reAlignNotes    
         procedure                                   :: checkChannelInstruMonotony => checkChannelInstruMonotony
-        procedure                                   :: fixChannel10               => fixChannel10
+        procedure                                   :: fixChannelPercuss          => fixChannelPercuss
         procedure                                   :: detectBestPlaceForNote     => detectBestPlaceForNote
         procedure                                   :: insertTheNote              => insertTheNote
         procedure                                   :: printTheTable              => printTheTable
@@ -176,20 +178,20 @@ module player
          
          deallocate(this%channelMemberNums, stat = stat)
          
-         deallocate(this%tempos%tempos    , stat = stat)
+         deallocate(this%tempos%tempos     , stat = stat)
          deallocate(this%tempos%startDeltas, stat = stat)
          this%tempos%lastOne = 0
          
     end subroutine     
     
-    subroutine fixChannel10(this, note, channel)    
+    subroutine fixChannelPercuss(this, note, channel)    
          class(midiPlayer)  , intent(inout)        :: this       
          type(playerNote)   , intent(inout)        :: note
          type(playerChannel), intent(inout)        :: channel
          character(len = 32)                       :: iName
          integer(kind = 1)                         :: charIndex, lenOfName
          
-         if (note%note /= 0) channel%currInst =  note%note + 129 - 35
+         if (note%note /= 0) channel%currInst =  calcPercussInstruNum(note%note) 
          note%instrument  =  channel%currInst
          note%instrumentP => sBank%instruments(note%instrument)
 
@@ -202,7 +204,7 @@ module player
              end if
           end do     
          
-         if (debug .EQV. .TRUE.) call debugLog("Fix Channel 10's " // &
+         if (debug .EQV. .TRUE.) call debugLog("Fix Channel "// trim(numToText(percussChannel)) //"'s " // &
                                 &trim(numToText(note%note)) // ", instrument is set to " // trim(numToText(channel%currInst)) // &
                                 & " (" // trim(iName(1:lenOfName)) // ")") 
          note%note        = fixNoteNum(channel%currInst)
@@ -210,6 +212,14 @@ module player
          
          
     end subroutine
+    
+    function calcPercussInstruNum(noteNum) result(instruNum)
+        integer(kind = 2)                   :: noteNum
+        integer(kind = 2)                   :: instruNum
+    
+        instruNum = noteNum + 94
+    
+    end function
     
     function fixNoteNum(instrument) result(res)
          integer(kind = 2), intent(in)      :: instrument
@@ -563,7 +573,7 @@ module player
       rankedOnes(1) = 10
       
       do channelIndex = 1, midiF%numberOfTracks, 1
-         if (channelIndex == 10) cycle    
+         if (channelIndex == percussChannel) cycle    
              
          if (this%channels(channelIndex,1)%hasAnyNotes .EQV. .TRUE.) then
              saveIndex = saveIndex +1 
@@ -639,14 +649,14 @@ module player
           end if  
           
           do memberIndex = 1, maxNumberOfMembers, 1 
-             if (this%channels(10, &
+             if (this%channels(percussChannel, &
                  &memberIndex)%hasAnyNotes .EQV. .FALSE.      ) exit
-             if (memberIndex      > this%channelMemberNums(10)) exit
+             if (memberIndex      > this%channelMemberNums(percussChannel)) exit
              if (memberIndex      > maxPercussItems           ) exit
              saveIndex = memberIndex + 1
              
-             do noteIndex = 1, this%channels(10, memberIndex)%lastNote, 1  
-                call this%saveNotePointer(10, memberIndex, noteIndex, memberIndex) 
+             do noteIndex = 1, this%channels(percussChannel, memberIndex)%lastNote, 1  
+                call this%saveNotePointer(percussChannel, memberIndex, noteIndex, memberIndex) 
              end do   
          end do      
       end if
@@ -655,6 +665,8 @@ module player
       channelIndex = rankedOnes(startIndex)  
       saveIndex    = saveIndex - 1
       if (saveIndex < 1) saveIndex = 1   
+      
+      if (percussionOnly .EQV. .TRUE.) goto 789
       
       call debugLog(trim(numToText(saveIndex)))  
       do memberIndex   = 1, maxNumberOfMembers, 1
@@ -1352,17 +1364,22 @@ module player
         
     end subroutine    
         
-    subroutine getFNumAndOctave(this, pNote)
+    subroutine getFNumAndOctave(this, pNote, channel)
         class(midiPlayer), intent(inout)        :: this 
         type(playerNote), intent(inout)         :: pNote
         integer(kind = 2)                       :: note
         integer(kind = 2)                       :: instru
-        
+        integer(kind = 2)                       :: channel
+
         !
         !   Sound bank has a changer offset, we will see if we really needed it.
         !
        
-        note   = pNote%note + pNote%instrumentP%noteOffset + (octaveChange * 12) + 1
+        if (channel /= percussChannel) then
+            note   = pNote%note + pNote%instrumentP%noteOffset + (octaveChange * 12) + 1
+        else
+            note   = pNote%instrumentP%fixedNote
+        end if
         instru = pNote%instrument
         
         pNote%fNumber = this%comboTable(note)%instruTable(instru)%fnum
@@ -1457,12 +1474,12 @@ module player
                     tempLastNote = this%channels(channel, subIndex)%lastNote     
                     read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") note
                     
-                    if (channel == 10) then
+                    if (channel == percussChannel) then
                         if (note < 35 .OR. note > 87 ) note = 0
                         if (note == 0) then
                            if (debug .EQV. .TRUE.) call debugLog("This one has 0 for note! :'(") 
                         end if    
-                        if (note /= 0) note = fixNoteNum(note + 129 - 35)
+                        if (note /= 0) note = fixNoteNum(calcPercussInstruNum(note))
                     end if
                     
                     if (this%channels(channel, subIndex)%playerNotes(tempLastNote)%closed .EQV. .TRUE.) cycle                           
@@ -1533,9 +1550,7 @@ module player
                         memberIndex = subIndex    
                         exit                        
                  end do    
-                 
-                 !call debugLog("FUCK " // trim(numToText(memberIndex)))
-                 
+                                  
                  lastNote = this%channels(channel, memberIndex)%lastNote
                  nextNote = lastNote + 1
                  
@@ -1554,6 +1569,10 @@ module player
                  read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(2), "(B8)") &
                      &this%channels(channel, memberIndex)%playerNotes(nextNote)%volume   
 
+                 
+                 if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note   < 0 .OR. &
+                    &this%channels(channel, memberIndex)%playerNotes(nextNote)%volume < 0) call debugLog("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCK")
+                 
                  this%channels(channel, memberIndex)%hasAnyNotes = .TRUE.
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%closed = .FALSE.
                  this%channels(channel, memberIndex)%lastNote  = nextNote
@@ -1569,23 +1588,23 @@ module player
                  
                  channel10NoteWasZero = .FALSE.
                  
-                 if (channel == 10) then 
+                 if (channel == percussChannel) then 
                      if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note < 35 .OR. &
                         &this%channels(channel, memberIndex)%playerNotes(nextNote)%note > 87 ) &
                         &this%channels(channel, memberIndex)%playerNotes(nextNote)%note = 0
-
-                     if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note == 0) channel10NoteWasZero = .TRUE.
                      
-                     call this%fixChannel10(this%channels(channel, memberIndex)%playerNotes(nextNote),&
+                     call this%fixChannelPercuss(this%channels(channel, memberIndex)%playerNotes(nextNote),&
                      & this%channels(channel, memberIndex))
 
+                     if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note == 0) channel10NoteWasZero = .TRUE.
+
                  end if     
-                     
-                 call this%getFNumAndOctave(this%channels(channel, memberIndex)%playerNotes(nextNote))
-                                  
+                                                       
                  if (channel10NoteWasZero .EQV. .TRUE.) then
                      this%channels(channel, memberIndex)%playerNotes(nextNote)%note = 0
                      this%channels(channel, memberIndex)%playerNotes(nextNote)%fNumber = 0
+                 else
+                     call this%getFNumAndOctave(this%channels(channel, memberIndex)%playerNotes(nextNote), channel)
                  end if     
                  
                  if (debug .EQV. .TRUE.) then
@@ -1639,15 +1658,16 @@ module player
     function initTempo(this) result(tempo)
         class(midiPlayer), intent(inout)        :: this 
         real(kind = 8)                          :: tempo
-        integer(kind = 2)                       :: index, subIndex, stat
-        integer(kind = 8)                       :: deltaSum, size, insertIndex, copyIndex
+        integer(kind = 2)                       :: index, stat
+        integer(kind = 8)                       :: deltaSum, size, insertIndex, copyIndex, subIndex
         
         tempo    = 0
         size     = 0
-        
+                
         do index = 1, midiF%numberOfTracks, 1
+            write(17, '(I0, 1x, I0)') index, midiF%tracks(index)%lastMessage
             do subIndex = 1, midiF%tracks(index)%lastMessage, 1
-                if (midiF%tracks(index)%messages(subIndex)%messageType == 'MT') then     
+                if (midiF%tracks(index)%messages(subIndex)%messageType == 'MT') then   
                     if (midiF%tracks(index)%messages(subIndex)%metaM%typeAsHex == '51') then
                         
                         if (midiF%tracks(index)%messages(subIndex)%metaM%valueAsNum > tempo) then
@@ -1659,14 +1679,17 @@ module player
                 end if    
             end do   
         end do    
-        
+                
         if (allocated(this%tempos%tempos)      .EQV. .TRUE.) deallocate(this%tempos%tempos     , stat = stat)
         if (allocated(this%tempos%startDeltas) .EQV. .TRUE.) deallocate(this%tempos%startDeltas, stat = stat)
         
         if (size < 2) then
             
-            if (size == 0) tempo = 120
-            
+            if (size == 0) then
+                call debugLog("No tempo data found, use default value of 120 for thw whole song.")
+                tempo = 120
+            end if
+                
             allocate(this%tempos%tempos(1)     , stat = stat)
             allocate(this%tempos%startDeltas(1), stat = stat)
             
@@ -1674,7 +1697,7 @@ module player
             this%tempos%lastOne        = 1
             this%tempos%startDeltas(1) = 0
             
-            call debugLog("Tempo for the whole song: " // trim(numToText(this%tempos%tempos(1))))
+            if (size == 1) call debugLog("Tempo for the whole song: " // trim(numToText(this%tempos%tempos(1))))
 
         else            
             allocate(this%tempos%tempos(size)     , stat = stat)
@@ -1792,8 +1815,9 @@ module player
         res = 0
         realTicks = ticks
         
-        if (this%divisionMode .EQV. .FALSE.) then           
-            tempoReal = 60000000 / tempo
+        if (this%divisionMode .EQV. .FALSE.) then  
+            tempoReal = 0
+            if (tempo /= 0) tempoReal = 60000000 / tempo
             tpqnREAL  = this%TPQN
             
             res       = realTicks * ( tempoReal / tpqnREAL)
@@ -1844,8 +1868,9 @@ module player
             ms   = instru%getMilliSeconds(typ1)        
         end if    
                             
-        if (this%divisionMode .EQV. .FALSE.) then   
-            tempoReal = 60000000 / tempo 
+        if (this%divisionMode .EQV. .FALSE.) then  
+            tempoReal = 0
+            if (tempo /= 0) tempoReal = 60000000 / tempo 
         
             ticks = ms / ( tempoReal / this%tpqn)
         else
@@ -1861,5 +1886,6 @@ module player
         if (L .EQV. .TRUE.) w = "Y" 
     
     end function
+
     
 end module
