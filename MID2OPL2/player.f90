@@ -1386,6 +1386,11 @@ module player
         end if
         instru = pNote%instrument
         
+        !
+        ! Sometimes they were lazy to set the instrument if it is the basic piano.
+        !
+        if (instru == 0) instru = 1
+        
         pNote%fNumber = this%comboTable(note)%instruTable(instru)%fnum
         pNote%freq    = this%comboTable(note)%freq
         pNote%octave  = this%comboTable(note)%instruTable(instru)%octave         
@@ -1581,6 +1586,14 @@ module player
                  !this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer(channel)
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument =  this%channels(channel, memberIndex)%currInst
+                 
+                 !
+                 ! If they forgot to set piano for a channel, set in here.
+                 !
+                 if (this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument == 0) then
+                     this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument  = 1
+                     this%channels(channel, memberIndex)%currInst                          = 1
+                 end if
                  
                  if (this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument /= 0) then
                      this%channels(channel, memberIndex)%playerNotes(nextNote)%instrumentP => sBank%instruments(this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument)
