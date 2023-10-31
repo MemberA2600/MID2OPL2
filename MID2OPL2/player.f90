@@ -286,7 +286,7 @@ module player
         integer(kind = 8)                       :: index, longestDelta, subIndex, memberIndex, maxTempo
         integer(kind = 1)                       :: stat
         integer(kind = 1)                       :: param1, param2, param5
-        logical                                 :: param3
+        logical                                 :: param3, wasAnyNote
         character(len = *)                      :: param4 
 
         dbgLogFirst                             = .TRUE.
@@ -347,9 +347,7 @@ module player
         end if     
         
         this%maxTime = this%deltaTimeToMS(longestDelta, maxTempo)
-        
-        this%maxTime = longestDelta
-               
+                       
         if (debug .EQV. .TRUE.) then
             call debugLog("Max Time:   " // trim(numToText(this%maxTime)))  
             if (midiF%divisionMode .EQV. .FALSE.) then
@@ -409,14 +407,20 @@ module player
         end do    
 
         do index = 1, midiF%numberOfTracks, 1 
-           call this%fillChannel(index)
+           wasAnyNote = .FALSE. 
+            
+           call this%fillChannel(index, wasAnyNote)
+           if (midiF%midiType == 2) then
+               if (wasAnyNote .EQV. .TRUE.) exit
+           end if    
         end do        
 
         do index = 1, midiF%numberOfTracks, 1 
            call this%removeNotClosed(index)
            call this%reSetDeltas(index)
+           
         end do     
-
+        
         call this%reAlignNotes()
         
     end subroutine
@@ -1429,29 +1433,40 @@ module player
     
     end function
     
-    subroutine fillChannel(this, channelNum)
+    subroutine fillChannel(this, channelNum, wasAnyNote)
         class(midiPlayer), intent(inout)        :: this 
         integer(kind = 1)                       :: channelNum, midiChannelNum, memberIndex, subIndex
-        integer(kind = 8)                       :: index, channel, lastNote, nextNote, tempLastNote, deltaIndex
+        integer(kind = 8)                       :: index, channel, lastNote, nextNote, tempLastNote, deltaIndex, deltaBuffer
         type(instrument), pointer               :: iProgram 
         logical                                 :: LR, channel10NoteWasZero, foundIt
-        integer(kind = 8)                       :: deltaBuffer
-        integer(kind = 2)                       :: note, currInst
+        !integer(kind = 8), dimension(:), &
+        !                          & allocatable :: deltaBuffer
+        integer(kind = 2)                       :: note, currInst, stat
         character(len = 16)                     :: word
         real(kind = 8)                          :: minLen
+        logical, intent(inout)                  :: wasAnyNote
+        
+        !if (allocated(deltaBuffer) .EQV. .TRUE.) deallocate(deltaBuffer, stat = stat)
+        !allocate(deltaBuffer(midiF%numberOfTracks), stat=stat)
         
         deltaBuffer         = 0
         memberIndex         = 1
                    
         do index = 1, midiF%tracks(channelNum)%lastMessage, 1
-           deltaBuffer = deltaBuffer + midiF%tracks(channelNum)%messages(index)%deltaTime
-                  
            if (debug .EQV. .TRUE.) then
                call debugLog("Source Channel: " // trim(numToText(channelNum))) 
            end if     
+           
+           call debugLog("\\\\ Current DeltaBuffer: " // trim(numToText(deltaBuffer)))
+           
            select case(midiF%tracks(channelNum)%messages(index)%messageType)
            case("MD")
                channel  = midiF%tracks(channelNum)%messages(index)%midiD%channelNum
+               call debugLog("Channel to Write: " // trim(numToText(channel)))
+               
+               !deltaBuffer(channel) = deltaBuffer(channel) + midiF%tracks(channelNum)%messages(index)%deltaTime 
+               deltaBuffer = deltaBuffer + midiF%tracks(channelNum)%messages(index)%deltaTime 
+
                lastNote = this%channels(channel, memberIndex)%lastNote
                if (debug .EQV. .TRUE.) then
                    call debugLog("MD: " // trim(numToText(channel)) // " " // trim(numToText(memberIndex)))  
@@ -1481,7 +1496,8 @@ module player
                         end if    
                         if (note /= 0) note = fixNoteNum(calcPercussInstruNum(note))
                     end if
-                    
+
+                    if (tempLastNote == 0) cycle                           
                     if (this%channels(channel, subIndex)%playerNotes(tempLastNote)%closed .EQV. .TRUE.) cycle                           
                     if (note /= this%channels(channel, subIndex)%playerNotes(tempLastNote)%note) cycle
                     if (        this%channels(channel, subIndex)%currInst /= &
@@ -1494,8 +1510,9 @@ module player
                  end do
                  
                  if (foundIt .EQV. .TRUE.) then
+                     !this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta = deltaBuffer(channel)
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta = deltaBuffer
-                 
+                     
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%closed   = .TRUE.
                      if (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta == &
                         &this%channels(channel, memberIndex)%playerNotes(lastNote)%startDelta) then
@@ -1510,8 +1527,10 @@ module player
                          this%channels(channel, memberIndex)%playerNotes(lastNote)%freq       = 0
                          this%channels(channel, memberIndex)%playerNotes(lastNote)%tempo      = 0
                          this%channels(channel, memberIndex)%lastNote                         = lastNote - 1
+                         if (lastNote - 1 == 0) this%channels(channel, memberIndex)%hasAnyNotes = .FALSE.
+                         call debugLog("-------------------- Reverting note!!!")
                      else       
-                        
+                         wasAnyNote = .TRUE. 
                          this%channels(channel, memberIndex)%numOfNotes    = this%channels(channel, memberIndex)%numOfNotes    + 1
                          this%channels(channel, memberIndex)%sumOfDuration = this%channels(channel, memberIndex)%sumOfDuration + &
                                                                            & (this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta -&
@@ -1545,10 +1564,13 @@ module player
                         exit                    
                     end if
                         
-                    if (this%channels(channel, subIndex)%playerNotes(lastNote)%closed     .EQV. .FALSE. ) cycle
-                    if (this%channels(channel, subIndex)%playerNotes(lastNote)%startDelta == deltabuffer) cycle
-                        memberIndex = subIndex    
-                        exit                        
+                    if (this%channels(channel, subIndex)%playerNotes(lastNote)%closed     .EQV. .FALSE.          ) cycle
+                   ! if (this%channels(channel, subIndex)%playerNotes(lastNote)%endDelta >= deltabuffer(channel)) cycle
+                    !if (this%channels(channel, subIndex)%playerNotes(lastNote)%startDelta >= deltabuffer(channel)) cycle
+                    if (this%channels(channel, subIndex)%playerNotes(lastNote)%startDelta >= deltabuffer) cycle
+
+                    memberIndex = subIndex    
+                    exit                        
                  end do    
                                   
                  lastNote = this%channels(channel, memberIndex)%lastNote
@@ -1556,6 +1578,7 @@ module player
                  
                  if (this%channelMemberNums(channel) < memberIndex) this%channelMemberNums(channel) = memberIndex
                  
+                 !this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer(channel)
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument =  this%channels(channel, memberIndex)%currInst
                  
@@ -1569,12 +1592,12 @@ module player
                  read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(2), "(B8)") &
                      &this%channels(channel, memberIndex)%playerNotes(nextNote)%volume   
 
-                 
                  if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note   < 0 .OR. &
-                    &this%channels(channel, memberIndex)%playerNotes(nextNote)%volume < 0) call debugLog("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCK")
+                    &this%channels(channel, memberIndex)%playerNotes(nextNote)%volume < 0) call debugLog("This is very corrupted!")
                  
                  this%channels(channel, memberIndex)%hasAnyNotes = .TRUE.
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%closed = .FALSE.
+                 this%channels(channel, memberIndex)%playerNotes(nextNote)%endDelta = this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta
                  this%channels(channel, memberIndex)%lastNote  = nextNote
                  
                  do deltaIndex = 1, this%tempos%lastOne, 1
@@ -1609,11 +1632,12 @@ module player
                  
                  if (debug .EQV. .TRUE.) then
                      call debugLog("ON:  " // trim(numToText(channel)) // " " // &
-                                         &trim(numToText(memberIndex)) // " " // trim(numToText(deltaBuffer)) //   " Note: "          // &
-                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%note))          // " | Velocity: "      // &
-                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%volume))        // " | Freq Number: "   // &
-                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%fNumber))       // " | Octave Number: " // &
-                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%octave))        // " | Instrument: "    // &
+!                                         &trim(numToText(memberIndex)) // " " // trim(numToText(deltaBuffer(channel))) //   " Note: "          // &
+                                         &trim(numToText(memberIndex)) // " " // trim(numToText(deltaBuffer))          //   " Note: "          // &
+                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%note))                   // " | Velocity: "      // &
+                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%volume))                 // " | Freq Number: "   // &
+                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%fNumber))                // " | Octave Number: " // &
+                    &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%octave))                 // " | Instrument: "    // &
                     &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument)))  
                  end if
                  
@@ -1652,6 +1676,8 @@ module player
            end select 
            
         end do    
+        
+        !deallocate(deltaBuffer, stat = stat)
         
     end subroutine
     

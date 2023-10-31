@@ -268,11 +268,12 @@ module midi
         tempString = trim(tempString) // binArray(messageDataIndex)(2:8)
         messageDataIndex = messageDataIndex + 1
      end do
-        
+          
      WRITE(formatNum, "(I0)") index * 7
      formatNum = "(B" // trim(formatNum) // ")"
-     
+          
      read(tempstring(1:index * 7), formatNum) theNumber
+     if (VLQdebug .EQV. .TRUE.) call dumpTest("The Number: " // trim(numToText(theNumber)))
      
    end subroutine
    
@@ -332,6 +333,13 @@ module midi
            byteIndex = byteIndex + 1
            call this%processAsSysMes(byteIndex, hexArray, binArray, arrSize)
 
+       ! System Exclusive Message
+       case("F7")
+           this%messages(this%lastMessage)%messageType = "SE"
+           channelNum = 1
+           byteIndex = byteIndex + 1
+           call this%processAsSysMes(byteIndex, hexArray, binArray, arrSize)
+           
        ! Midi Message    
        case default    
            this%messages(this%lastMessage)%messageType = "MD"
@@ -959,6 +967,67 @@ module midi
        
        character(len = 255)                          :: sizeAsText    
        character(len = 3)                            :: advance   
+       logical                                       :: first
+       
+       this%messages(this%lastMessage)%sysM%lenght   = 0
+       first                                         = .TRUE.
+             
+       if (allocated(tempArr) .EQV. .TRUE.) deallocate(tempArr, stat = stat)
+       
+       do 
+            call calculateVLQ(tempLen, binArray, byteIndex)
+            if (allocated(this%messages(this%lastMessage)%sysM%valueAsHex) .EQV. .TRUE.) &
+              &deallocate(this%messages(this%lastMessage)%sysM%valueAsHex, stat = stat)
+       
+            if (first .EQV. .TRUE.) then
+                first = .FALSE.
+                this%messages(this%lastMessage)%sysM%typeAsHex  = hexArray(byteIndex)
+                this%messages(this%lastMessage)%sysM%typeAsText = getSysTypeFromHex(this%messages(this%lastMessage)%sysM%typeAsHex)
+            end if
+            
+            this%messages(this%lastMessage)%sysM%lenght = this%messages(this%lastMessage)%sysM%lenght + tempLen
+            
+            allocate(this%messages(this%lastMessage)%sysM%valueAsHex(this%messages(this%lastMessage)%sysM%lenght), stat = stat)
+       
+            saveIndex = 1
+            if (allocated(tempArr) .EQV. .TRUE.) then
+                do index = 1, size(tempArr), 1
+                   this%messages(this%lastMessage)%sysM%valueAsHex(saveIndex) = tempArr(index)  
+                   saveIndex = saveIndex + 1
+                end do
+                
+                deallocate(tempArr, stat = stat)
+            end if
+            
+            do index = byteIndex, byteIndex + tempLen - 1, 1
+               this%messages(this%lastMessage)%sysM%valueAsHex(saveIndex) = hexArray(index) 
+               !call dumpTest(hexArray(index) )
+               saveIndex = saveIndex + 1
+            end do
+            
+            byteIndex = byteIndex + tempLen - 1
+            
+            !call dumpTest("FOSRAKÁS " // hexArray(byteIndex) )
+            if (hexArray(byteIndex) /= "F7") then                
+                if (hexArray(byteIndex + 1) /= "F7") then     
+                   call dumpTest("Missing 'F7'!!")
+                else    
+                    allocate(tempArr(this%messages(this%lastMessage)%sysM%lenght), stat = stat)
+                    
+                    do index = 1, this%messages(this%lastMessage)%sysM%lenght, 1
+                        tempArr(index) = this%messages(this%lastMessage)%sysM%valueAsHex(index)
+                    end do    
+                    
+                    byteIndex = byteIndex + 2
+                end if 
+            else
+                byteIndex = byteIndex + 1
+                exit                
+            end if
+       
+       end do
+       
+       goto 1666
        
        this%messages(this%lastMessage)%sysM%typeAsHex  = hexArray(byteIndex + 1)
        this%messages(this%lastMessage)%sysM%typeAsText = getSysTypeFromHex(this%messages(this%lastMessage)%sysM%typeAsHex)
@@ -966,6 +1035,7 @@ module midi
        
        byteIndex = byteIndex - 1
               
+
        do 
            ! Should stand on "F0' or "F7"
            if (byteIndex + 2 > arrSize)                                                   exit          
@@ -1001,7 +1071,8 @@ module midi
            this%messages(this%lastMessage)%sysM%lenght = this%messages(this%lastMessage)%sysM%lenght + tempLen
            
        end do
-              
+
+1666   &              
        if (debug .EQV. .TRUE.) then
            open(12, file = logPath, action="write", position="append")
            write(sizeAsText, "(I0)") this%messages(this%lastMessage)%sysM%lenght
@@ -1017,7 +1088,7 @@ module midi
               write(12, "(A, 1x)", advance = advance) this%messages(this%lastMessage)%sysM%valueAsHex(index)
            end do    
            close(12)           
-      end if
+       end if
 
    end subroutine
        
