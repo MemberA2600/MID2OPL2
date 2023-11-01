@@ -8,6 +8,7 @@
 #define IDC_BUTTON_CONVERT              1008
 #define IMG_PIANO                       1011
 #define IDC_BUTTON_CLOSE2               1011
+#define IDC_BUTTON_C                    1011
 #define ID_PICTURE                      1013
 #define IDC_EDIT1                       1014
 #define IDC_PATH                        1014
@@ -38,7 +39,6 @@
 #define IDC_GD3Update                   1038
 #define IDC_log                         1039
 #define IDC_octave                      1040
-#define IDC_log2                        1042
 #define IDC_DUMP                        1042
 #define IDM_EXIT                        30001
 #define IDM_APPLY                       30002

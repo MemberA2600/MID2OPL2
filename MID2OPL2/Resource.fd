@@ -24,8 +24,8 @@
       integer, parameter :: IDC_NOTES = 1026
       integer, parameter :: IDC_octave = 1040
       integer, parameter :: IDC_TRACKNAME = 1020
+      integer, parameter :: IDC_BUTTON_C = 1011
       integer, parameter :: IDC_AUTHORNAME = 1023
-      integer, parameter :: IDC_log2 = 1042
       integer, parameter :: IDC_LOAD = 1014
       integer, parameter :: IMG_PIANO = 1011
       integer, parameter :: IDC_OUTPUT = 1016

@@ -78,7 +78,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
           
     lret = DlgInit(IDD_MID2OPL2_DIALOG, gdlg)
     if (lret == FALSE) goto 99999
-    lret = DlgSetSub(gdlg, IDC_BUTTON_CLOSE, MID2OPL2Close)
+    lret = DlgSetSub(gdlg, IDC_BUTTON_CLOSE2, MID2OPL2Close)
     !lret = DlgSetSub(gdlg, IDC_BUTTON_TEST, MID2OPL2Test)
     lret = DlgSetSub(gdlg, IDC_MIDI_BUTTON, MID2OPL2MidiLOAD)
     lret = DlgSetSub(gdlg, IDC_PATH_BUTTON, MID2OPL2VGMPath)
@@ -176,7 +176,9 @@ SUBROUTINE MID2OPL2Close( dlg, id, callbacktype )
   integer       :: id, callbacktype
 
   call PostQuitMessage(0)
-
+  !CALL DLGSETRETURN (dlg, 0)
+  !CALL DLGEXIT(dlg)
+  
   END SUBROUTINE 
 
 !****************************************************************************
