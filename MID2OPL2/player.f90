@@ -191,6 +191,9 @@ module player
          character(len = 32)                       :: iName
          integer(kind = 1)                         :: charIndex, lenOfName
          
+         if (debug .EQV. .TRUE.) call debugLog("Fix Channel "// trim(numToText(percussChannel)) //"'s " // &
+                                &trim(numToText(note%note)))
+         
          if (note%note /= 0) channel%currInst =  calcPercussInstruNum(note%note) 
          note%instrument  =  channel%currInst
          note%instrumentP => sBank%instruments(note%instrument)
@@ -204,9 +207,9 @@ module player
              end if
           end do     
          
-         if (debug .EQV. .TRUE.) call debugLog("Fix Channel "// trim(numToText(percussChannel)) //"'s " // &
-                                &trim(numToText(note%note)) // ", instrument is set to " // trim(numToText(channel%currInst)) // &
+         if (debug .EQV. .TRUE.) call debugLog("Instrument is set to " // trim(numToText(channel%currInst)) // &
                                 & " (" // trim(iName(1:lenOfName)) // ")") 
+             
          note%note        = fixNoteNum(channel%currInst)
          if (debug .EQV. .TRUE.) call debugLog("The new note is " // trim(numToText(note%note))) 
          
@@ -1495,7 +1498,7 @@ module player
                     read(midiF%tracks(channelNum)%messages(index)%midiD%valueAsBin(1), "(B8)") note
                     
                     if (channel == percussChannel) then
-                        if (note < 35 .OR. note > 87 ) note = 0
+                        if (note < 35 .OR. note > 81 ) note = 0
                         if (note == 0) then
                            if (debug .EQV. .TRUE.) call debugLog("This one has 0 for note! :'(") 
                         end if    
@@ -1625,8 +1628,12 @@ module player
                  channel10NoteWasZero = .FALSE.
                  
                  if (channel == percussChannel) then 
+                     !
+                     !  In standard genmidi, the max. of instruments is 175, the number above is silent.
+                     !
+
                      if (this%channels(channel, memberIndex)%playerNotes(nextNote)%note < 35 .OR. &
-                        &this%channels(channel, memberIndex)%playerNotes(nextNote)%note > 87 ) &
+                        &this%channels(channel, memberIndex)%playerNotes(nextNote)%note > 81 ) &
                         &this%channels(channel, memberIndex)%playerNotes(nextNote)%note = 0
                      
                      call this%fixChannelPercuss(this%channels(channel, memberIndex)%playerNotes(nextNote),&

@@ -277,7 +277,7 @@ module midi
      
    end subroutine
    
-   subroutine addMessage(this, byteIndex, hexArray, binArray, arrSize)
+   subroutine addMessage(this, byteIndex, hexArray, binArray, arrSize, midiType)
        class(track), intent(inout)            :: this
        character(len = 2), dimension(*)       :: hexArray
        character(len = 8), dimension(*)       :: binArray  
@@ -290,6 +290,7 @@ module midi
        character(len = 3)                     :: binText
        integer(kind = 2)                      :: val, origLen  
        character(len = 8)                     :: origType  
+       integer(kind = 1)                      :: midiType  
        
        if (debug .EQV. .TRUE.) then
           open(12, file = logPath, action="write", position="append")
@@ -350,9 +351,11 @@ module midi
            
        end select
 
-       this%midiF%deltaSums(channelNum) = this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime 
-       !this%midiF%deltaSums(this%trackNum) = this%midiF%deltaSums(this%trackNum) + this%messages(this%lastMessage)%deltaTime 
-
+       if (midiType == 1) then
+           this%midiF%deltaSums(channelNum) = this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime 
+       else
+           this%midiF%deltaSums = this%midiF%deltaSums + this%messages(this%lastMessage)%deltaTime 
+       end if    
        
        if (debug .EQV. .TRUE.) then
            open(12, file = logPath, action="write", status="old", position="append")
@@ -392,9 +395,9 @@ module midi
                
             end do    
                         
-            read(tempText     , "(Z0)") valAsNum 
-            write(valAsNumText, "(I0)"  ) valAsNum
-            write(12, "(A)") "Value: " // trim(tempText) // " (" // trim(valAsNumText) // ")"
+            !read(tempText     , "(Z512)") valAsNum 
+            !write(valAsNumText, "(I0)"  ) valAsNum
+            write(12, "(A)") "Value: " // trim(tempText) !// " (" // trim(valAsNumText) // ")"
             
        case("MD")
             write(12, "(A)") "Type: Midi Data" 
@@ -1272,7 +1275,7 @@ module midi
         
    end function 
    
-   subroutine BuildTrack(this, hexArray, binArray, arrSize)
+   subroutine BuildTrack(this, hexArray, binArray, arrSize, midiType)
        class(track), intent(inout)            :: this
        character(len = 2), dimension(*)       :: hexArray
        character(len = 8), dimension(*)       :: binArray  
@@ -1281,7 +1284,8 @@ module midi
        integer(kind = 8)                      :: arrSize
        character(len = 255)                   :: trackNumAsText, sizeAsText   
        character(len = 3)                     :: advance
-             
+       integer(kind = 1)                      :: midiType      
+       
        this%lastMessage = 0
        if (allocated(this%messages) .EQV. .FALSE.) then
            allocate(this%messages(64), stat = stat)
@@ -1312,7 +1316,7 @@ module midi
        
        byteIndex        = 1
        do while (byteIndex < arrSize) 
-          call this%addMessage(byteIndex, hexArray, binArray, arrSize)
+          call this%addMessage(byteIndex, hexArray, binArray, arrSize, midiType)
        end do    
    end subroutine
     
@@ -1377,7 +1381,7 @@ module midi
               midiF%tracks(trackNum)%midiF    => midiF
               arrSize                         = size(this%hexas)
           
-              call midiF%tracks(trackNum)%BuildTrack(this%hexas, this%binaries, arrSize)
+              call midiF%tracks(trackNum)%BuildTrack(this%hexas, this%binaries, arrSize, midiF%midiType)
           end if    
       end if    
       
