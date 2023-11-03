@@ -210,7 +210,7 @@ module player
          if (debug .EQV. .TRUE.) call debugLog("Instrument is set to " // trim(numToText(channel%currInst)) // &
                                 & " (" // trim(iName(1:lenOfName)) // ")") 
              
-         note%note        = fixNoteNum(channel%currInst)
+         note%note        = fixNoteNum(channel%currInst) 
          if (debug .EQV. .TRUE.) call debugLog("The new note is " // trim(numToText(note%note))) 
          
          
@@ -230,7 +230,7 @@ module player
    
          ! The percussion instruments start after the 127th byte, 
          ! but the very first valid is the 35th on general midi 
-         res = sBank%instruments(instrument)%fixedNote
+         res = sBank%instruments(instrument)%fixedNote + 1
          
     end function     
          
@@ -1277,7 +1277,7 @@ module player
            do instruIndex = 1, numOfInstruments , 1                  
               
               if (instruIndex > 128) then
-                  if (noteIndex /= sBank%instruments(instruIndex)%fixedNote) then
+                  if (noteIndex /= sBank%instruments(instruIndex)%fixedNote + 1) then
                      this%comboTable(noteIndex)%instruTable(instruIndex)%fnum   = 0
                      this%comboTable(noteIndex)%instruTable(instruIndex)%octave = 0
                      this%comboTable(noteIndex)%instruTable(instruIndex)%value  = 0
@@ -1385,7 +1385,7 @@ module player
         if (channel /= percussChannel) then
             note   = pNote%note + pNote%instrumentP%noteOffset + (octaveChange * 12) + 1
         else
-            note   = pNote%instrumentP%fixedNote
+            note   = pNote%instrumentP%fixedNote + 1
         end if
         instru = pNote%instrument
         
