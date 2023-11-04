@@ -8,6 +8,7 @@ module VGM
     public                                         :: vgmFile, buildVGM, done
     logical                                        :: first = .TRUE., done
     logical, parameter                             :: debug = .FALSE.
+    integer                                        :: normalisePercuss = 7
     
     type(midiPlayer), pointer                      :: midiP
     type(soundB)    , pointer                      :: sBank   
@@ -529,7 +530,7 @@ module VGM
 
    end subroutine
     
-   subroutine buildVGM(this, midiPP, sBankP, tags, path) 
+   subroutine buildVGM(this, midiPP, sBankP, tags, path, normalizeP) 
        use player
        use soundBank
        
@@ -537,7 +538,7 @@ module VGM
        type(soundB),     intent(in), target           :: sBankP
        type(midiPlayer), intent(in), target           :: midiPP
        
-       integer(kind = 2)                              :: stat, channelIndex
+       integer(kind = 2)                              :: stat, channelIndex, normalizeP
        integer(kind = 8)                              :: noteIndex, offset
        logical                                        :: double = .FALSE.
        
@@ -553,6 +554,7 @@ module VGM
        
        first = .TRUE.
        done = .FALSE.
+       normalisePercuss = normalizeP      
        
        if (allocated(this%chipData%byteTriples) .EQV. .TRUE.) deallocate(this%chipData%byteTriples, stat = stat)
        this%chipData%lastOne      = 0
@@ -752,13 +754,14 @@ module VGM
       logical                                       :: newOne
       integer(kind = 2)                             :: instru, old
       type(instrument), pointer                     :: newI, oldI
-      integer(kind = 2)                             :: dataIndex, slotIndex
+      integer(kind = 2)                             :: dataIndex, slotIndex, temp1, temp2
       integer(kind = 2)                             :: channelIndex
       character(len = 8)                            :: tempByte
       integer(kind = 1)                             :: bitIndex, lenOfName
       character(len = 10)                           :: bits10      
       logical, intent(inout)                        :: firstNote
       character(len = 32)                           :: iName
+      
       
       call debugLog("*** Adding New Note to Channel #" // trim(numToText(channelIndex)) // "!")
       
@@ -902,6 +905,22 @@ module VGM
                  tempByte = ""
                  write(tempByte(1:2), "(B2)") newI%byte5(slotIndex)
                  write(tempByte(3:8), "(B6)") newI%byte6(slotIndex)
+                 !
+                 !  Normalize percussion output level
+                 !
+                 if (noteP%originalChannel == 10) then
+                     temp1 = newI%byte6(1)
+                     if (temp1 < normalisePercuss) temp1 = normalisePercuss 
+                     
+                     temp2 = newI%byte6(2) * (temp1 / normalisePercuss)
+                     if (temp2 < normalisePercuss) temp2 = normalisePercuss 
+                     
+                     if (slotIndex == 2) then
+                         write(tempByte(3:8), "(B6)") temp1
+                     else
+                         write(tempByte(3:8), "(B6)") temp2
+                     end if    
+                 end if
                  
                  do bitIndex = 1, 8, 1
                     if (tempByte(bitIndex:bitIndex) == " ") tempByte(bitIndex:bitIndex) = "0" 

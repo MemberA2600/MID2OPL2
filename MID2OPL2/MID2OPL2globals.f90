@@ -40,5 +40,6 @@ integer                :: selectedSB = 0
 integer(kind = 1)      :: maxNumberOfMembers = 9
 integer(kind = 1)      :: maxPercussItems = 3
 integer(kind = 1)      :: octaveChange = 0
+integer(kind = 1)      :: normalizePerc = 7
 
 end module

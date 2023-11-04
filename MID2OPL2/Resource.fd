@@ -4,6 +4,7 @@
 !
       integer, parameter :: IDC_CONVERTEDBY = 1025
       integer, parameter :: IDC_DAY = 1028
+      integer, parameter :: IDC_NORMALIZE2 = 1044
       integer, parameter :: IDC_PERCUSS = 1034
       integer, parameter :: IDC_STATIC2 = 1030
       integer, parameter :: IDC_BUTTON_CONVERT = 1008
@@ -11,6 +12,7 @@
       integer, parameter :: IDC_STATIC5 = 1035
       integer, parameter :: IDC_STATIC6 = 1036
       integer, parameter :: IDC_STATIC7 = 1037
+      integer, parameter :: IDC_STATIC8 = 1041
       integer, parameter :: IDC_SYSTEMNAME = 1022
       integer, parameter :: IDC_YEAR = 1024
       integer, parameter :: IDC_PATH_BUTTON = 1015
@@ -24,7 +26,6 @@
       integer, parameter :: IDC_NOTES = 1026
       integer, parameter :: IDC_octave = 1040
       integer, parameter :: IDC_TRACKNAME = 1020
-      integer, parameter :: IDC_BUTTON_C = 1011
       integer, parameter :: IDC_AUTHORNAME = 1023
       integer, parameter :: IDC_LOAD = 1014
       integer, parameter :: IMG_PIANO = 1011
@@ -32,6 +33,7 @@
       integer, parameter :: IDM_EXIT = 30001
       integer, parameter :: IDC_BUTTON_CLOSE2 = 1011
       integer, parameter :: IDC_POLY = 1033
+      integer, parameter :: IDC_NORMALIZE = 1044
       integer, parameter :: IDC_OKBOX = 1018
       integer, parameter :: IDD_MID2OPL2_SB = 101
       integer, parameter :: IDC_PATH = 1014

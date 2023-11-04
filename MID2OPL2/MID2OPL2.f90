@@ -91,6 +91,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     lret = DlgSetSub(gdlg, IDC_POLY, MID2OPL2ChangeSettings)
     lret = DlgSetSub(gdlg, IDC_PERCUSS, MID2OPL2ChangeSettings)
     lret = DlgSetSub(gdlg, IDC_OCTAVE, MID2OPL2ChangeSettings)
+    lret = DlgSetSub(gdlg, IDC_NORMALIZE, MID2OPL2ChangeSettings)
 
     retlog = DLGSET(gdlg, IDC_LOAD, "Ready to work!")
     retlog = DLGSET(gdlg, IDC_OUTPUT, "You must construct additional pylons!")
@@ -99,6 +100,7 @@ function WinMain( hInstance, hPrevInstance, lpszCmdLine, nCmdShow )
     retlog = DLGSET(gdlg, IDC_POLY, "5")
     retlog = DLGSET(gdlg, IDC_PERCUSS, "3")
     retlog = DLGSET(gdlg, IDC_OCTAVE, "0")
+    retlog = DLGSET(gdlg, IDC_NORMALIZE, "7")
     
     call DATE_AND_TIME(date = currentDate)
     
@@ -519,9 +521,14 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
      
      retlog = DLGGET (gdlg, IDC_Log, checkBox)
      
-     call midiP%initPlayer(midiF, sBank, maxNumberOfMembers, maxPercussItems, checkBox, &
+     if (normalizePerc == 15) then
+        call midiP%initPlayer(midiF, sBank, maxNumberOfMembers, 0, checkBox, &
                           &trim(outPath) // "\" // trim(fileName), octaveChange)
-     call myVGM%buildVGM(midiP, sBank, tags, fullName)  
+     else 
+        call midiP%initPlayer(midiF, sBank, maxNumberOfMembers, maxPercussItems, checkBox, &
+                          &trim(outPath) // "\" // trim(fileName), octaveChange)
+     end if
+     call myVGM%buildVGM(midiP, sBank, tags, fullName, normalizePerc)  
 
      dummy = fdialog('"Error" "Conversion Finished!" "Conversion was succesfully finished!"')
      
@@ -583,14 +590,15 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
         type (dialog)                     :: dlg
         integer                           :: id, callbacktype
         integer(SINT)                     :: iret, retlog
-        integer(kind = 2)                 :: stat, tempMemb, tempPercuss, tempOctave
+        integer(kind = 2)                 :: stat, tempMemb, tempPercuss, tempOctave, normalize
         
-        character(len = 2)                :: maxMemberText, maxPercussText, octavetext 
+        character(len = 2)                :: maxMemberText, maxPercussText, octavetext, normalizeText 
         character                         :: dummy
         
-        retlog = DLGGET(dlg, IDC_POLY   , maxMemberText ) 
-        retlog = DLGGET(dlg, IDC_PERCUSS, maxPercussText) 
-        retlog = DLGGET(dlg, IDC_OCTAVE, octavetext) 
+        retlog = DLGGET(dlg, IDC_POLY      , maxMemberText ) 
+        retlog = DLGGET(dlg, IDC_PERCUSS   , maxPercussText) 
+        retlog = DLGGET(dlg, IDC_OCTAVE    , octavetext    ) 
+        retlog = DLGGET(dlg, IDC_NORMALIZE , normalizeText ) 
         
         read(maxMemberText , *, iostat = stat) tempMemb
         
@@ -604,10 +612,16 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
         
         if (stat /= 0) tempPercuss = 3
 
+        read(normalizeText, *, iostat = stat) normalize
+        
+        if (stat /= 0) normalize = 7
+        
         if (tempMemb      > 9)        tempMemb    = 9   
         if (tempPercuss   > tempMemb) tempPercuss = tempMemb 
         if (tempMemb      < 1)        tempMemb    = 1
         if (tempPercuss   < 1)        tempPercuss = 0
+        if (normalize     < 1)        normalize = 0
+        if (normalize     > 15)       normalize = 15
 
         if (tempOctave   >  4)        tempOctave = 4
         if (tempOctave   < -4)        tempOctave = -4
@@ -615,17 +629,21 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
         write(maxMemberText , "(I0)") tempMemb
         write(maxPercussText, "(I0)") tempPercuss
         if (octaveText /= "-") write(octavetext    , "(I0)") tempOctave
+        write(normalizeText, "(I0)")  normalize
         
-        retlog = DLGSET(dlg, IDC_POLY   , maxMemberText ) 
-        retlog = DLGSET(dlg, IDC_PERCUSS, maxPercussText) 
-        retlog = DLGSET(dlg, IDC_OCTAVE , octaveText    ) 
+        retlog = DLGSET(dlg, IDC_POLY      , maxMemberText ) 
+        retlog = DLGSET(dlg, IDC_PERCUSS   , maxPercussText) 
+        retlog = DLGSET(dlg, IDC_OCTAVE    , octaveText    ) 
+        retlog = DLGSET(dlg, IDC_NORMALIZE , normalizeText ) 
         
-        retlog = DLGSET(dlg, IDC_POLY   , len_trim(maxMemberText) , DLG_POSITION) 
-        retlog = DLGSET(dlg, IDC_PERCUSS, len_trim(maxPercussText), DLG_POSITION) 
-        retlog = DLGSET(dlg, IDC_OCTAVE , len_trim(octaveText)    , DLG_POSITION) 
+        retlog = DLGSET(dlg, IDC_POLY      , len_trim(maxMemberText) , DLG_POSITION) 
+        retlog = DLGSET(dlg, IDC_PERCUSS   , len_trim(maxPercussText), DLG_POSITION) 
+        retlog = DLGSET(dlg, IDC_OCTAVE    , len_trim(octaveText)    , DLG_POSITION) 
+        retlog = DLGSET(dlg, IDC_NORMALIZE , len_trim(normalizeText) , DLG_POSITION) 
              
         maxNumberOfMembers = tempMemb
         maxPercussItems    = tempPercuss
         octaveChange       = tempOctave
+        normalizePerc      = normalize
         
     END SUBROUTINE 
