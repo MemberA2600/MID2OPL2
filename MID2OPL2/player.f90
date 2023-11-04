@@ -1573,8 +1573,7 @@ module player
                     end if
                         
                     if (this%channels(channel, subIndex)%playerNotes(lastNote)%closed     .EQV. .FALSE.          ) cycle
-                   ! if (this%channels(channel, subIndex)%playerNotes(lastNote)%endDelta >= deltabuffer(channel)) cycle
-                    !if (this%channels(channel, subIndex)%playerNotes(lastNote)%startDelta >= deltabuffer(channel)) cycle
+                    !if (this%channels(channel, subIndex)%playerNotes(lastNote)%endDelta   >= deltabuffer) cycle
                     if (this%channels(channel, subIndex)%playerNotes(lastNote)%startDelta >= deltabuffer) cycle
 
                     memberIndex = subIndex    

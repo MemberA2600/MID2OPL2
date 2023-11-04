@@ -523,6 +523,8 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
                           &trim(outPath) // "\" // trim(fileName), octaveChange)
      call myVGM%buildVGM(midiP, sBank, tags, fullName)  
 
+     dummy = fdialog('"Error" "Conversion Finished!" "Conversion was succesfully finished!"')
+     
     END SUBROUTINE 
 
     SUBROUTINE MID2OPL2ChangeBank(dlg, id, callbacktype)

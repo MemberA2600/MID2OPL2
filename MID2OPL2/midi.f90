@@ -9,7 +9,7 @@ module midi
     logical                                             :: first                
     
     logical, parameter                                  :: streamMode = .FALSE.!, lastCheck = .TRUE.
-    logical, parameter                                  :: VLQdebug = .FALSE.
+    logical, parameter                                  :: VLQdebug = .FALSE., chunkDBG = .FALSE.
     logical                                             :: debug    = .FALSE.
 
     character(len = 255)                                :: logPath
@@ -1353,7 +1353,7 @@ module midi
       integer(kind = 8)                      :: arrSize
       
       tempArray = (/ "00", "00", "00", "00" /)
-      
+            
       if (this%header .EQV. .TRUE.) then
           tempArray(3)      = this%hexas(1)
           tempArray(4)      = this%hexas(2)          
@@ -1374,6 +1374,7 @@ module midi
          
           call setMidiTiming(midiF, this%binaries(5) // this%binaries(6))
       else
+          
           if (streamMode .EQV. .FALSE.) then  
               trackNum = trackNum + 1 
               
@@ -1455,16 +1456,21 @@ module midi
       
    end subroutine
    
-   subroutine NextChunk(this, hexArray, binArray, currentIndex)
+   subroutine NextChunk(this, hexArray, binArray, currentIndex, arrSize, break)
       class(chunkList), intent(inout)       :: this
       character(len = 2), dimension(*)      :: hexArray 
       character(len = 8), dimension(*)      :: binArray 
       integer(kind = 8), intent(inout)      :: currentIndex
-      integer(kind = 8)                     :: index
+      integer(kind = 8)                     :: index, arrSize, adder, tempIndex
+      logical                               :: isSizeCorrect
+      logical, intent(inout)                :: break
+      character(len = 4)                    :: char4
       
+      if (chunkDBG .EQV. .TRUE.) write(47, "(A, I0, A, I0, A, I0, A)") "New chunk at ", currentindex, " (", this%last, "/", this%theSize, ")"
+          
       if (this%theSize == this%last) call this%doubleSize()
       this%last = this%last + 1
-           
+            
       if (getASCIIFromBytes(hexArray(1:4), 4) .EQ. "MThd") then
          this%listOfChunks(this%last)%header = .TRUE.
       else
@@ -1472,17 +1478,80 @@ module midi
       end if
       
       this%listOfChunks(this%last)%theSize = getInt32FromBytes(hexArray(5:8))
+      !
+      ! I found some touhou midis where the chunk len is not correct, so some bytes are left
+      ! at the ends and it will make fail the parsing.
+      !
+      
+      isSizeCorrect = isChunkSizeCorrect(hexArray, this%listOfChunks(this%last)%theSize, arrSize, currentIndex)
+      
+      if (isSizeCorrect .EQV. .FALSE.) then
+          adder = 0
+          if (currentIndex + 12 + this%listOfChunks(this%last)%theSize > arrSize) then
+              write(47, "(A)") "Reached EoF, no more chunks to load." // char4
+              break = .TRUE.
+          else  
+              do tempIndex = currentIndex + 8 + this%listOfChunks(this%last)%theSize, arrSize, 1
+                  if (tempIndex + 4 > arrSize) then
+                      write(47, "(A)") "Reached EoF, no more chunks to load." // char4
+                      break = .TRUE.
+                      exit
+                  else
+                      if (getASCIIFromBytes(hexArray(tempIndex+1:tempIndex+4), 4) .EQ. "MThd") then
+                          !this%listOfChunks(this%last)%theSize = this%listOfChunks(this%last)%theSize + adder  
+                          currentIndex = currentIndex + adder
+                          write(47, "(A, I0)") "Wrong size, changing offset by ", adder
+                          exit
+                      end if
+                      adder = adder + 1
+                  end if 
+              end do
+          end if  
+      end if    
       
       call this%listOfChunks(this%last)%allocateChunk()
       
       do index = 1, this%listOfChunks(this%last)%theSize, 1
-         this%listOfChunks(this%last)%hexas(index)    = hexArray(index + 8)        
+         this%listOfChunks(this%last)%hexas   (index) = hexArray(index + 8)        
          this%listOfChunks(this%last)%binaries(index) = binArray(index + 8)
       end do    
       
       currentIndex = currentIndex + 8 + this%listOfChunks(this%last)%theSize
-      
+            
    end subroutine   
+   
+   function isChunkSizeCorrect(hexArray, theSize, arrSize, currentIndex) result(ok)
+        logical                               :: ok 
+        character(len = 2), dimension(*)      :: hexArray 
+        integer(kind = 8)                     :: theSize, arrSize, currentIndex, tempIndex
+        character(len = 4)                    :: char4
+        
+        ok = .FALSE.
+        
+        ! Check if chunk is the last one
+        if (theSize + 7 == arrSize) then
+            write(47, "(A)") "This was the last chunk and seems okay."
+            ok = .TRUE. 
+        end if    
+            
+        if (ok .EQV. .FALSE.) then
+            if (12 + theSize < arrSize) then
+                tempIndex = 9 + theSize
+                char4     = getASCIIFromBytes(hexArray(tempIndex:tempIndex+4), 4)
+                
+                write(47, "(A)") "Convert next chunks first 4 bytes to ASCII: " // char4
+                if (char4 == "MTrk") then
+                    ok = .TRUE.
+                    write(47, "(A)") "The ending byte position is okay."
+                end if
+            end if
+        end if
+        
+        if (ok .EQV. .FALSE.) then
+           if (chunkDBG .EQV. .TRUE.) write(47, "(A, I0, A, I0, A)") "Size of Chunk is corrupted! (", arrSize, " != ", (8 + theSize), ")" 
+        end if    
+        
+   end function
    
    function getASCIIFromBytes(hexArray, theSize) result(theText)
      integer(kind = 8)                      :: theSize
@@ -1582,7 +1651,7 @@ module midi
      character(len = *)             :: path
      integer                        :: theSize, stat, trackNum
      integer(kind = 8)              :: index, subIndex, currentIndex
-     logical                        :: dbg
+     logical                        :: dbg, break
      
      debug = dbg
      
@@ -1625,12 +1694,13 @@ module midi
      OPEN(unit=11, file=path, access="stream", status="old", action="read",iostat=stat)     
      read(11, iostat=stat) this%bytes
      CLOSE(11)
-
+    
      first = .TRUE.
      
      !
      !  Get pure hexString and binString data
      !
+     
      do index = 1, theSize, 1
         WRITE(this%hexas(index)   , '(Z2)', iostat = stat) this%bytes(index)
         WRITE(this%binaries(index), '(B8)', iostat = stat) this%bytes(index)
@@ -1649,19 +1719,28 @@ module midi
          
      end do    
      deallocate(this%bytes, stat = stat)   
-     
+         
      call this%chunks%initList()
      currentIndex = 1
-    
+         
      !
      !  Create chunks from binary: Chunk Type (Header / Track), Size, Data of Chunk
      !
-     do while (currentIndex < size(this%hexas))        
-        call this%chunks%NextChunk(this%hexas(currentIndex:size(this%hexas)), &
-                                 & this%binaries(currentIndex:size(this%binaries)), currentIndex) 
+     if (chunkDBG .EQV. .TRUE.) open(47, file = "chunkDebug.txt", action = "write") 
+     
+     break = .FALSE.
+     
+     do while (currentIndex < size(this%hexas))   
+        if (chunkDBG .EQV. .TRUE.) write(47, "(A, I0, A, I0, A, I0)") "Processing chunk ", this%chunks%last, ", starts at ", currentIndex, "/", size(this%hexas) 
          
+        call this%chunks%NextChunk(this%hexas   (currentIndex:size(this%hexas   )), &
+                                 & this%binaries(currentIndex:size(this%binaries)), currentIndex,&
+                                 & size(this%hexas) - currentIndex, break) 
+        if (break .EQV. .TRUE.) exit 
      end do
-         
+      
+     if (chunkDBG .EQV. .TRUE.) close(47) 
+
      deallocate(this%hexas    , stat = stat)
      deallocate(this%binaries , stat = stat)
 
