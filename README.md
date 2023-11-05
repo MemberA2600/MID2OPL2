@@ -14,5 +14,12 @@ Here are some conversion made with this tool:
 
 <p align = "justify">Soundbanks are not made by me! You can find a really cool OPL3 bank editor <b><a href="[https://youtube.com/playlist?list=PLRiYYfr6zccx_YlmFaOYpOitg6AWhjBQH&si=7DNugwhHKsy1vTwk](https://github.com/Wohlstand/OPL3BankEditor/)https://github.com/Wohlstand/OPL3BankEditor/">here</a></b></p>
 
-<img src = "https://github.com/MemberA2600/MID2OPL2/assets/70763810/c6805905-60d6-4cce-8c84-4d851cd30602">
+<p align = "justify">The software let's you dump the midi data, soyou can get information about what it has inside (mostly the meta and system exclusive messages and midi data), and also prints out which notes were used and left out. Because some soundbanks sets the percussion volume too high, you can normalize it, and also limit the polyphony.</p>
+
+<p align = "justify">Feel free to write me (feher.janos.zoltan@gmail.com) if it fails on midi load or vgm conversion, I have checked dosens of midis, but since it's a really messy format, there could be exceptions in the wild! </p>
+<p align = "justify">Good source for <b><a href="https://midistock.ru/">midis</a></b>.</p>
+
+<p align = "justify">Development machine: <i>Ryzen 5 2600, 32GB RAM, Windows 7, Visual Studio 2013</i> </p>
+
+<img src = "https://i.ibb.co/b73xkvp/000.png">
 
