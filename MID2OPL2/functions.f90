@@ -91,7 +91,6 @@ module functions
               lastPath = trim(path)
            else   
               lastPath = path(1:positions(index))       
-              !dummy = fdialog('"Error" "FUCK" "' // lastPath // '"')
            end if 
        
            inquire(directory = lastPath, exist = found)

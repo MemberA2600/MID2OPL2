@@ -188,7 +188,6 @@ module soundbank
      
         allocate(this%instruments(numOfInstruments), stat = stat)
         do index = 1, 8, 1
-           !if (debug .EQV. .TRUE. ) call writeLine("ByteIndex #" // trim(numToText(index)) // ": " // trim(numToText(bytes(index))))
            theFormat(index:index) = achar(bytes(index))
         end do    
         
@@ -357,7 +356,6 @@ module soundbank
            if (tempword(subindex:subindex) == " ") tempword(subindex:subindex) = "0"
         end do    
     
-        !if (debug .EQV. .TRUE.) call writeLine("From Bytes: " // tempWord)
         read(tempWord, "(B16)") r
         r = r - 1
         
@@ -393,7 +391,6 @@ module soundbank
         do subIndex = 1, 8, 1
            if (tempByte(subindex:subindex) == " ") tempByte(subindex:subindex) = "0"
         end do    
-        !if (debug .EQV. .TRUE.) call writeLine("From Bytes: " // tempByte)
 
         read(tempByte, "(B8)") r
         r = r - 1

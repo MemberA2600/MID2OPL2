@@ -8,7 +8,7 @@ module midi
     public                                              :: midiFile, LoadFile, midiData, message
     logical                                             :: first                
     
-    logical, parameter                                  :: streamMode = .FALSE.!, lastCheck = .TRUE.
+    logical, parameter                                  :: streamMode = .FALSE.
     logical, parameter                                  :: VLQdebug = .FALSE., chunkDBG = .FALSE.
     logical                                             :: debug    = .FALSE.
 
@@ -189,12 +189,9 @@ module midi
        do index = 1, this%lastMessage, 1
           this%messages(index)%deltaTime   = tempMessages(index)%deltaTime
           this%messages(index)%messageType = tempMessages(index)%messageType
-          !this%messages(index)%trueDeltaTime   = tempMessages(index)%trueDeltaTime
-
           
           select case(this%messages(index)%messageType)
           case ("MT")    
-               !this%messages(index)%metaM  = tempMessages(index)%metaM
                this%messages(index)%metaM%lenght      = tempMessages(index)%metaM%lenght 
                this%messages(index)%metaM%typeAsHex   = tempMessages(index)%metaM%typeAsHex 
                this%messages(index)%metaM%typeAsText  = tempMessages(index)%metaM%typeAsText 
@@ -395,9 +392,7 @@ module midi
                
             end do    
                         
-            !read(tempText     , "(Z512)") valAsNum 
-            !write(valAsNumText, "(I0)"  ) valAsNum
-            write(12, "(A)") "Value: " // trim(tempText) !// " (" // trim(valAsNumText) // ")"
+            write(12, "(A)") "Value: " // trim(tempText) 
             
        case("MD")
             write(12, "(A)") "Type: Midi Data" 
@@ -891,7 +886,6 @@ module midi
            if (this%messages(this%lastMessage)%midiD%usage /= "B") then
                do index = byteIndex, byteIndex + this%messages(this%lastMessage)%midiD%lenght - 1, 1
                   this%messages(this%lastMessage)%midiD%valueAsBin(saveIndex) = binArray(index)   
-                  !call dumpTest(binArray(index) // " " // trim(numToText(saveIndex)) // " " // trim(numToText(index)) // " " // trim(numToText(arrSize)))
 
                   saveIndex = saveIndex + 1 
                   byteIndex = byteIndex + 1
@@ -940,11 +934,7 @@ module midi
                this%messages(this%lastMessage)%midiD%typeAsBin(1:4)  = "1000"
                this%messages(this%lastMessage)%midiD%typeAsText      = "Note Off (Channel " // channelNumAsText // ")"
            end if 
-       end if    
-           
-       !open(15, file = "szar.txt", action="write", position="append")
-       !write(15, "(I8, 1x, I8)") this%messages(this%lastMessage)%deltaTime, this%midiF%deltaSums(channelNum) + this%messages(this%lastMessage)%deltaTime
-       !close(15)
+       end if     
        
    end subroutine    
        
@@ -1004,13 +994,11 @@ module midi
             
             do index = byteIndex, byteIndex + tempLen - 1, 1
                this%messages(this%lastMessage)%sysM%valueAsHex(saveIndex) = hexArray(index) 
-               !call dumpTest(hexArray(index) )
                saveIndex = saveIndex + 1
             end do
             
             byteIndex = byteIndex + tempLen - 1
             
-            !call dumpTest("FOSRAKÁS " // hexArray(byteIndex) )
             if (hexArray(byteIndex) /= "F7") then                
                 if (hexArray(byteIndex + 1) /= "F7") then     
                    call dumpTest("Missing 'F7'!!")
@@ -1154,13 +1142,11 @@ module midi
        
        this%messages(this%lastMessage)%metaM%valueAsNum = 0
        this%messages(this%lastMessage)%metaM%typeAsHex  = hexArray(byteIndex)
-       !call dumpTest(hexArray(byteIndex))
        
        byteIndex = byteIndex + 1
        this%messages(this%lastMessage)%metaM%typeAsText = getMetaTypeFromHex(this%messages(this%lastMessage)%metaM%typeAsHex) 
        
        this%messages(this%lastMessage)%metaM%lenght = 0
-       !call dumpTest(binArray(byteIndex))
        call calculateVLQ(this%messages(this%lastMessage)%metaM%lenght, binArray, byteIndex)
        
        if (this%messages(this%lastMessage)%metaM%lenght > 0) then
@@ -1169,7 +1155,6 @@ module midi
            goto 7777
        end if
        this%messages(this%lastMessage)%metaM%valueAsText = ""
-       ! allocate(this%messages(this%lastMessage)%metaM%valueAsHex(this%messages(this%lastMessage)%metaM%lenght), stat = stat)
              
        saveIndex = 1
        do index = byteIndex, this%messages(this%lastMessage)%metaM%lenght + byteIndex - 1, 1         
@@ -1268,8 +1253,6 @@ module midi
         end do    
                
         write(F, "(A, I0, A)") "(Z", lenght * 2, ")" 
-        !call dumpTest(F)
-        !call dumpTest(tempText)
 
         read(tempText, F) num
         
@@ -1498,7 +1481,6 @@ module midi
                       exit
                   else
                       if (getASCIIFromBytes(hexArray(tempIndex+1:tempIndex+4), 4) .EQ. "MThd") then
-                          !this%listOfChunks(this%last)%theSize = this%listOfChunks(this%last)%theSize + adder  
                           currentIndex = currentIndex + adder
                           write(47, "(A, I0)") "Wrong size, changing offset by ", adder
                           exit
@@ -1754,45 +1736,8 @@ module midi
      end do
 
      this%loaded = .TRUE.
-     !if (lastCheck .EQV. .TRUE.) call this%lastPrint()
    end subroutine
    
-!   subroutine lastPrint(this)
-!     implicit none
-!   
-!     class(midiFile), intent(inout) :: this   
-!     integer                        :: channelIndex, itemIndex, subIndex 
-!     character(len = 3)             :: advance
-!     
-!     open(17, file = "last.txt")
-!     
-!     do channelIndex = 1, this%numberOfTracks, 1
-!        write(17, "(A, I0, A)") "--- Channel #", channelIndex, "---" 
-!         
-!        do itemIndex = 1, this%tracks(channelIndex)%lastMessage, 1 
-!           write(17, "(A, I0, A)") "|Item #", itemIndex, "|"
-!           select case(this%tracks(channelIndex)%messages(itemIndex)%messageType)
-!           case("MT")
-!               write(17, "(A, 1x, A)") trim(this%tracks(channelIndex)%messages(itemIndex)%metaM%typeAsText), trim(this%tracks(channelIndex)%messages(itemIndex)%metaM%valueAsText)
-!               do subIndex = 1, this%tracks(channelIndex)%messages(itemIndex)%metaM%lenght, 1
-!                  advance = "NO " 
-!                  if (mod(subIndex, 16) == 0 ) advance = "YES"
-!                  if (subIndex == this%tracks(channelIndex)%messages(itemIndex)%metaM%lenght) advance = "YES"
-!                  write(17, "(A)", advance = advance) this%tracks(channelIndex)%messages(itemIndex)%metaM%valueAsHex(subIndex)
-!               end do    
-!               
-!                              
-!               
-!           end select
-!           
-!           write(17, "(A)") "----------------------------------"
-!        end do 
-!     end do    
-!     
-!     close(17)
-!     
-!   end subroutine     
-     
    subroutine DeAllocator(this)
      class(midiFile), intent(inout) :: this
      integer(kind = 8)              :: trackIndex, messageIndex, chunkIndex, subIndex

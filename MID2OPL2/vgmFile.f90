@@ -183,7 +183,6 @@ module VGM
              hexas(letterIndex+1) = asHex(1:2)
              
              letterIndex          = letterIndex + 2 
-             ! call debugLog("Letter: " // tag(index:index) // " " // trim(numToText(num)) // " " // asHex) 
          
           end do
       else
@@ -395,7 +394,6 @@ module VGM
         integer(kind = 1)                      :: index 
         
         if ((this%lastOne + 3) > this%theSize) call this%doubleMe()  
-        !call debugLog(trim(numToText(bytes(1))) // " | " // trim(numToText(bytes(2))) // " | " // trim(numToText(bytes(3))))
         call debugLog(numToHex(bytes(1)) // " | " // numToHex(bytes(2)) // " | " // numToHex(bytes(3)))
         
         do index = 1, 3, 1
@@ -485,7 +483,6 @@ module VGM
    subroutine AddByteP(this, note)
        class(dataPointerChannel), intent(inout)         :: this
        type(deltaAndBytes), intent(in), target          :: note
-       !type(dataPointer), dimension(:), allocatable     :: tempData
 
        integer(kind = 2)                                :: stat, byteIndex
        integer(kind = 8)                                :: insertIndex, tempIndex
@@ -664,21 +661,7 @@ module VGM
 
        call this%header%changeHeader(20, this%header%gd3Offset)
        call this%header%changeHeader(24, this%header%allWaitSamples)
-       call this%header%changeHeader(4 , this%header%eofOffset)
-       
-       !write(lenAsHex, "(Z8)") this%header%allWaitSamples
-
-       !open(76, file = "fos.txt", action = "write")
-       !write(76, "(I0)") this%header%eofOffset
-       !close(76)
-       
-       !do channelIndex = 1, 8, 1
-       !   if (lenAsHex(channelIndex : channelIndex) == " ") lenAsHex(channelIndex : channelIndex) = "0" 
-       !end do           
-       
-       !do channelIndex = 1, 4, 1
-       !   read(lenAsHex((2 * channelIndex) - 1 : (2 * channelIndex)), "(Z2)") this%header%headerBytes(24 + (5-channelIndex))  
-       !end do    
+       call this%header%changeHeader(4 , this%header%eofOffset) 
        
        if (allocated(outBytes) .EQV. .TRUE.) deallocate(outBytes, stat = stat)       
        allocate(outBytes(this%bList%lastOne + this%header%gd3Last + 128), stat = stat)
@@ -723,7 +706,6 @@ module VGM
        call midiP%deAllocator()
        
    end subroutine
-   
    
    
    subroutine addData(this, noteP, channelIndex)

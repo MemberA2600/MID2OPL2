@@ -326,7 +326,6 @@ module player
         maxTempo = this%initTempo()
         
         if (debug .EQV. .TRUE.) then
-            !call debugLog("Full Delta:  " // trim(numToText(this%midiF%deltaFull)), this%dbgLogFirst)  
             
             if (midiF%divisionMode .EQV. .FALSE.) then
                 call debugLog("Max Tempo:   " // trim(numToText(maxtempo)))    
@@ -719,11 +718,6 @@ module player
                chanMemb(1)  = chanMemb(1) + 1
            end if 
          end if     
-       
-       !  
-       ! Remove after testing
-       !  
-       !goto 789 
          
        if (saveIndex > 9) then
        
@@ -1053,7 +1047,6 @@ module player
                  cycle
              end if
                        
-              !if (insertIndex < this%maxNumberOfNotes .AND. insertIndex < lastNote) then    
               if (insertIndex < this%maxNumberOfNotes .AND. insertIndex < otherLast) then 
                   if (this%notePointerChannels(saveIndex)%notePointers(insertIndex+1)%startDelta > note%endDelta) then
                          startIndexes(saveIndex) = -1 
@@ -1447,15 +1440,11 @@ module player
         integer(kind = 8)                       :: index, channel, lastNote, nextNote, tempLastNote, deltaIndex, deltaBuffer
         type(instrument), pointer               :: iProgram 
         logical                                 :: LR, channel10NoteWasZero, foundIt
-        !integer(kind = 8), dimension(:), &
-        !                          & allocatable :: deltaBuffer
+
         integer(kind = 2)                       :: note, currInst, stat
         character(len = 16)                     :: word
         real(kind = 8)                          :: minLen
         logical, intent(inout)                  :: wasAnyNote
-        
-        !if (allocated(deltaBuffer) .EQV. .TRUE.) deallocate(deltaBuffer, stat = stat)
-        !allocate(deltaBuffer(midiF%numberOfTracks), stat=stat)
         
         deltaBuffer         = 0
         memberIndex         = 1
@@ -1472,7 +1461,6 @@ module player
                channel  = midiF%tracks(channelNum)%messages(index)%midiD%channelNum
                call debugLog("Channel to Write: " // trim(numToText(channel)))
                
-               !deltaBuffer(channel) = deltaBuffer(channel) + midiF%tracks(channelNum)%messages(index)%deltaTime 
                deltaBuffer = deltaBuffer + midiF%tracks(channelNum)%messages(index)%deltaTime 
 
                lastNote = this%channels(channel, memberIndex)%lastNote
@@ -1518,7 +1506,6 @@ module player
                  end do
                  
                  if (foundIt .EQV. .TRUE.) then
-                     !this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta = deltaBuffer(channel)
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%endDelta = deltaBuffer
                      
                      this%channels(channel, memberIndex)%playerNotes(lastNote)%closed   = .TRUE.
@@ -1573,7 +1560,6 @@ module player
                     end if
                         
                     if (this%channels(channel, subIndex)%playerNotes(lastNote)%closed     .EQV. .FALSE.          ) cycle
-                    !if (this%channels(channel, subIndex)%playerNotes(lastNote)%endDelta   >= deltabuffer) cycle
                     if (this%channels(channel, subIndex)%playerNotes(lastNote)%startDelta >= deltabuffer) cycle
 
                     memberIndex = subIndex    
@@ -1585,7 +1571,6 @@ module player
                  
                  if (this%channelMemberNums(channel) < memberIndex) this%channelMemberNums(channel) = memberIndex
                  
-                 !this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer(channel)
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%startDelta =  deltaBuffer
                  this%channels(channel, memberIndex)%playerNotes(nextNote)%instrument =  this%channels(channel, memberIndex)%currInst
                  
@@ -1651,7 +1636,6 @@ module player
                  
                  if (debug .EQV. .TRUE.) then
                      call debugLog("ON:  " // trim(numToText(channel)) // " " // &
-!                                         &trim(numToText(memberIndex)) // " " // trim(numToText(deltaBuffer(channel))) //   " Note: "          // &
                                          &trim(numToText(memberIndex)) // " " // trim(numToText(deltaBuffer))          //   " Note: "          // &
                     &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%note))                   // " | Velocity: "      // &
                     &trim(numToText(this%channels(channel, memberIndex)%playerNotes(nextNote)%volume))                 // " | Freq Number: "   // &

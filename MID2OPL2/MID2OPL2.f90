@@ -346,7 +346,6 @@ SUBROUTINE MID2OPL2BoxChanged( dlg, id, callbacktype)
       if (exist .EQV. .TRUE.) then
           outPath = tempDir
       end if
-          !dummy = fdialog('"Error" "Invalid Folder" "The given folder for output does not exist"')
       call checkOutPut(tempDir)    
       
       call enableDisableConvertButton()
@@ -411,9 +410,6 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
   
   isItVGM = checkIfVGM(fileName)
   
- ! write(shortDummy, "(I0)") isItVGM
- ! dummy = fdialog('"Error" "!!!" "' // shortDummy // '"') 
-  
   select case(isItVGM)
     case(1)
         dummy = fdialog('"Error" "Invalid Characters" "Invalid characters found in filename ' // "'" // trim(fileName) // "'" // ' !"') 
@@ -439,7 +435,6 @@ SUBROUTINE MID2OPL2Convert( dlg, id, callbacktype)
     if (outPath(fLen:fLen) == "\" .OR. outPath(fLen:fLen) == "/") outPath = outPath(1:(fLen-1))
     
     fullName = trim(outPath) // "\" // trim(fileName) // ".vgm"
-    !dummy = fdialog('"Error" "!!!" "' // trim(fullName) // '"') 
     
     inquire(file = fullName, exist = exist)
     
